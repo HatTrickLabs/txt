@@ -1,0 +1,18 @@
+Name:	{FirstName} {LastName}
+Dob:	{Dob}
+{#if IsEmployed}
+Employer: {Employer}
+{#/if}
+{#if !IsEmployed}
+Currently Not Employed
+{#/if}
+{#if Certs}
+This guy has certifications...
+Cert List:
+{#each Certs}
+{$}
+{#/each}
+{#/if}
+{#each PreviousEmployers}
+{$}
+{#/each}

@@ -1,0 +1,44 @@
+Hello {FirstName} {LastName},
+
+We see your current title is {Title}.
+
+Your title lower cased would be {(Title) => ToLower}
+
+Education List:
+{#each Education-}
+- {$}
+{#/each-}
+
+Past/Current Addresses:
+{#each Addresses-}
+{$.Street}
+{$.City}, {$.State} {$.Zip}
+---------------------------------------------
+{#/each-}
+
+{#each Items-}
+{$.Name}
+{#each SubItems-}
+{..\$.Prop} => {$} {..\..\$.FirstName}
+{#/each-}
+{#/each-}
+
+********
+{#if Wage-}
+{Wage.Value} as {Wage.Currency}
+{#/if-}
+{#if !Wage-}
+...No wage found...
+{#/if-}
+
+{#if (Title) => IsDeveloper-}
+Yes, he is a developer.
+{#/if}
+
+{#each () => GetAddresses-}
+{#if ($.Zip) => ShouldRenderAddress-}
+{$.Street}
+{$.City}, {$.State} {$.Zip}
+---------------------------------------------
+{#/if}
+{#/each-}

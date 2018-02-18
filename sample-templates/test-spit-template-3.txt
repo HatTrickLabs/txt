@@ -1,0 +1,7 @@
+Name:	{FirstName} {LastName}
+Dob:	{(Dob) => formatBirthDate}
+Certifications:
+{#each Certs-}
+{($) => toUpper}
+{#/each-}
+

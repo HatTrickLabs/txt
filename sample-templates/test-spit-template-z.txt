@@ -1,0 +1,9 @@
+Hello {FirstName} {LastName},
+
+We see your current title is {Title}.
+
+I see your zip code is {Address.Zip}
+
+{(var1) => InsertSpaces}
+
+goodby...
