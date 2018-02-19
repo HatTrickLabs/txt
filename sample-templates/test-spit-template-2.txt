@@ -1,8 +1,8 @@
 Name:	{FirstName} {LastName}
 Dob:	{Dob}
-{#if IsEmployed}
+{# if IsEmployed}
 Employer: {Employer}
-{#/if}
+{# /if}
 {#if !IsEmployed}
 Currently Not Employed
 {#/if}
@@ -16,3 +16,12 @@ Cert List:
 {#each PreviousEmployers}
 {$}
 {#/each}
+{>SubContent}
+{!this is just a comment}
+
+{#if Certs}
+- he has certs...
+{#if IsEmployed}
+- he is alsow employed...
+{#/if}
+{#/if}
