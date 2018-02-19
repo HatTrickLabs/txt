@@ -451,27 +451,29 @@ namespace HatTrick.Spit
             endTag = null;
             int offset = 1;// we are inside 1 if and looking for its /if
 
+            string tag;
+            bool emitTagAsContent;
             do
             {
                 //look for the next tag...
                 this.EmitCharToActionTill(emitContentTo, '{', false);
 
-                //we found a tag, emit it to tmp holding place to analyze
-                string tag = string.Empty;
+                tag = string.Empty;
+                emitTagAsContent = false;
+
                 Action<char> emitTagTo = (c) =>
                 {
                     if (c != ' ') { tag += c; }
                 };
+
                 this.EmitCharToActionTill(emitTagTo, '}', true);
+
                 if (!till(tag))
                 {
+                    emitTagAsContent = true;
                     if (ensuring(tag))
                     {
                         offset += 1;
-                    }
-                    for (int i = 0; i < tag.Length; i++)
-                    {
-                        emitContentTo(tag[i]);
                     }
                 }
                 else
@@ -479,16 +481,22 @@ namespace HatTrick.Spit
                     offset -= 1;
                     if (offset > 0)
                     {
-                        for (int i = 0; i < tag.Length; i++)
-                        {
-                            emitContentTo(tag[i]);
-                        }
+                        emitTagAsContent = true;
                     }
                     else
                     {
                         endTag = tag;
                     }
                 }
+
+                if (emitTagAsContent)
+                {
+                    for (int i = 0; i < tag.Length; i++)
+                    {
+                        emitContentTo(tag[i]);
+                    }
+                }
+
             } while (offset > 0);
         }
         #endregion
