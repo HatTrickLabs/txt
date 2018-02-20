@@ -38,7 +38,7 @@ namespace HatTrick.Spit.TestHarness
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             long totalTicks = 0;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 100; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(obj);
@@ -61,15 +61,16 @@ namespace HatTrick.Spit.TestHarness
                 Dob = DateTime.Parse("1975-03-03"),
                 IsEmployed = true,
                 Employer = "Microsoft",
-                Certs = new[] { "MCSE", "MCITP", "MCTS" },
-                PreviousEmployers = default(object) //null
+                Certifications = new[] { "MCSE", "MCITP", "MCTS" },
+                PreviousEmployers = default(object), //null
+                SubContent = "Hi {FirstName} {LastName}, this is just a sub content merge test..."
             };
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.SuppressNewline = true;
             long totalTicks = 0;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 100; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(person);
@@ -92,7 +93,7 @@ namespace HatTrick.Spit.TestHarness
                 Dob = DateTime.Parse("1975-03-03"),
                 IsEmployed = true,
                 Employer = "Microsoft",
-                Certs = new[] { "mcse", "mcitp", "mcts" },
+                Certifications = new[] { "mcse", "mcitp", "mcts" },
                 PreviousEmployers = default(object) //null
             };
 
@@ -111,7 +112,7 @@ namespace HatTrick.Spit.TestHarness
             ngin.LambdaRepo.Add(nameof(formatBirthDate), formatBirthDate);
             ngin.LambdaRepo.Add(nameof(toUpper), toUpper);
             long totalTicks = 0;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 100; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(person);

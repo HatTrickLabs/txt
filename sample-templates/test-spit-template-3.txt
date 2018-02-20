@@ -1,7 +1,10 @@
 Name:	{FirstName} {LastName}
 Dob:	{(Dob) => formatBirthDate}
+{#if IsEmployed-}
+he is employed!!!
+{#/if-}
 Certifications:
-{#each Certs-}
+{#each Certifications-}
 {($) => toUpper}
 {#/each-}
 

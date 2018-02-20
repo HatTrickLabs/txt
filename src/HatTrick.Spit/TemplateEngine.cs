@@ -59,114 +59,129 @@ namespace HatTrick.Spit
             _index = 0;
 
             char eot = (char)3; //end of text....
+            StringBuilder tokenBuilder = new StringBuilder(100);
             while (this.Peek() != eot)
             {
                 this.RollForwardAndKeepTill('{');
 
+                Action<char> captureTag = (c) =>
+                {
+                    if (c != ' ')
+                    { tokenBuilder.Append(c); }
+                };
+                this.EmitCharToActionTill(captureTag, '}', true);
+
                 if (!this.EndOfTemplate)
                 {
-                    //TODO: JRod, optimize... eliminate the peek(int count) func..
-                    //--->: we need to be able to handle dirty tags (spaces) i.e. {# if or { #if or {# each etc...
-
-                    if (this.Peek(4) == "{#if") //# if logic tag (boolean switch)
+                    string token = tokenBuilder.ToString();
+                    if (this.IsIfTag(token)) //# if logic tag (boolean switch)
                     {
-                        this.HandleIfTag(bindTo);
+                        this.HandleIfTag(token, bindTo);
                     }
-                    else if (this.Peek(6) == "{#each") //#each enumeration
+                    else if (this.IsEachTag(token)) //#each enumeration
                     {
-                        this.HandleEachTag(bindTo);
+                        this.HandleEachTag(token, bindTo);
                     }
-                    else if (this.Peek(2) == "{>") //sub template tag
+                    else if (this.IsPartialTag(token)) //sub template tag
                     {
-                        this.HandleSubTemplateTag(bindTo);
+                        this.HandleSubTemplateTag(token, bindTo);
                     }
-                    else if (this.Peek(2) == "{!") //comment tag
+                    else if (this.IsCommentTag(token)) //comment tag
                     {
-                        this.HandleCommentTag();
+                        this.HandleCommentToken(token);
                     }
                     else //basic token
                     {
-                        this.HandleBasicTag(bindTo);
+                        this.HandleBasicToken(token, bindTo);
                     }
                 }
+                tokenBuilder.Clear();
             }
 
             return _mergeResult.ToString();
         }
         #endregion
 
-        #region handle comment tag
-        private void HandleCommentTag()
+        #region is if tag
+        public bool IsIfTag(string tag)
         {
-            //bypass and exclude from output
-            this.RollForwardAndDiscardTill('}');
-            string endTag = new string(new char[] { _template[_index - 1], _template[_index] });
-            _index += 1;
-            this.EnsureNewLineSuppression(endTag);
+            return tag.StartsWith("{#if", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region is end if tag
+        public bool IsEndIfTag(string tag)
+        {
+            return tag.StartsWith("{#/if", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region is each tag
+        public bool IsEachTag(string tag)
+        {
+            return tag.StartsWith("{#each", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region is end each tag
+        public bool IsEndEachTag(string tag)
+        {
+            return tag.StartsWith("{#/each", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region is comment tag
+        public bool IsCommentTag(string tag)
+        {
+            return tag.StartsWith("{!", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region is include tag
+        public bool IsPartialTag(string tag)
+        {
+            return tag.StartsWith("{>", StringComparison.CurrentCultureIgnoreCase);
+        }
+        #endregion
+
+        #region handle comment tag
+        private void HandleCommentToken(string token)
+        {
+            //string endTag = new string(new char[] { _template[_index - 1], _template[_index] });
+            //_index += 1;
+            this.EnsureNewLineSuppression(token, out bool _);
         }
         #endregion
 
         #region handle basic tag
-        private void HandleBasicTag(object bindTo)
+        private void HandleBasicToken(string token, object bindTo)
         {
-            string token = string.Empty;
-
-            Action<char> emitTo = (s) => 
-            {
-                if (s != ' ' && s != '{' && s != '}')
-                { token += s; }
-            };
-
-            this.EmitCharToActionTill(emitTo, '}', true);
-
-            object target = this.ResolveTarget(token, bindTo);
+            object target = this.ResolveTarget(token.Trim('{', '}'), bindTo);
 
             _mergeResult.Append(target ?? string.Empty);
         }
         #endregion
 
         #region handle if tag
-        private void HandleIfTag(object bindTo)
+        private void HandleIfTag(string token, object bindTo)
         {
-            StringBuilder openTagBuilder = new StringBuilder();
             StringBuilder enclosedContentBuilder = new StringBuilder();
-            StringBuilder closeTagBuilder = new StringBuilder();
 
-            Action<char> emitOpenTo = (s) => 
-            {
-                if (s != ' ')
-                { openTagBuilder.Append(s); }
-            };
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
-            Action<char> emitCloseTo = (s) => { closeTagBuilder.Append(s); };
 
-            //roll throug the open each tag and emit to open builder
-            this.EmitCharToActionTill(emitOpenTo, '}', true);
-            string openTag = openTagBuilder.ToString();
-            this.EnsureNewLineSuppression(openTag);
+            this.EnsureNewLineSuppression(token, out bool _);
 
-            //roll and emit intil proper #/if tag found (allowing nested #if #/if tags
-            this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/if", "{#if", false);
+            //roll and emit until proper #/if tag found (allowing nested #if #/if tags
+            //this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/if", "{#if", false);
+            string closeTag;
+            this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
 
-            //roll through the close tag and emit to close builder
-            this.EmitCharToActionTill(emitCloseTo, '}', true);
-            string closeTag = closeTagBuilder.ToString();
-            this.EnsureNewLineSuppression(closeTag);
+            string bindAs = token.Substring(4, (hasTrimMarker) ? (token.Length - 6) : (token.Length - 5));
+            bool isNegated = bindAs[0] == '!';
 
-            bool isNegated = false;
-            for (int i = 0; i < openTag.Length; i++)
-            {
-                //TODO: JRod, optimize... no need to iterate the entire tag contents... ! should be before token
-                if (openTag[i] == '!')
-                {
-                    isNegated = true;
-                    break;
-                }
-            }
-
-            string[] bindAs = openTag.Split(new string[] { "{", "#", "if", "!", "-", "}" }, StringSplitOptions.RemoveEmptyEntries);
-
-            object target = this.ResolveTarget(bindAs[0], bindTo);
+            object target = this.ResolveTarget(isNegated ? bindAs.Substring(1) : bindAs, bindTo);
 
             bool render = (target != null);
 
@@ -189,37 +204,23 @@ namespace HatTrick.Spit
         #endregion
 
         #region handle each tag
-        private void HandleEachTag(object bindTo)
+        private void HandleEachTag(string token, object bindTo)
         {
-            StringBuilder openTagBuilder = new StringBuilder();
             StringBuilder enclosedContentBuilder = new StringBuilder();
-            StringBuilder closeTagBuilder = new StringBuilder();
 
-            Action<char> emitOpenTo = (s) => 
-            {
-                if (s != ' ')
-                { openTagBuilder.Append(s); }
-            };
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
-            Action<char> emitCloseTo = (s) => { closeTagBuilder.Append(s); };
 
-            //roll through the open each tag and emit to open builder
-            this.EmitCharToActionTill(emitOpenTo, '}', true);
-            string openTag = openTagBuilder.ToString();
-            this.EnsureNewLineSuppression(openTag);
+            this.EnsureNewLineSuppression(token, out bool _);
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
-            this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/each", "{#each", false);
+            string closeTag;
+            this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
 
-            //roll through the close tag and emit to close builder
-            this.EmitCharToActionTill(emitCloseTo, '}', true);
-            string closeTag = closeTagBuilder.ToString();
-            this.EnsureNewLineSuppression(closeTag);
+            string bindAs = token.Substring(6, (hasTrimMarker) ? (token.Length - 8) : (token.Length - 7));
 
-            //open tag {#each Person.Details.Addresses}
-            string[] bindAs = openTagBuilder.ToString().Split(new string[] { "{", "#", "each", "-", "}" }, StringSplitOptions.RemoveEmptyEntries);
-
-            object target = this.ResolveTarget(bindAs[0], bindTo);
+            object target = this.ResolveTarget(bindAs, bindTo);
 
             if (!(target == null)) //if null just ignore
             {
@@ -249,19 +250,10 @@ namespace HatTrick.Spit
         #endregion
 
         #region handle sub template tag
-        private void HandleSubTemplateTag(object bindTo)
+        private void HandleSubTemplateTag(string token, object bindTo)
         {
-            string token = string.Empty;
-
-            Action<char> emitTo = (s) => 
-            {
-                if (s != ' ' && s != '>' && s != '{' && s != '}')
-                { token += s; }
-            };
-
-            this.EmitCharToActionTill(emitTo, '}', true);
-
-            object target = this.ResolveTarget(token, bindTo);
+            //this.EnsureNewLineSuppression(token); //TODO: JRod, test this!!!!
+            object target = this.ResolveTarget(token.Trim('{', '>', '}'), bindTo);
             //object target = ReflectionHelper.Expression.ReflectItem(bindTo, token);
 
             if (!(target is string))
@@ -452,36 +444,59 @@ namespace HatTrick.Spit
         }
         #endregion
 
-        #region ensured sub pattern count emit char to action till
-        private void EnsuredSubPatternCountEmitCharToActionTill(Action<char> emitTo, string till, string ensuring, bool greedy)
+        #region emit enclosed content to action till
+        private void EmitEnclosedContetToActionTill(Action<char> emitContentTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
         {
-            StringBuilder content = new StringBuilder();
+            endTag = null;
+            int offset = 1;// we are inside 1 if and looking for its /if
 
-            emitTo += (s) => 
-            {
-                content.Append(s);
-            };
-
-            int subOpenCount;
-            int subCloseCount;
-            //Need to account for the enclosed content having it's own #each tag... roll forward until #each count == #/each count...
+            string tag = string.Empty;
+            bool emitTagAsContent;
             do
             {
-                //roll through enclosed content and emit to local enclosed content appender action
-                this.EmitCharToActionTill(emitTo, till, greedy);
+                //look for the next tag...
+                this.EmitCharToActionTill(emitContentTo, '{', false);
 
-                string template = content.ToString();
+                tag = string.Empty;
+                emitTagAsContent = false;
 
-                subOpenCount = this.CountInstanceOfPattern(template, ensuring);
-                subCloseCount = this.CountInstanceOfPattern(template, till);
-
-                if (subOpenCount != subCloseCount)
+                Action<char> emitTagTo = (c) =>
                 {
-                    emitTo(this.Peek());
-                    _index += 1;
+                    if (c != ' ') { tag += c; }
+                };
+
+                this.EmitCharToActionTill(emitTagTo, '}', true);
+
+                if (!till(tag))
+                {
+                    emitTagAsContent = true;
+                    if (ensuring(tag))
+                    {
+                        offset += 1;
+                    }
+                }
+                else
+                {
+                    offset -= 1;
+                    if (offset > 0)
+                    {
+                        emitTagAsContent = true;
+                    }
+                    else
+                    {
+                        endTag = tag;
+                    }
                 }
 
-            } while (subOpenCount != subCloseCount);
+                if (emitTagAsContent)
+                {
+                    for (int i = 0; i < tag.Length; i++)
+                    {
+                        emitContentTo(tag[i]);
+                    }
+                }
+
+            } while (offset > 0);
         }
         #endregion
 
@@ -502,9 +517,11 @@ namespace HatTrick.Spit
         #endregion
 
         #region ensure new line suppression
-        private void EnsureNewLineSuppression(string tag)
+        private void EnsureNewLineSuppression(string tag, out bool hasTrimMarker)
         {
-            if (this.SuppressNewline || tag.EndsWith("-}"))
+            //if global suppress newline or tag has right side trim marker..
+            hasTrimMarker = false;
+            if (this.SuppressNewline || (hasTrimMarker = tag[tag.Length - 2] == '-'))
             {
                 int newLineLength = Environment.NewLine.Length;
                 if (this.Peek(newLineLength) == Environment.NewLine)
