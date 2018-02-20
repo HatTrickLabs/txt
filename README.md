@@ -1,2 +1,2 @@
-# spit
-Single Pass Interpolation Tools
+# SPaT
+Single Pass Tempates
