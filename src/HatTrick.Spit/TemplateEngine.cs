@@ -13,6 +13,7 @@ namespace HatTrick.Spit
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
         private StringBuilder _mergeResult;
+        private int _allotedStackDepth = 15;
         #endregion
 
         #region interface
@@ -52,6 +53,18 @@ namespace HatTrick.Spit
         }
         #endregion
 
+        #region with alloted stack depth
+        private TemplateEngine WithAllotedStackDepth(int depth)
+        {
+            if (depth < 0)
+            {
+                throw new MergeException("stack depth overflow.  partial (sub template) stack depth cannot exceed 15");
+            }
+            _allotedStackDepth = depth;
+            return this;
+        }
+        #endregion
+
         #region merge
         public string Merge(object bindTo) //TODO, JRod, allow stream output...
         {
@@ -84,7 +97,7 @@ namespace HatTrick.Spit
                     }
                     else if (this.IsPartialTag(token)) //sub template tag
                     {
-                        this.HandleSubTemplateTag(token, bindTo);
+                        this.HandlePartialTag(token, bindTo);
                     }
                     else if (this.IsCommentTag(token)) //comment tag
                     {
@@ -137,7 +150,7 @@ namespace HatTrick.Spit
         }
         #endregion
 
-        #region is include tag
+        #region is partial tag
         public bool IsPartialTag(string tag)
         {
             return tag.StartsWith("{>", StringComparison.CurrentCultureIgnoreCase);
@@ -195,6 +208,7 @@ namespace HatTrick.Spit
             {
                 TemplateEngine subEngine = new TemplateEngine(enclosedContentBuilder.ToString())
                     .WithScopeChain(_scopeChain)
+                    .WithAllotedStackDepth(_allotedStackDepth)
                     .WithLambdaRepository(_lambdaRepo);
 
                 subEngine.SuppressNewline = this.SuppressNewline;
@@ -236,6 +250,7 @@ namespace HatTrick.Spit
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(enclosedContentBuilder.ToString())
                     .WithScopeChain(_scopeChain)
+                    .WithAllotedStackDepth(_allotedStackDepth)
                     .WithLambdaRepository(_lambdaRepo);
 
                 subEngine.SuppressNewline = this.SuppressNewline;
@@ -249,18 +264,18 @@ namespace HatTrick.Spit
         }
         #endregion
 
-        #region handle sub template tag
-        private void HandleSubTemplateTag(string token, object bindTo)
+        #region handle partial tag (sub templates)
+        private void HandlePartialTag(string token, object bindTo)
         {
             //this.EnsureNewLineSuppression(token); //TODO: JRod, test this!!!!
             object target = this.ResolveTarget(token.Trim('{', '>', '}'), bindTo);
-            //object target = ReflectionHelper.Expression.ReflectItem(bindTo, token);
 
             if (!(target is string))
             { throw new MergeException($"#sub template tag / token reflected value is not typeof string: {target}"); }
 
             TemplateEngine subEngine = new TemplateEngine(target as string)
                 .WithScopeChain(_scopeChain)
+                .WithAllotedStackDepth(_allotedStackDepth - 1) //decrement 1 unit for sub template...
                 .WithLambdaRepository(_lambdaRepo);
 
             subEngine.SuppressNewline = this.SuppressNewline;
