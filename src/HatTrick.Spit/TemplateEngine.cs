@@ -160,8 +160,6 @@ namespace HatTrick.Spit
         #region handle comment tag
         private void HandleCommentToken(string token)
         {
-            //string endTag = new string(new char[] { _template[_index - 1], _template[_index] });
-            //_index += 1;
             this.EnsureNewLineSuppression(token, out bool _);
         }
         #endregion
@@ -169,7 +167,7 @@ namespace HatTrick.Spit
         #region handle basic tag
         private void HandleBasicToken(string token, object bindTo)
         {
-            object target = this.ResolveTarget(token.Trim('{', '}'), bindTo);
+            object target = this.ResolveTarget(token.Substring(1, (token.Length - 2)), bindTo);
 
             _mergeResult.Append(target ?? string.Empty);
         }
