@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using HatTrick.Spit;
+using HatTrick.Spat;
 
-namespace HatTrick.Spit.TestHarness
+namespace HatTrick.Spat.TestHarness
 {
     class Program
     {
@@ -31,7 +31,7 @@ namespace HatTrick.Spit.TestHarness
         #region test template engine simple tags
         private static void TestTemplateEngineSimpleTags()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spit-template-1.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spat-template-1.txt");
 
             var obj = new { DocTitle = "Title Goes Here", DocBody = "Document Body Goes Here" };
 
@@ -52,7 +52,7 @@ namespace HatTrick.Spit.TestHarness
         #region test template engine conditions and loops
         private static void TestTemplateEngineConditionsAndLoops()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spit-template-2.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spat-template-2.txt");
 
             var person = new
             {
@@ -84,7 +84,7 @@ namespace HatTrick.Spit.TestHarness
         #region test template engine conditions and loops
         private static void TestTemplateEngineLambdaExpressions()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spit-template-3.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spat-template-3.txt");
 
             var person = new
             {

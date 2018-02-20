@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HatTrick.Spit.Reflection
+namespace HatTrick.Spat.Reflection
 {
     public class NoPropertyExistsException : Exception
     {
