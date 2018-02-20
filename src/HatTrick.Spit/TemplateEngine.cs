@@ -178,6 +178,9 @@ namespace HatTrick.Spit
         #region handle if tag
         private void HandleIfTag(string token, object bindTo)
         {
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(token, out hasTrimMarker);
+
             StringBuilder enclosedContentBuilder = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
@@ -187,9 +190,6 @@ namespace HatTrick.Spit
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
             this.EnsureNewLineSuppression(closeTag, out bool _);
-
-            bool hasTrimMarker;
-            this.EnsureNewLineSuppression(token, out hasTrimMarker);
 
             string bindAs = token.Substring(4, (hasTrimMarker) ? (token.Length - 6) : (token.Length - 5));
             bool isNegated = bindAs[0] == '!';
@@ -220,6 +220,9 @@ namespace HatTrick.Spit
         #region handle each tag
         private void HandleEachTag(string token, object bindTo)
         {
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(token, out hasTrimMarker);
+
             StringBuilder enclosedContentBuilder = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
@@ -228,9 +231,6 @@ namespace HatTrick.Spit
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
             this.EnsureNewLineSuppression(closeTag, out bool _);
-
-            bool hasTrimMarker;
-            this.EnsureNewLineSuppression(token, out hasTrimMarker);
 
             string bindAs = token.Substring(6, (hasTrimMarker) ? (token.Length - 8) : (token.Length - 7));
 
