@@ -182,14 +182,14 @@ namespace HatTrick.Spit
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
 
-            this.EnsureNewLineSuppression(token, out bool _);
-
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
             //this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/if", "{#if", false);
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
+            this.EnsureNewLineSuppression(closeTag, out bool _);
+
             bool hasTrimMarker;
-            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
+            this.EnsureNewLineSuppression(token, out hasTrimMarker);
 
             string bindAs = token.Substring(4, (hasTrimMarker) ? (token.Length - 6) : (token.Length - 5));
             bool isNegated = bindAs[0] == '!';
@@ -224,13 +224,13 @@ namespace HatTrick.Spit
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
 
-            this.EnsureNewLineSuppression(token, out bool _);
-
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
+            this.EnsureNewLineSuppression(closeTag, out bool _);
+
             bool hasTrimMarker;
-            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
+            this.EnsureNewLineSuppression(token, out hasTrimMarker);
 
             string bindAs = token.Substring(6, (hasTrimMarker) ? (token.Length - 8) : (token.Length - 7));
 
@@ -536,7 +536,7 @@ namespace HatTrick.Spit
         {
             //if global suppress newline or tag has right side trim marker..
             hasTrimMarker = false;
-            if (this.SuppressNewline || (hasTrimMarker = tag[tag.Length - 2] == '-'))
+            if ((hasTrimMarker = tag[tag.Length - 2] == '-') || this.SuppressNewline)
             {
                 int newLineLength = Environment.NewLine.Length;
                 if (this.Peek(newLineLength) == Environment.NewLine)
