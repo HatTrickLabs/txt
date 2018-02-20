@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Reflection;
 
-namespace HatTrick.Spit.Reflection
+namespace HatTrick.Spat.Reflection
 {
     //reflects nested class members; i.e. itemExpression="User.Address.City"....JRod
     public static partial class ReflectionHelper
