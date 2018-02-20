@@ -72,7 +72,7 @@ namespace HatTrick.Spit
             _index = 0;
 
             char eot = (char)3; //end of text....
-            StringBuilder tokenBuilder = new StringBuilder(100);
+            StringBuilder tokenBuilder = new StringBuilder(60);
             while (this.Peek() != eot)
             {
                 this.RollForwardAndKeepTill('{');
