@@ -6,20 +6,20 @@ Employer: {Employer}
 {#if !IsEmployed}
 Currently Not Employed
 {#/if}
-{#if Certs}
+{# if Certifications}
 This guy has certifications...
 Cert List:
-{#each Certs}
+{#each Certifications}
 {$}
 {#/each}
 {#/if}
 {#each PreviousEmployers}
 {$}
 {#/each}
+****
 {>SubContent}
 {!this is just a comment}
-
-{#if Certs}
+{#if Certifications}
 - he has certs...
 {#if IsEmployed}
 - he is alsow employed...

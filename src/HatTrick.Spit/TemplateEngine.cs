@@ -149,7 +149,7 @@ namespace HatTrick.Spit
         {
             //string endTag = new string(new char[] { _template[_index - 1], _template[_index] });
             //_index += 1;
-            this.EnsureNewLineSuppression(token);
+            this.EnsureNewLineSuppression(token, out bool _);
         }
         #endregion
 
@@ -169,20 +169,19 @@ namespace HatTrick.Spit
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
 
-            this.EnsureNewLineSuppression(token);
+            this.EnsureNewLineSuppression(token, out bool _);
 
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
             //this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/if", "{#if", false);
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
-            this.EnsureNewLineSuppression(closeTag);
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
 
-            bool isNegated = token.IndexOf('!') > -1;
+            string bindAs = token.Substring(4, (hasTrimMarker) ? (token.Length - 6) : (token.Length - 5));
+            bool isNegated = bindAs[0] == '!';
 
-            string[] bindAs = token.Split(new string[] { "{", "#", "if", "!", "-", "}" }, StringSplitOptions.RemoveEmptyEntries);
-            
-
-            object target = this.ResolveTarget(bindAs[0], bindTo);
+            object target = this.ResolveTarget(isNegated ? bindAs.Substring(1) : bindAs, bindTo);
 
             bool render = (target != null);
 
@@ -211,17 +210,17 @@ namespace HatTrick.Spit
 
             Action<char> emitEnclosedTo = (s) => { enclosedContentBuilder.Append(s); };
 
-            this.EnsureNewLineSuppression(token);
+            this.EnsureNewLineSuppression(token, out bool _);
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             string closeTag;
             this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
-            this.EnsureNewLineSuppression(closeTag);
+            bool hasTrimMarker;
+            this.EnsureNewLineSuppression(closeTag, out hasTrimMarker);
 
-            //open tag {#each Person.Details.Addresses}
-            string[] bindAs = token.ToString().Split(new string[] { "{", "#", "each", "-", "}" }, StringSplitOptions.RemoveEmptyEntries);
+            string bindAs = token.Substring(6, (hasTrimMarker) ? (token.Length - 8) : (token.Length - 7));
 
-            object target = this.ResolveTarget(bindAs[0], bindTo);
+            object target = this.ResolveTarget(bindAs, bindTo);
 
             if (!(target == null)) //if null just ignore
             {
@@ -451,7 +450,7 @@ namespace HatTrick.Spit
             endTag = null;
             int offset = 1;// we are inside 1 if and looking for its /if
 
-            string tag;
+            string tag = string.Empty;
             bool emitTagAsContent;
             do
             {
@@ -518,9 +517,11 @@ namespace HatTrick.Spit
         #endregion
 
         #region ensure new line suppression
-        private void EnsureNewLineSuppression(string tag)
+        private void EnsureNewLineSuppression(string tag, out bool hasTrimMarker)
         {
-            if (this.SuppressNewline || tag.EndsWith("-}"))
+            //if global suppress newline or tag has right side trim marker..
+            hasTrimMarker = false;
+            if (this.SuppressNewline || (hasTrimMarker = tag[tag.Length - 2] == '-'))
             {
                 int newLineLength = Environment.NewLine.Length;
                 if (this.Peek(newLineLength) == Environment.NewLine)
