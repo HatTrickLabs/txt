@@ -19,8 +19,8 @@ namespace HatTrick.Spat.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            TestTemplateEngineSimpleTags();
-            TestTemplateEngineConditionsAndLoops();
+            //TestTemplateEngineSimpleTags();
+            //TestTemplateEngineConditionsAndLoops();
             TestTemplateEngineLambdaExpressions();
 
             Console.WriteLine("processing complete, press [Enter] to exit");
@@ -81,7 +81,7 @@ namespace HatTrick.Spat.TestHarness
         }
         #endregion
 
-        #region test template engine conditions and loops
+        #region test template engine lambda expressions
         private static void TestTemplateEngineLambdaExpressions()
         {
             string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spat-template-3.txt");
@@ -97,6 +97,11 @@ namespace HatTrick.Spat.TestHarness
                 PreviousEmployers = default(object) //null
             };
 
+            Func<DateTime, string> resolvePartial = (key) =>
+            {
+                return "..xx..xx..xx..{FirstName} {LastName}xx..xx..xx..xx..xx..";
+            };
+
             Func<DateTime, string> formatBirthDate = (date) =>
             {
                 return date.ToString("yyyy-MM-dd");
@@ -109,6 +114,7 @@ namespace HatTrick.Spat.TestHarness
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Add(nameof(resolvePartial), resolvePartial);
             ngin.LambdaRepo.Add(nameof(formatBirthDate), formatBirthDate);
             ngin.LambdaRepo.Add(nameof(toUpper), toUpper);
             long totalTicks = 0;
