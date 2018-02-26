@@ -1,2 +1,2 @@
-# SPaT
-Single Pass Tempates
+# Linx SPaTT
+Single Pass Text Tempates

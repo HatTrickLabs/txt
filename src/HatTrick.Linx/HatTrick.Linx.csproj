@@ -7,8 +7,8 @@
     <ProjectGuid>{36A1A864-955A-4504-B392-B74DD8849422}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HatTrick.Spat</RootNamespace>
-    <AssemblyName>HatTrick.Spat</AssemblyName>
+    <RootNamespace>HatTrick.Linx</RootNamespace>
+    <AssemblyName>HatTrick.Linx</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
