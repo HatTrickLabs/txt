@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace HatTrick.Spat
+namespace HatTrick.Linx
 {
     public static class StringInterpolation
     {

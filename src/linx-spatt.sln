@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Spat", "HatTrick.Spat\HatTrick.Spat.csproj", "{36A1A864-955A-4504-B392-B74DD8849422}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Linx", "HatTrick.Linx\HatTrick.Linx.csproj", "{36A1A864-955A-4504-B392-B74DD8849422}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Spat.TestHarness", "HatTrick.Spat.TestHarness\HatTrick.Spat.TestHarness.csproj", "{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Linx.TestHarness", "HatTrick.Linx.TestHarness\HatTrick.Linx.TestHarness.csproj", "{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

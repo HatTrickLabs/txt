@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HatTrick.Spat.TestHarness</RootNamespace>
-    <AssemblyName>HatTrick.Spat.TestHarness</AssemblyName>
+    <RootNamespace>HatTrick.Linx.TestHarness</RootNamespace>
+    <AssemblyName>HatTrick.Linx.TestHarness</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -49,9 +49,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Spat\HatTrick.Spat.csproj">
+    <ProjectReference Include="..\HatTrick.Linx\HatTrick.Linx.csproj">
       <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
-      <Name>HatTrick.Spat</Name>
+      <Name>HatTrick.Linx</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
