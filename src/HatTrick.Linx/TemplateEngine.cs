@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using HatTrick.Spat.Reflection;
+using HatTrick.Linx.Reflection;
 
-namespace HatTrick.Spat
+namespace HatTrick.Linx
 {
     public class TemplateEngine
     {
@@ -296,7 +296,7 @@ namespace HatTrick.Spat
                 string expression = token.Substring(2, token.Length - 2);//remove the $.
                 target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             }
-            else if (token[0] == '.')
+            else if (token[0] == '.' && token[1] == '.' && token[2] == '\\')
             {
                 int back = this.CountInstanceOfPattern(token, @"..\");
                 target = this.ResolveTarget(token.Replace(@"..\", string.Empty), _scopeChain.Reach(back));
@@ -305,6 +305,8 @@ namespace HatTrick.Spat
             else if (token.Contains("=>")) //lambda expression
             {
                 //{($.abc, $.xyz) => ConcatToValues}
+                //{("keyVal") => GetSomething}
+                //{(true) => GetSomething}
 
                 string[] leftRight = token.Split(new char[] { '=', '>' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -313,7 +315,18 @@ namespace HatTrick.Spat
                 object[] parameters = new object[args.Length];
                 for (int i = 0; i < args.Length; i++)
                 {
-                    parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
+                    if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"')
+                    {
+                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                    }
+                    else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
+                    {
+                        parameters[i] = bool.Parse(args[i]);
+                    }
+                    else
+                    {
+                        parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
+                    }
                 }
 
                 target = this.LambdaRepo.Invoke(leftRight[1], parameters);

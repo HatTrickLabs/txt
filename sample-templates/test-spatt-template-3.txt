@@ -1,3 +1,4 @@
+{> ("key") => resolvePartial }
 Name:	{$.FirstName} {LastName}
 Dob:	{ (Dob ) => formatBirthDate  }
 {#if IsEmployed-}
