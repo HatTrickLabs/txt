@@ -319,6 +319,10 @@ namespace HatTrick.Linx
                     {
                         parameters[i] = args[i].Substring(1, (args[i].Length - 2));
                     }
+                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'')
+                    {
+                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                    }
                     else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
                     {
                         parameters[i] = bool.Parse(args[i]);
