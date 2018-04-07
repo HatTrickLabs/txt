@@ -319,6 +319,10 @@ namespace HatTrick.Linx
                     {
                         parameters[i] = args[i].Substring(1, (args[i].Length - 2));
                     }
+                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'')
+                    {
+                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                    }
                     else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
                     {
                         parameters[i] = bool.Parse(args[i]);
@@ -493,6 +497,9 @@ namespace HatTrick.Linx
 
                 this.EmitCharToActionTill(emitTagTo, '}', true);
 
+                if (tag == string.Empty)
+                { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
+
                 if (!till(tag))
                 {
                     emitTagAsContent = true;
@@ -646,7 +653,7 @@ namespace HatTrick.Linx
 
                 if (paramsCount != parms.Length)
                 {
-                    string msg = $"Attempted lambda invocation with invalid number of parameters.  Actual count: {paramsCount} Provided count: {parms.Length}";
+                    string msg = $"Attempted lambda invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
                     throw new MergeException(msg);
                 }
 
