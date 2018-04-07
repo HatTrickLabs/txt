@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Reflection;
 
-namespace HatTrick.Linx.Reflection
+namespace HatTrick.Text.Reflection
 {
     //reflects nested class members; i.e. itemExpression="User.Address.City"....JRod
     public static partial class ReflectionHelper

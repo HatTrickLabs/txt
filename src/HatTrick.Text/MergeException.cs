@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HatTrick.Linx
+namespace HatTrick.Text
 {
     public class MergeException : Exception
     {

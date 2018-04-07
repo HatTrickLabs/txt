@@ -6,11 +6,12 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HatTrick.Linx.TestHarness</RootNamespace>
-    <AssemblyName>HatTrick.Linx.TestHarness</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <RootNamespace>HatTrick.Text.TestHarness</RootNamespace>
+    <AssemblyName>HatTrick.Text.TestHarness</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -50,9 +51,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Linx\HatTrick.Linx.csproj">
+    <ProjectReference Include="..\HatTrick.Text\HatTrick.Text.csproj">
       <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
-      <Name>HatTrick.Linx</Name>
+      <Name>HatTrick.Text</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

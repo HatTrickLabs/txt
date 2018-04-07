@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using HatTrick.Linx;
+using HatTrick.Text;
 
-namespace HatTrick.Linx.TestHarness
+namespace HatTrick.Text.TestHarness
 {
     class Program
     {

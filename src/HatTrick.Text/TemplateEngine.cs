@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using HatTrick.Linx.Reflection;
+using HatTrick.Text.Reflection;
 
-namespace HatTrick.Linx
+namespace HatTrick.Text
 {
     public class TemplateEngine
     {

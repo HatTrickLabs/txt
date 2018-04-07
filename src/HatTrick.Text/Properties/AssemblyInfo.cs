@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("HatTrick.Lin.SPaTT.TestHarness")]
+[assembly: AssemblyTitle("HatTrick.Text")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HatTrick.Linx.SPaTT.TestHarness")]
+[assembly: AssemblyProduct("HatTrick.Text")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("714623e1-e1d4-4c8d-b7f1-bd896e3206cd")]
+[assembly: Guid("36a1a864-955a-4504-b392-b74dd8849422")]
 
 // Version information for an assembly consists of the following four values:
 //

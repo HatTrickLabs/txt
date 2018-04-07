@@ -1,2 +1,3 @@
-# Linx SPaTT
-Single Pass Text Tempates
+# txt tool
+- string interpolation engine
+- text template engine (single pass)

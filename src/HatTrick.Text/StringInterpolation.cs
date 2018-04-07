@@ -2,16 +2,12 @@
 using System.Linq;
 using System.Text;
 
-namespace HatTrick.Linx
+namespace HatTrick.Text
 {
     public static class StringInterpolation
     {
         #region interpolate via callback
-        //Example:
-        //This text value needs a value injected for {userName}
-        //value provider accepts string token 'userName' and returns the value to inject
-        //to escape a { or } within the text just double them up {{ or }} results in a single bracked in the output
-        public static string Interpolate(string baseText, Func<string, string> valueProvider)
+        public static string Run(string baseText, Func<string, string> valueProvider)
         {
             int idx = -1;
             int length = baseText.Length;
@@ -60,7 +56,7 @@ namespace HatTrick.Linx
                         {
                             if (injectionValue.Contains('{'))
                             {
-                                string subInjectionValue = StringInterpolation.Interpolate(injectionValue, valueProvider);
+                                string subInjectionValue = StringInterpolation.Run(injectionValue, valueProvider);
                                 sb.Append(subInjectionValue);
                             }
                             else
@@ -95,7 +91,7 @@ namespace HatTrick.Linx
         #endregion
 
         #region interpolate via reflection
-        public static string Interpolate(string baseText, object values)
+        public static string Run(string baseText, object values)
         {
             Func<string, string> func = (token) =>
             {
@@ -103,7 +99,7 @@ namespace HatTrick.Linx
                 return val;
             };
 
-            string output = Interpolate(baseText, func);
+            string output = Run(baseText, func);
 
             return output;
         }
