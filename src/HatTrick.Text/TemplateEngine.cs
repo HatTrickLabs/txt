@@ -17,9 +17,6 @@ namespace HatTrick.Text
         #endregion
 
         #region interface
-        public bool EndOfTemplate
-        { get { return (_index == _template.Length); } }
-
         public bool SuppressNewline
         { get; set; }
 
@@ -72,41 +69,45 @@ namespace HatTrick.Text
             _index = 0;
 
             char eot = (char)3; //end of text....
+
             StringBuilder tokenBuilder = new StringBuilder(60);
+
+            Action<char> captureTag = (c) =>
+            {
+                if (c != ' ')
+                { tokenBuilder.Append(c); }
+            };
+
             while (this.Peek() != eot)
             {
-                this.RollForwardAndKeepTill('{');
-
-                Action<char> captureTag = (c) =>
+                if (this.RollForwardAndKeepTill('{'))
                 {
-                    if (c != ' ')
-                    { tokenBuilder.Append(c); }
-                };
-                this.EmitCharToActionTill(captureTag, '}', true);
-
-                if (!this.EndOfTemplate)
-                {
-                    string token = tokenBuilder.ToString();
-                    if (this.IsIfTag(token)) //# if logic tag (boolean switch)
+                    if (this.EmitCharToActionTill(captureTag, '}', true))
                     {
-                        this.HandleIfTag(token, bindTo);
+                        string token = tokenBuilder.ToString();
+                        if (this.IsIfTag(token)) //# if logic tag (boolean switch)
+                        {
+                            this.HandleIfTag(token, bindTo);
+                        }
+                        else if (this.IsEachTag(token)) //#each enumeration
+                        {
+                            this.HandleEachTag(token, bindTo);
+                        }
+                        else if (this.IsPartialTag(token)) //sub template tag
+                        {
+                            this.HandlePartialTag(token, bindTo);
+                        }
+                        else if (this.IsCommentTag(token)) //comment tag
+                        {
+                            this.HandleCommentToken(token);
+                        }
+                        else //basic token
+                        {
+                            this.HandleBasicToken(token, bindTo);
+                        }
                     }
-                    else if (this.IsEachTag(token)) //#each enumeration
-                    {
-                        this.HandleEachTag(token, bindTo);
-                    }
-                    else if (this.IsPartialTag(token)) //sub template tag
-                    {
-                        this.HandlePartialTag(token, bindTo);
-                    }
-                    else if (this.IsCommentTag(token)) //comment tag
-                    {
-                        this.HandleCommentToken(token);
-                    }
-                    else //basic token
-                    {
-                        this.HandleBasicToken(token, bindTo);
-                    }
+                    //else
+                    //TODO: JRod, encountered un-closed tag...
                 }
                 tokenBuilder.Clear();
             }
@@ -186,7 +187,7 @@ namespace HatTrick.Text
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
             //this.EnsuredSubPatternCountEmitCharToActionTill(emitEnclosedTo, "{#/if", "{#if", false);
             string closeTag;
-            this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
+            this.EmitEnclosedContentToActionTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
             this.EnsureNewLineSuppression(closeTag, out bool _);
 
             string bindAs = token.Substring(4, (hasTrimMarker) ? (token.Length - 6) : (token.Length - 5));
@@ -227,7 +228,7 @@ namespace HatTrick.Text
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             string closeTag;
-            this.EmitEnclosedContetToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
+            this.EmitEnclosedContentToActionTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
             this.EnsureNewLineSuppression(closeTag, out bool _);
 
             string bindAs = token.Substring(6, (hasTrimMarker) ? (token.Length - 8) : (token.Length - 7));
@@ -376,22 +377,23 @@ namespace HatTrick.Text
         #endregion
 
         #region roll forward and keep till
-        public void RollForwardAndKeepTill(char till)
+        public bool RollForwardAndKeepTill(char till)
         {
-            this.RollForwardTill(till, true);
+            return this.RollForwardTill(till, true);
         }
         #endregion
 
         #region roll forward and discard till
-        public void RollForwardAndDiscardTill(char till)
+        public bool RollForwardAndDiscardTill(char till)
         {
-            this.RollForwardTill(till, false);
+            return this.RollForwardTill(till, false);
         }
         #endregion
 
         #region roll forward till
-        private void RollForwardTill(char till, bool keepChars)
+        private bool RollForwardTill(char till, bool keepChars)
         {
+            bool found = false;
             char c;
             while (_index < _template.Length)
             {
@@ -411,6 +413,7 @@ namespace HatTrick.Text
 
                 if (c == till)
                 {
+                    found = true;
                     break;
                 }
                 else
@@ -420,18 +423,21 @@ namespace HatTrick.Text
                     _index += 1;
                 }
             }
+            return found;
         }
         #endregion
 
         #region emit char to action till
-        public void EmitCharToActionTill(Action<char> emitTo, char till, bool greedy)
+        public bool EmitCharToActionTill(Action<char> emitTo, char till, bool greedy)
         {
+            bool found = false;
             char c;
             while (_index < _template.Length)
             {
                 c = this.Peek();
                 if (c == till)
                 {
+                    found = true;
                     if (greedy)
                     {
                         _index += 1;
@@ -445,6 +451,7 @@ namespace HatTrick.Text
                     emitTo(c);
                 }
             }
+            return found;
         }
 
         public void EmitCharToActionTill(Action<char> emitTo, string till, bool greedy)
@@ -475,7 +482,7 @@ namespace HatTrick.Text
         #endregion
 
         #region emit enclosed content to action till
-        private void EmitEnclosedContetToActionTill(Action<char> emitContentTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
+        private void EmitEnclosedContentToActionTill(Action<char> emitContentTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
         {
             endTag = null;
             int offset = 1;// we are inside 1 if and looking for its /if

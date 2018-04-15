@@ -19,9 +19,10 @@ namespace HatTrick.Text.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            //TestTemplateEngineSimpleTags();
-            //TestTemplateEngineConditionsAndLoops();
+            TestTemplateEngineSimpleTags();
+            TestTemplateEngineConditionsAndLoops();
             TestTemplateEngineLambdaExpressions();
+            TestTemplateLastCharacterIsATag();
 
             Console.WriteLine("processing complete, press [Enter] to exit");
             Console.ReadLine();
@@ -31,7 +32,7 @@ namespace HatTrick.Text.TestHarness
         #region test template engine simple tags
         private static void TestTemplateEngineSimpleTags()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spatt-template-1.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-1.txt");
 
             var obj = new { DocTitle = "Title Goes Here", DocBody = "Document Body Goes Here" };
 
@@ -52,7 +53,7 @@ namespace HatTrick.Text.TestHarness
         #region test template engine conditions and loops
         private static void TestTemplateEngineConditionsAndLoops()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spatt-template-2.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-2.txt");
 
             var person = new
             {
@@ -84,7 +85,7 @@ namespace HatTrick.Text.TestHarness
         #region test template engine lambda expressions
         private static void TestTemplateEngineLambdaExpressions()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-spatt-template-3.txt");
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-3.txt");
 
             var person = new
             {
@@ -126,6 +127,44 @@ namespace HatTrick.Text.TestHarness
                 totalTicks += _sw.ElapsedTicks;
             }
             Console.WriteLine($"lambda expression template avg ticks: {totalTicks / 10}");
+        }
+        #endregion
+
+        #region test template last character is a tag
+        private static void TestTemplateLastCharacterIsATag()
+        {
+
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-4.txt");
+
+            var obj = new
+            {
+                Title = "Title Goes Here",
+                FirstName = "Jerry",
+                LastName = "Smith",
+                Services = new[] { new { Name = "ABC" }, new { Name = "XYZ" } },
+                IsGoldMember = true,
+                Supervisor = "Yours Truly"
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            Func<dynamic, string> GetFullName = (o) =>
+            {
+                return $"{o.FirstName} {o.LastName}";
+            };
+
+            ngin.LambdaRepo.Add(nameof(GetFullName), GetFullName);
+
+            long totalTicks = 0;
+            for (int i = 0; i < 1; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(obj);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+            Console.WriteLine($"last char is tag template execution avg ticks: {totalTicks / 10}");
         }
         #endregion
     }
