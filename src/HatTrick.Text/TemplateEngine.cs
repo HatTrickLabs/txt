@@ -28,7 +28,7 @@ namespace HatTrick.Text
         #endregion
 
         #region constructors
-        public TemplateEngine(in string template) //TODO: JRod, allow stream as template...
+        public TemplateEngine(string template) //TODO: JRod, allow stream as template...
         {
             _index = 0;
             _template = template;
