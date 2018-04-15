@@ -13,7 +13,7 @@ namespace HatTrick.Text
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
         private StringBuilder _mergeResult;
-        private int _allotedStackDepth = 15;
+        private int _maxStackDepth = 15;
         #endregion
 
         #region interface
@@ -28,7 +28,7 @@ namespace HatTrick.Text
         #endregion
 
         #region constructors
-        public TemplateEngine(string template) //TODO: JRod, allow stream as template...
+        public TemplateEngine(in string template) //TODO: JRod, allow stream as template...
         {
             _index = 0;
             _template = template;
@@ -53,14 +53,14 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region with alloted stack depth
-        private TemplateEngine WithAllotedStackDepth(int depth)
+        #region with max stack depth
+        private TemplateEngine WithMaxStackDepth(int depth)
         {
             if (depth < 0)
             {
                 throw new MergeException("stack depth overflow.  partial (sub template) stack depth cannot exceed 15");
             }
-            _allotedStackDepth = depth;
+            _maxStackDepth = depth;
             return this;
         }
         #endregion
@@ -206,7 +206,7 @@ namespace HatTrick.Text
             {
                 TemplateEngine subEngine = new TemplateEngine(enclosedContentBuilder.ToString())
                     .WithScopeChain(_scopeChain)
-                    .WithAllotedStackDepth(_allotedStackDepth)
+                    .WithMaxStackDepth(_maxStackDepth)
                     .WithLambdaRepository(_lambdaRepo);
 
                 subEngine.SuppressNewline = this.SuppressNewline;
@@ -248,7 +248,7 @@ namespace HatTrick.Text
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(enclosedContentBuilder.ToString())
                     .WithScopeChain(_scopeChain)
-                    .WithAllotedStackDepth(_allotedStackDepth)
+                    .WithMaxStackDepth(_maxStackDepth)
                     .WithLambdaRepository(_lambdaRepo);
 
                 subEngine.SuppressNewline = this.SuppressNewline;
@@ -273,7 +273,7 @@ namespace HatTrick.Text
 
             TemplateEngine subEngine = new TemplateEngine(target as string)
                 .WithScopeChain(_scopeChain)
-                .WithAllotedStackDepth(_allotedStackDepth - 1) //decrement 1 unit for sub template...
+                .WithMaxStackDepth(_maxStackDepth - 1) //decrement 1 unit for sub template...
                 .WithLambdaRepository(_lambdaRepo);
 
             subEngine.SuppressNewline = this.SuppressNewline;
