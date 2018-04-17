@@ -10,6 +10,7 @@ namespace HatTrick.Text
         #region internals
         private int _index;
         private string _template;
+        private StringBuilder tokenBuilder;
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
         private StringBuilder _mergeResult;
@@ -29,7 +30,8 @@ namespace HatTrick.Text
         {
             _index = 0;
             _template = template;
-            _mergeResult = new StringBuilder((int)(template.Length * 1.5));
+            tokenBuilder = new StringBuilder(60);
+            _mergeResult = new StringBuilder((int)(template.Length * 1.3));
             _scopeChain = new ScopeChain();
         }
         #endregion
@@ -70,7 +72,7 @@ namespace HatTrick.Text
 
             char eot = (char)3; //end of text....
 
-            StringBuilder tokenBuilder = new StringBuilder(60);
+            tokenBuilder.Clear();
 
             Action<char> captureTag = (c) =>
             {
@@ -499,7 +501,7 @@ namespace HatTrick.Text
 
                 Action<char> emitTagTo = (c) =>
                 {
-                    if (c != ' ') { tag += c; }
+                    if (c != ' ') { tag += c; } //TODO: JRod, eliminate this un-necessary string alloc
                 };
 
                 this.EmitCharToActionTill(emitTagTo, '}', true);
@@ -567,6 +569,7 @@ namespace HatTrick.Text
                 if (this.Peek(newLineLength) == Environment.NewLine)
                 { _index += newLineLength; }
             }
+            //TODO: Jrod, should I remove any white space that appears before the tag ???
         }
         #endregion
 
