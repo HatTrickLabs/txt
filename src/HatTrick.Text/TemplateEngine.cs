@@ -10,6 +10,7 @@ namespace HatTrick.Text
         #region internals
         private int _index;
         private string _template;
+        private StringBuilder tokenBuilder;
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
         private StringBuilder _mergeResult;
@@ -29,7 +30,8 @@ namespace HatTrick.Text
         {
             _index = 0;
             _template = template;
-            _mergeResult = new StringBuilder((int)(template.Length * 1.5));
+            tokenBuilder = new StringBuilder(60);
+            _mergeResult = new StringBuilder((int)(template.Length * 1.3));
             _scopeChain = new ScopeChain();
         }
         #endregion
@@ -55,7 +57,7 @@ namespace HatTrick.Text
         {
             if (depth < 0)
             {
-                throw new MergeException("stack depth overflow.  partial (sub template) stack depth cannot exceed 15");
+                throw new MergeException($"stack depth overflow.  partial (sub template) stack depth cannot exceed {_maxStackDepth}");
             }
             _maxStackDepth = depth;
             return this;
@@ -70,7 +72,7 @@ namespace HatTrick.Text
 
             char eot = (char)3; //end of text....
 
-            StringBuilder tokenBuilder = new StringBuilder(60);
+            tokenBuilder.Clear();
 
             Action<char> captureTag = (c) =>
             {
@@ -119,42 +121,60 @@ namespace HatTrick.Text
         #region is if tag
         public bool IsIfTag(string tag)
         {
-            return tag.StartsWith("{#if", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' 
+                && tag[1] == '#' 
+                && tag[2] == 'i' 
+                && tag[3] == 'f';
         }
         #endregion
 
         #region is end if tag
         public bool IsEndIfTag(string tag)
         {
-            return tag.StartsWith("{#/if", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' 
+                && tag[1] == '#' 
+                && tag[2] == '/' 
+                && tag[3] == 'i' 
+                && tag[4] == 'f';
         }
         #endregion
 
         #region is each tag
         public bool IsEachTag(string tag)
         {
-            return tag.StartsWith("{#each", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' 
+                && tag[1] == '#' 
+                && tag[2] == 'e' 
+                && tag[3] == 'a' 
+                && tag[4] == 'c' 
+                && tag[5] == 'h';
         }
         #endregion
 
         #region is end each tag
         public bool IsEndEachTag(string tag)
         {
-            return tag.StartsWith("{#/each", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' 
+                && tag[1] == '#' 
+                && tag[2] == '/' 
+                && tag[3] == 'e' 
+                && tag[4] == 'a' 
+                && tag[5] == 'c' 
+                && tag[6] == 'h';
         }
         #endregion
 
         #region is comment tag
         public bool IsCommentTag(string tag)
         {
-            return tag.StartsWith("{!", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' && tag[1] == '!';
         }
         #endregion
 
         #region is partial tag
         public bool IsPartialTag(string tag)
         {
-            return tag.StartsWith("{>", StringComparison.CurrentCultureIgnoreCase);
+            return tag[0] == '{' && tag[1] == '>';
         }
         #endregion
 
@@ -288,20 +308,20 @@ namespace HatTrick.Text
         private object ResolveTarget(string token, object localScope)
         {
             object target = null;
-            if (token == "$") //append bindto obj
+            if (token.Length == 1 && token[0] == '$') //append bindto obj
             {
                 target = localScope;
             }
-            else if (token[0] == '$') //reflect from bindto object
+            else if (token[0] == '$' && token[1] == '.') //reflect from bindto object
             {
                 string expression = token.Substring(2, token.Length - 2);//remove the $.
                 target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             }
             else if (token[0] == '.' && token[1] == '.' && token[2] == '\\')
             {
-                int back = this.CountInstanceOfPattern(token, @"..\");
-                target = this.ResolveTarget(token.Replace(@"..\", string.Empty), _scopeChain.Reach(back));
-
+                int lastIdxOf;
+                int cnt = this.CountInstanceOfPattern(token, @"..\", out lastIdxOf);
+                target = this.ResolveTarget(token.Substring(lastIdxOf + 3, token.Length - (cnt * 3)), _scopeChain.ReachBack(cnt));
             }
             else if (token.Contains("=>")) //lambda expression
             {
@@ -316,11 +336,11 @@ namespace HatTrick.Text
                 object[] parameters = new object[args.Length];
                 for (int i = 0; i < args.Length; i++)
                 {
-                    if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"')
+                    if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
                     {
                         parameters[i] = args[i].Substring(1, (args[i].Length - 2));
                     }
-                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'')
+                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
                     {
                         parameters[i] = args[i].Substring(1, (args[i].Length - 2));
                     }
@@ -336,7 +356,7 @@ namespace HatTrick.Text
 
                 target = this.LambdaRepo.Invoke(leftRight[1], parameters);
             }
-            else //reflect from root context (inside #each tag)
+            else
             {
                 target = ReflectionHelper.Expression.ReflectItem(localScope, token);
             }
@@ -355,14 +375,14 @@ namespace HatTrick.Text
             return c;
         }
 
-        public string Peek(int length)
-        {
-            string peek = (_template.Length >= (_index + length))
-                ? _template.Substring(_index, length) //TODO: JRod, refactor out the substring...
-                : null;
+        //public string Peek(int length)
+        //{
+        //    string peek = (_template.Length >= (_index + length))
+        //        ? _template.Substring(_index, length) //TODO: JRod, refactor out the substring...
+        //        : null;
 
-            return peek;
-        }
+        //    return peek;
+        //}
         #endregion
 
         #region peek at
@@ -394,10 +414,11 @@ namespace HatTrick.Text
         private bool RollForwardTill(char till, bool keepChars)
         {
             bool found = false;
+            char eot = (char)3;
             char c;
-            while (_index < _template.Length)
+            while((c = this.Peek()) != eot) //(_index < _template.Length)
             {
-                c = this.Peek();
+                //c = this.Peek();
 
                 if (c == '{' || c == '}')
                 {
@@ -431,10 +452,10 @@ namespace HatTrick.Text
         public bool EmitCharToActionTill(Action<char> emitTo, char till, bool greedy)
         {
             bool found = false;
+            char eot = (char)3;
             char c;
-            while (_index < _template.Length)
+            while((c = this.Peek()) != eot)
             {
-                c = this.Peek();
                 if (c == till)
                 {
                     found = true;
@@ -454,63 +475,63 @@ namespace HatTrick.Text
             return found;
         }
 
-        public void EmitCharToActionTill(Action<char> emitTo, string till, bool greedy)
-        {
-            char c;
-            while (_index < _template.Length)
-            {
-                string peek = this.Peek(till.Length);
-                if (peek == till)
-                {
-                    if (greedy)
-                    {
-                        for (int i = 0; i < till.Length; i++)
-                        {
-                            c = _template[_index++];
-                            emitTo(c);
-                        }
-                    }
-                    break;
-                }
-                else
-                {
-                    c = _template[_index++];
-                    emitTo(c);
-                }
-            }
-        }
+        //public void EmitCharToActionTill(Action<char> emitTo, string till, bool greedy)
+        //{
+        //    char c;
+        //    while (_index < _template.Length)
+        //    {
+        //        string peek = this.Peek(till.Length);
+        //        if (peek == till)
+        //        {
+        //            if (greedy)
+        //            {
+        //                for (int i = 0; i < till.Length; i++)
+        //                {
+        //                    c = _template[_index++];
+        //                    emitTo(c);
+        //                }
+        //            }
+        //            break;
+        //        }
+        //        else
+        //        {
+        //            c = _template[_index++];
+        //            emitTo(c);
+        //        }
+        //    }
+        //}
         #endregion
 
         #region emit enclosed content to action till
         private void EmitEnclosedContentToActionTill(Action<char> emitContentTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
         {
             endTag = null;
-            int offset = 1;// we are inside 1 if and looking for its /if
+            int offset = 1;// i.e. we are inside 1 if tag and looking for its /if tag but must account for contained if tags...
 
-            string tag = string.Empty;
+            StringBuilder tag = new StringBuilder(30);
             bool emitTagAsContent;
             do
             {
                 //look for the next tag...
                 this.EmitCharToActionTill(emitContentTo, '{', false);
 
-                tag = string.Empty;
+                tag.Clear();
                 emitTagAsContent = false;
 
                 Action<char> emitTagTo = (c) =>
                 {
-                    if (c != ' ') { tag += c; }
+                    if (c != ' ') { tag.Append(c); } //TODO: JRod, eliminate this un-necessary string alloc
                 };
 
                 this.EmitCharToActionTill(emitTagTo, '}', true);
 
-                if (tag == string.Empty)
+                if (tag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
 
-                if (!till(tag))
+                if (!till(tag.ToString()))
                 {
                     emitTagAsContent = true;
-                    if (ensuring(tag))
+                    if (ensuring(tag.ToString()))
                     {
                         offset += 1;
                     }
@@ -524,7 +545,7 @@ namespace HatTrick.Text
                     }
                     else
                     {
-                        endTag = tag;
+                        endTag = tag.ToString();
                     }
                 }
 
@@ -541,13 +562,15 @@ namespace HatTrick.Text
         #endregion
 
         #region count instances of pattern
-        public int CountInstanceOfPattern(string content, string pattern)
+        public int CountInstanceOfPattern(string content, string pattern, out int lastIndexOf)
         {
+            lastIndexOf = -1;
             int cnt = 0;
             int idx = 0;
 
             while ((idx = content.IndexOf(pattern, idx)) != -1)
             {
+                lastIndexOf = idx;
                 idx += pattern.Length;
                 cnt += 1;
             }
@@ -559,14 +582,20 @@ namespace HatTrick.Text
         #region ensure new line suppression
         private void EnsureNewLineSuppression(string tag, out bool hasTrimMarker)
         {
-            //if global suppress newline or tag has right side trim marker..
+            //if global suppress newline || tag has right side trim marker..
             hasTrimMarker = false;
             if ((hasTrimMarker = tag[tag.Length - 2] == '-') || this.SuppressNewline)
             {
                 int newLineLength = Environment.NewLine.Length;
-                if (this.Peek(newLineLength) == Environment.NewLine)
+
+                string lookFor = newLineLength == 1
+                    ? Char.ToString(this.Peek())
+                    : Char.ToString(this.Peek()) + Char.ToString(this.PeekAt(_index + 1));
+
+                if (lookFor == Environment.NewLine)
                 { _index += newLineLength; }
             }
+            //TODO: Jrod, should I remove any white space that appears before the tag ???
         }
         #endregion
 
@@ -602,7 +631,7 @@ namespace HatTrick.Text
             #endregion
 
             #region get
-            public object Reach(int back)
+            public object ReachBack(int back)
             {
                 int count = _items.Count;
                 object item = _items[count - back];
