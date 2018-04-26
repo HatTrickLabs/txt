@@ -23,6 +23,7 @@ namespace HatTrick.Text.TestHarness
             TestTemplateEngineConditionsAndLoops();
             TestTemplateEngineLambdaExpressions();
             TestTemplateLastCharacterIsATag();
+            TestTemplateEngineWhitespaceFormatting();
 
             Console.WriteLine("processing complete, press [Enter] to exit");
             Console.ReadLine();
@@ -46,7 +47,7 @@ namespace HatTrick.Text.TestHarness
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"simple template execution avg ticks: {totalTicks / 10}");
+            Console.WriteLine($"simple template execution avg ticks: {totalTicks / 100}");
         }
         #endregion
 
@@ -69,7 +70,6 @@ namespace HatTrick.Text.TestHarness
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressNewline = true;
             long totalTicks = 0;
             for (int i = 0; i < 100; i++)
             {
@@ -78,7 +78,7 @@ namespace HatTrick.Text.TestHarness
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"conditions and loops template avg ticks: {totalTicks / 10}");
+            Console.WriteLine($"conditions and loops template avg ticks: {totalTicks / 100}");
         }
         #endregion
 
@@ -126,7 +126,7 @@ namespace HatTrick.Text.TestHarness
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"lambda expression template avg ticks: {totalTicks / 10}");
+            Console.WriteLine($"lambda expression template avg ticks: {totalTicks / 100}");
         }
         #endregion
 
@@ -157,14 +157,45 @@ namespace HatTrick.Text.TestHarness
             ngin.LambdaRepo.Add(nameof(GetFullName), GetFullName);
 
             long totalTicks = 0;
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 100; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(obj);
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"last char is tag template execution avg ticks: {totalTicks / 10}");
+            Console.WriteLine($"last char is tag template execution avg ticks: {totalTicks / 100}");
+        }
+        #endregion
+
+        #region test template engine whitespace formatting
+        private static void TestTemplateEngineWhitespaceFormatting()
+        {
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-a.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                Dob = DateTime.Parse("1975-03-03"),
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new[] { "MCSE", "MCITP", "MCTS" },
+                PreviousEmployers = default(object), //null
+                SubContent = "Hi {FirstName} {LastName}, this is just a sub content merge test..."
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+            long totalTicks = 0;
+            for (int i = 0; i < 100; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+            Console.WriteLine($"template whitespace formatting execution avg ticks: {totalTicks / 100}");
         }
         #endregion
     }
