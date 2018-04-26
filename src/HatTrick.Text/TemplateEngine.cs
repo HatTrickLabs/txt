@@ -9,6 +9,7 @@ namespace HatTrick.Text
     {
         #region internals
         private int _index;
+        private int _lineCount;
 
         private string _template;
 
@@ -37,6 +38,7 @@ namespace HatTrick.Text
         public TemplateEngine(string template) //TODO: JRod, allow stream as template...
         {
             _index = 0;
+            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
             _template = template;
             _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
@@ -90,6 +92,7 @@ namespace HatTrick.Text
         {
             _result.Clear();
             _index = 0;
+            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
 
             char eot = (char)3; //end of text....
 
@@ -467,6 +470,10 @@ namespace HatTrick.Text
             char c;
             while((c = this.Peek()) != eot)
             {
+                if (c == '\n')
+                {
+                    _lineCount += 1;
+                }
                 if (c == '{' || c == '}')
                 {
                     char next = this.PeekAt(_index + 1);
@@ -616,7 +623,7 @@ namespace HatTrick.Text
                 if (lookFor == Environment.NewLine)
                 {
                     _index += newLineLength;
-                    //TODO: JRod, add 1 to line count...
+                    _lineCount += 1;
                 }
             }
         }
