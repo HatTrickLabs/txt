@@ -159,10 +159,9 @@ namespace HatTrick.Text
         {
             return tag.Length > 4
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == '/')
-                && (tag[3] == '/' || tag[3] == 'i')
-                && (tag[4] == 'i' || tag[4] == 'f');
+                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[2] == '/' || tag[2] == 'i')
+                && (tag[3] == 'i' || tag[3] == 'f');
         }
         #endregion
 
@@ -182,14 +181,13 @@ namespace HatTrick.Text
         #region is end each tag
         public bool IsEndEachTag(string tag)
         {
-            return tag.Length > 6 
+            return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == '/')
-                && (tag[3] == '/' || tag[3] == 'e')
-                && (tag[4] == 'e' || tag[4] == 'a')
-                && (tag[5] == 'a' || tag[5] == 'c')
-                && (tag[6] == 'c' || tag[6] == 'h');
+                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[2] == '/' || tag[2] == 'e')
+                && (tag[3] == 'e' || tag[3] == 'a')
+                && (tag[4] == 'a' || tag[4] == 'c')
+                && (tag[5] == 'c' || tag[5] == 'h');
         }
         #endregion
 
