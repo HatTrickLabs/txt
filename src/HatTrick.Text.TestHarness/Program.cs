@@ -25,6 +25,8 @@ namespace HatTrick.Text.TestHarness
             TestTemplateLastCharacterIsATag();
             TestTemplateEngineWhitespaceFormatting();
 
+            TestTruthy();
+
             Console.WriteLine("processing complete, press [Enter] to exit");
             Console.ReadLine();
         }
@@ -196,6 +198,34 @@ namespace HatTrick.Text.TestHarness
                 totalTicks += _sw.ElapsedTicks;
             }
             Console.WriteLine($"template whitespace formatting execution avg ticks: {totalTicks / 100}");
+        }
+        #endregion
+
+        #region test truthy
+        private static void TestTruthy()
+        {
+            TemplateEngine ngin = new TemplateEngine("");
+
+            bool isTrue0 = ngin.IsTrue(null);
+            bool isTrue1 = ngin.IsTrue(1.00F);
+            bool isTrue2 = ngin.IsTrue(1U);
+            bool isTrue3 = ngin.IsTrue(0.00F);
+            bool isTrue4 = ngin.IsTrue(0);
+            bool isTrue5 = ngin.IsTrue(string.Empty);
+            bool isTrue6 = ngin.IsTrue(new object[0]);
+            bool isTrue7 = ngin.IsTrue(new object[1]);
+            bool isTrue8 = ngin.IsTrue(true);
+            bool isTrue9 = ngin.IsTrue(false);
+            bool isTrue10 = ngin.IsTrue('\0');
+            bool isTrue11 = ngin.IsTrue('t');
+            bool isTrue12 = ngin.IsTrue('f');
+            bool isTrue14 = ngin.IsTrue((decimal)1.111);
+            bool isTrue15 = ngin.IsTrue((decimal)0.000);
+            bool isTrue16 = ngin.IsTrue("\0");
+            bool isTrue17 = ngin.IsTrue("f");
+            bool isTrue18 = ngin.IsTrue("t");
+            bool isTrue19 = ngin.IsTrue("false");
+            bool isTrue20 = ngin.IsTrue("hello");
         }
         #endregion
     }
