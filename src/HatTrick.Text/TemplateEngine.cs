@@ -260,10 +260,7 @@ namespace HatTrick.Text
 
             object target = this.ResolveTarget(negate ? bindAs.Substring(1) : bindAs, bindTo);
 
-            bool render = (target != null);
-
-            if (render && target is bool)
-            { render = ((bool)target == true); }
+            bool render = this.IsTrue(target);
 
             if (negate)
             { render = !render; }
@@ -278,6 +275,43 @@ namespace HatTrick.Text
 
                 _result.Append(subEngine.Merge(bindTo));
             }
+        }
+        #endregion
+
+        #region is truth
+        public bool IsTrue(object val)
+        {
+            bool? bit;
+            int? i;
+            uint? ui;
+            long? l;
+            ulong? ul;
+            double? dbl;
+            float? flt;
+            decimal? dec;
+            short? sht;
+            ushort? usht;
+            char? c;
+            string s;
+            System.Collections.IEnumerable col;
+
+            bool isFalse = (val == null)
+                       ||
+                          ((bit = val as bool?) != null && bit == false
+                       || (i = val as int?) != null && i == 0
+                       || (dbl = val as double?) != null && dbl == 0
+                       || (l = val as long?) != null && l == 0
+                       || (flt = val as float?) != null && flt == 0
+                       || (dec = val as decimal?) != null && dec == 0
+                       || (c = val as char?) != null && (c == 'f' || c == '0' || c == '\0')
+                       || (ui = val as uint?) != null && ui == 0
+                       || (ul = val as ulong?) != null && ul == 0
+                       || (sht = val as short?) != null && sht == 0
+                       || (usht = val as ushort?) != null && usht == 0
+                       || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: JRod, this will catch string.Empty
+                       || (s = val as string) != null && ((s.Length == 1 && (s[0] == '\n' || s[0] == 'f')) || string.Compare(s, "false", true) == 0));
+
+            return !isFalse;
         }
         #endregion
 
