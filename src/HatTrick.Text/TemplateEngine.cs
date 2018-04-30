@@ -35,7 +35,7 @@ namespace HatTrick.Text
         #endregion
 
         #region constructors
-        public TemplateEngine(string template) //TODO: JRod, allow stream as template...
+        public TemplateEngine(string template)
         {
             _index = 0;
             _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
@@ -88,7 +88,7 @@ namespace HatTrick.Text
         #endregion
 
         #region merge
-        public string Merge(object bindTo) //TODO, JRod, allow stream output...
+        public string Merge(object bindTo)
         {
             _result.Clear();
             _index = 0;
@@ -660,106 +660,6 @@ namespace HatTrick.Text
                     _lineCount += 1;
                 }
             }
-        }
-        #endregion
-
-        #region scope chain
-        public class ScopeChain
-        {
-            #region internals
-            private List<object> _items;
-            #endregion
-
-            #region constructors
-            public ScopeChain()
-            {
-                _items = new List<object>();
-            }
-            #endregion
-
-            #region push
-            public void Push(object item)
-            {
-                _items.Add(item);
-            }
-            #endregion
-
-            #region pop
-            public object Pop()
-            {
-                int lastIndex = _items.Count - 1;
-                object item = _items[lastIndex];
-                _items.RemoveAt(lastIndex);
-                return item;
-            }
-            #endregion
-
-            #region get
-            public object ReachBack(int back)
-            {
-                int count = _items.Count;
-                object item = _items[count - back];
-                return item;
-            }
-            #endregion
-        }
-        #endregion
-
-        #region lambda repository
-        public class LambdaRepository
-        {
-            #region internals
-            Dictionary<string, Delegate> _lambdas;
-            #endregion
-
-            #region constructors
-            public LambdaRepository()
-            {
-                _lambdas = new Dictionary<string, Delegate>();
-            }
-            #endregion
-
-            #region add
-            public void Add(string name, Delegate lambda)
-            {
-                if (_lambdas.ContainsKey(name))
-                {
-                    throw new ArgumentException($"A lambda with the provided name: {name} has already been added");
-                }
-                _lambdas.Add(name, lambda);
-            }
-            #endregion
-
-            #region remove
-            public void Remove(string name)
-            {
-                if (!_lambdas.ContainsKey(name))
-                {
-                    throw new ArgumentException($"No lambda exists for the provided name: {name}");
-                }
-                _lambdas.Remove(name);
-            }
-            #endregion
-
-            #region invoke
-            public object Invoke(string name, params object[] parms)
-            {
-                if (!_lambdas.ContainsKey(name))
-                { throw new MergeException($"Encountered lambda that does not exist in lambda repo: {name}"); }
-
-                System.Reflection.MethodInfo mi = _lambdas[name].Method;
-
-                int paramsCount = mi.GetParameters().Length;
-
-                if (paramsCount != parms.Length)
-                {
-                    string msg = $"Attempted lambda invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
-                    throw new MergeException(msg);
-                }
-
-                return _lambdas[name].DynamicInvoke(parms);
-            }
-            #endregion
         }
         #endregion
     }

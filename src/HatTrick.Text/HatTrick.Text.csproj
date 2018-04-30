@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LambdaRepository.cs" />
+    <Compile Include="ScopeChain.cs" />
     <Compile Include="StringInterpolation.cs" />
     <Compile Include="TemplateEngine.cs" />
     <Compile Include="MergeException.cs" />
