@@ -221,7 +221,7 @@ namespace HatTrick.Text.TestHarness
             bool isTrue12 = ngin.IsTrue('f');
             bool isTrue14 = ngin.IsTrue((decimal)1.111);
             bool isTrue15 = ngin.IsTrue((decimal)0.000);
-            bool isTrue16 = ngin.IsTrue("\n");
+            bool isTrue16 = ngin.IsTrue("\0");
             bool isTrue17 = ngin.IsTrue("f");
             bool isTrue18 = ngin.IsTrue("t");
             bool isTrue19 = ngin.IsTrue("false");

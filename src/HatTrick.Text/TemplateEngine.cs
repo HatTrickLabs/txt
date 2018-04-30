@@ -303,13 +303,13 @@ namespace HatTrick.Text
                        || (l = val as long?) != null && l == 0
                        || (flt = val as float?) != null && flt == 0
                        || (dec = val as decimal?) != null && dec == 0
-                       || (c = val as char?) != null && (c == 'f' || c == '0' || c == '\0')
+                       || (c = val as char?) != null && c == '\0'
                        || (ui = val as uint?) != null && ui == 0
                        || (ul = val as ulong?) != null && ul == 0
                        || (sht = val as short?) != null && sht == 0
                        || (usht = val as ushort?) != null && usht == 0
                        || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: JRod, this will catch string.Empty
-                       || (s = val as string) != null && ((s.Length == 1 && (s[0] == '\n' || s[0] == 'f')) || string.Compare(s, "false", true) == 0));
+                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0'));
 
             return !isFalse;
         }
