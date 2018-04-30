@@ -1,0 +1,28 @@
+<html>
+<head>
+  <title>{FirstName} {LastName}</title>{! this is a commant tag.. this should not render to output}
+</head>
+{!this is a comment on it's own line without white space control flags}
+<body>
+  {-!this is also a comment on it's own line WITH whitespace control flags-}
+  <p>{{this content is escaped should result in single curly braces}}</p>
+  {-#if Employer-}
+  <span>This person is currently employed @ {Employer}.</span>
+  {-/if-}
+  {-#if !Employer-}
+  <span>This person is currently un-employed.</span>
+  {-/if-}
+  {-#if Certifications-}
+  <div>This person has the following certifications:</div>
+  <ul>
+  {-#each Certifications-}
+    <li>{$}</li>
+  {-/each-}
+  </ul>
+  {-/if-}
+  <div>This person typically has worked from one of the following localities:</div>
+  {-#each Localities-}
+  <p>{$.City}, {$.State}</p>
+  {-/each-}
+</body>
+</html>

@@ -1,0 +1,12 @@
+<htlml>
+<head>
+  <title>{FirstName} {LastName}</title>
+</head>
+<body>
+  <div>Employment Status:</div>
+  <div>
+    {#if IsEmployed}<span>This person is employed{#if Employer} @ {Employer}{/if}.{/if}
+    {#if !IsEmployed}<span>This person is not employed.</span>{/if}
+  </div>
+</body>
+

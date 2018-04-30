@@ -1,0 +1,33 @@
+{FirstName} {LastName} {#if NameSuffix}{NameSuffix}{/if}
+
+{#if IsEmployed-}
+This person is employed @ {Employer}
+{/if-}
+
+{#if HasTransportation}Employee has his/her own transporation{/if}
+
+{#if Certifications-}
+<ul>
+  {-#each Certifications-}
+  <li>{$}</li>
+  {-/each-}
+</ul>
+{/if-}
+{#if !Certifications}
+<span>This person has no known certifications</span>
+{/if-}
+
+{#if () => isRetired-}
+  <div>This person is currently retired</div>
+{/if}
+{#if !() => isRetired-}
+  <div>No AARP discount for this guy!</div>
+{/if-}
+
+Objective:
+      {-#if () => getObjective-}
+{() => getObjective}
+      {-/if-}
+{#if !() => getObjective-}
+No objective provided...
+{/if-}

@@ -1,0 +1,21 @@
+Hello {FirstName} {LastName},
+
+We see that your current address is as follows:
+{(CurrentAddress) => formatAddress}
+
+We also see that you have the following certifications:
+{(Certifications, "| ") => join}
+
+Now we are going to render some localities in alternating colors:
+<table>
+  <tr>
+    <th>City</th>
+    <th>State</th>
+  </tr>
+{#each Localities-}
+  <tr class='{() => getRowCssClass}'>
+    <td>{$.City}</td>
+    <td>{$.State}</td>
+  </tr>
+{/each-}
+</table>

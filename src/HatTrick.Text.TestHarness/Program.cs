@@ -19,185 +19,250 @@ namespace HatTrick.Text.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            TestTemplateEngineSimpleTags();
-            TestTemplateEngineConditionsAndLoops();
-            TestTemplateEngineLambdaExpressions();
-            TestTemplateLastCharacterIsATag();
-            TestTemplateEngineWhitespaceFormatting();
-
             TestTruthy();
+            TestSimpleTags();
+            TestConditionalBlocks();
+            TestEachBlocks();
+            TestWhitespaceControl();
+            TestLambdaExpressions();
+            //TestTemplateLastCharacterIsATag();
+            //TestTemplateEngineWhitespaceFormatting();
+            //TestTemplateComplexConditions();
+
 
             Console.WriteLine("processing complete, press [Enter] to exit");
             Console.ReadLine();
         }
         #endregion
 
-        #region test template engine simple tags
-        private static void TestTemplateEngineSimpleTags()
+        #region test simple tags
+        private static void TestSimpleTags()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-1.txt");
+            //this template demonstrates the most basic template tags (simple text injection)...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\simple-tags.txt");
 
-            var obj = new { DocTitle = "Title Goes Here", DocBody = "Document Body Goes Here" };
+            var obj = new { FirstName = "Jerrod", LastName = "Eiman", Title = "Code Monkey" };
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             long totalTicks = 0;
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 25; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(obj);
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"simple template execution avg ticks: {totalTicks / 100}");
+            Console.WriteLine($"simple template execution avg ticks: {totalTicks / 25}");
         }
         #endregion
 
-        #region test template engine conditions and loops
-        private static void TestTemplateEngineConditionsAndLoops()
+        #region test conditional blocks
+        private static void TestConditionalBlocks()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-2.txt");
+            //this template demostrates basic conditional blocks {#if } and the negated {#if !}
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\conditional-blocks.txt");
 
             var person = new
             {
                 FirstName = "James",
                 LastName = "Doe",
-                Dob = DateTime.Parse("1975-03-03"),
                 IsEmployed = true,
                 Employer = "Microsoft",
-                Certifications = new[] { "MCSE", "MCITP", "MCTS" },
-                PreviousEmployers = default(object), //null
-                SubContent = "Hi {FirstName} {LastName}, this is just a sub content merge test..."
             };
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             long totalTicks = 0;
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 25; i++)
             {
                 _sw.Restart();
                 result = ngin.Merge(person);
                 _sw.Stop();
                 totalTicks += _sw.ElapsedTicks;
             }
-            Console.WriteLine($"conditions and loops template avg ticks: {totalTicks / 100}");
+            Console.WriteLine($"conditional block template avg ticks: {totalTicks / 25}");
         }
         #endregion
 
-        #region test template engine lambda expressions
-        private static void TestTemplateEngineLambdaExpressions()
+        #region test each blocks
+        private static void TestEachBlocks()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-3.txt");
+            //this template demonstrates block iteration via the {#each } tag...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\each-blocks.txt");
 
             var person = new
             {
                 FirstName = "James",
                 LastName = "Doe",
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new[] { "mcse", "mcitp", "mcts" },
+                Localities = new[]
+                {
+                    new { City = "Dallas", State = "TX" },
+                    new { City = "Plano", State = "TX" },
+                    new { City = "Durango", State = "CO" },
+                }
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+            Console.WriteLine($"each block template avg ticks: {totalTicks / 25}");
+        }
+        #endregion
+
+        #region test whitespace control
+        private static void TestWhitespaceControl()
+        {
+            //this template demonstrates whitespace control and escaping of { and } chars...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\whitespace-control.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new[] { "MCSE", "MCITP", "MCTS" },
+                Localities = new[]
+                {
+                    new { City = "Dallas", State = "TX" },
+                    new { City = "Plano", State = "TX" },
+                    new { City = "Durango", State = "CO" },
+                },
+                PreviousEmployers = default(object), //null,
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+            Console.WriteLine($"whitespace formatting template execution avg ticks: {totalTicks / 25}");
+        }
+        #endregion
+
+        #region test partials
+        public static void TestLambdaExpressions()
+        {
+            //this template demonstrates utilizing lambda expressions for callbacks to ...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\lambda-expressions.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                CurrentAddress = new
+                {
+                    Line1 = "111 Main St.",
+                    Line2 = "Suite 211",
+                    City = "Dallas",
+                    State = "TX",
+                    Zip = "75201"
+                },
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new string[] { "MCSE", "MCITP", "MCTS" },
+                Localities = new[]
+                {
+                    new { City = "Dallas", State = "TX" },
+                    new { City = "Plano", State = "TX" },
+                    new { City = "Durango", State = "CO" },
+                    new { City = "Portland", State = "OR" },
+                    new { City = "Salt Lake City", State = "Utah" },
+                    new { City = "Austin", State = "TX" },
+                },
+            };
+
+            //anon func to return a formatted address...
+            Func<dynamic, string> formatAddress = (address) =>
+            {
+                string nl = Environment.NewLine;
+                string formatted = $"{address.Line1}{nl}{address.Line2}{nl}{address.City}, {address.State} {address.Zip}";
+                return formatted;
+            };
+
+            //anon func to join a collection of strings...
+            Func<string[], string, string> join = (values, separator) =>
+            {
+                string s = string.Join(separator, values);
+                return s;
+            };
+
+            bool cssToggle = false;
+            Func<string> getRowCssClass = () =>
+            {
+                cssToggle = !cssToggle;
+                return cssToggle ? "light" : "dark";
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+            //register lambdas...
+            ngin.LambdaRepo.Register(nameof(formatAddress), formatAddress);
+            ngin.LambdaRepo.Register(nameof(join), join);
+            ngin.LambdaRepo.Register(nameof(getRowCssClass), getRowCssClass);
+
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+
+            Console.WriteLine($"lambda expression template execution avg ticks: {totalTicks / 25}");
+        }
+        #endregion
+
+        #region test template complex conditions
+        private static void TestTemplateComplexConditions()
+        {
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-5.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                NameSuffix = default(object),
                 Dob = DateTime.Parse("1975-03-03"),
                 IsEmployed = true,
                 Employer = "Microsoft",
                 Certifications = new[] { "mcse", "mcitp", "mcts" },
-                PreviousEmployers = default(object) //null
+                PreviousEmployers = new string[0], //null
+                HasTransportation = true,
             };
 
-            Func<string, string> resolvePartial = (key) =>
-            {
-                return "..xx..xx..xx..{FirstName} {LastName}xx..xx..xx..xx..xx..";
-            };
 
-            Func<DateTime, string> formatBirthDate = (date) =>
-            {
-                return date.ToString("yyyy-MM-dd");
-            };
-
-            Func<string, string> toUpper = (val) =>
-            {
-                return val.ToUpper();
-            };
-
-            string result;
-            TemplateEngine ngin = new TemplateEngine(template);
-            ngin.LambdaRepo.Add(nameof(resolvePartial), resolvePartial);
-            ngin.LambdaRepo.Add(nameof(formatBirthDate), formatBirthDate);
-            ngin.LambdaRepo.Add(nameof(toUpper), toUpper);
-            long totalTicks = 0;
-            for (int i = 0; i < 100; i++)
-            {
-                _sw.Restart();
-                result = ngin.Merge(person);
-                _sw.Stop();
-                totalTicks += _sw.ElapsedTicks;
-            }
-            Console.WriteLine($"lambda expression template avg ticks: {totalTicks / 100}");
-        }
-        #endregion
-
-        #region test template last character is a tag
-        private static void TestTemplateLastCharacterIsATag()
-        {
-
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-4.txt");
-
-            var obj = new
-            {
-                Title = "Title Goes Here",
-                FirstName = "Jerry",
-                LastName = "Smith",
-                Services = new[] { new { Name = "ABC" }, new { Name = "XYZ" } },
-                IsGoldMember = true,
-                Supervisor = "Yours Truly"
-            };
-
-            string result;
             TemplateEngine ngin = new TemplateEngine(template);
 
-            Func<dynamic, string> GetFullName = (o) =>
+            bool isAARPMember = false;
+            Func<bool> isRetired = () => { return isAARPMember; };
+            ngin.LambdaRepo.Register(nameof(isRetired), isRetired);
+
+            Func<string> getObjective = () =>
             {
-                return $"{o.FirstName} {o.LastName}";
+                return "I want a dev job with massive salary.";
             };
+            ngin.LambdaRepo.Register(nameof(getObjective), getObjective);
 
-            ngin.LambdaRepo.Add(nameof(GetFullName), GetFullName);
 
-            long totalTicks = 0;
-            for (int i = 0; i < 100; i++)
-            {
-                _sw.Restart();
-                result = ngin.Merge(obj);
-                _sw.Stop();
-                totalTicks += _sw.ElapsedTicks;
-            }
-            Console.WriteLine($"last char is tag template execution avg ticks: {totalTicks / 100}");
-        }
-        #endregion
-
-        #region test template engine whitespace formatting
-        private static void TestTemplateEngineWhitespaceFormatting()
-        {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-a.txt");
-
-            var person = new
-            {
-                FirstName = "James",
-                LastName = "Doe",
-                Dob = DateTime.Parse("1975-03-03"),
-                IsEmployed = true,
-                Employer = "Microsoft",
-                Certifications = new[] { "MCSE", "MCITP", "MCTS" },
-                PreviousEmployers = default(object), //null
-                SubContent = "Hi {FirstName} {LastName}, this is just a sub content merge test..."
-            };
-
-            string result;
-            TemplateEngine ngin = new TemplateEngine(template);
-            long totalTicks = 0;
-            for (int i = 0; i < 100; i++)
-            {
-                _sw.Restart();
-                result = ngin.Merge(person);
-                _sw.Stop();
-                totalTicks += _sw.ElapsedTicks;
-            }
-            Console.WriteLine($"template whitespace formatting execution avg ticks: {totalTicks / 100}");
+            string result = ngin.Merge(person);
         }
         #endregion
 

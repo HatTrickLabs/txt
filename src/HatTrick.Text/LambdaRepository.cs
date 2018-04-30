@@ -19,19 +19,28 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region add
-        public void Add(string name, Delegate lambda)
+        #region register
+        public void Register(string name, Delegate function)
         {
             if (_lambdas.ContainsKey(name))
             {
-                throw new ArgumentException($"A lambda with the provided name: {name} has already been added");
+                throw new ArgumentException($"A function with the provided name: {name} has already been added");
             }
-            _lambdas.Add(name, lambda);
+            _lambdas.Add(name, function);
+        }
+
+        public void Register(string name, Func<string> function)
+        {
+            if (_lambdas.ContainsKey(name))
+            {
+                throw new ArgumentException($"A function with the provided name: {name} has already been added");
+            }
+            _lambdas.Add(name, function);
         }
         #endregion
 
-        #region remove
-        public void Remove(string name)
+        #region deregister
+        public void Deregister(string name)
         {
             if (!_lambdas.ContainsKey(name))
             {
@@ -45,7 +54,7 @@ namespace HatTrick.Text
         public object Invoke(string name, params object[] parms)
         {
             if (!_lambdas.ContainsKey(name))
-            { throw new MergeException($"Encountered lambda that does not exist in lambda repo: {name}"); }
+            { throw new MergeException($"Encountered function that does not exist in lambda repo: {name}"); }
 
             System.Reflection.MethodInfo mi = _lambdas[name].Method;
 
@@ -53,7 +62,7 @@ namespace HatTrick.Text
 
             if (paramsCount != parms.Length)
             {
-                string msg = $"Attempted lambda invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
+                string msg = $"Attempted function invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
                 throw new MergeException(msg);
             }
 

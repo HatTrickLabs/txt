@@ -79,7 +79,7 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region with max stack depth
+        #region with white space suppression
         private TemplateEngine WithWhitespaceSuppression(bool suppress)
         {
             this.SuppressWhitespace = suppress;
@@ -219,7 +219,8 @@ namespace HatTrick.Text
         #region handle basic tag
         private void HandleBasicTag(string tag, object bindTo)
         {
-            object target = this.ResolveTarget(tag.Substring(1, (tag.Length - 2)), bindTo);
+            string bindAs = tag.Substring(1, (tag.Length - 2));
+            object target = this.ResolveTarget(bindAs, bindTo);
 
             _result.Append(target ?? string.Empty);
         }
@@ -433,6 +434,7 @@ namespace HatTrick.Text
 
                 string[] leftRight = tag.Split(new char[] { '=', '>' }, StringSplitOptions.RemoveEmptyEntries);
 
+                //TODO: JRod, if params contains a string literal that contains a comma or open paren or close paren this BREAKS...
                 string[] args = leftRight[0].Split(new char[] { '(', ')', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                 object[] parameters = new object[args.Length];
