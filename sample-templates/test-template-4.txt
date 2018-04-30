@@ -7,11 +7,11 @@
 Thank you for registering for the following services:
 {-#each Services-}
 * {$.Name}
-{-#/each-}
+{-/each-}
 
 {#if IsGoldMember-}
 You will receive a 5% discount.
-{-#/if-}
+{-/if-}
 
 Thank you,
 

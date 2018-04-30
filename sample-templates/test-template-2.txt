@@ -2,20 +2,20 @@ Name:	{FirstName} {LastName}
 Dob:	{Dob}
 {-# if IsEmployed-}
 Employer: {Employer}
-{-# /if-}
+{- /if-}
 {#if !IsEmployed}
 Currently Not Employed
-{#/if}
+{/if}
 {# if Certifications}
 This guy has certifications...
 Cert List:
 {#each Certifications}
 {$}
-{#/each}
-{#/if}
+{/each}
+{/if}
 {#each PreviousEmployers}
 {$}
-{#/each}
+{/each}
 ****
 {>SubContent}
 {!this is just a comment}
@@ -23,5 +23,5 @@ Cert List:
 - he has certs...
 {#if IsEmployed}
 - he is alsow employed...
-{#/if}
-{#/if}
+{/if}
+{/if}

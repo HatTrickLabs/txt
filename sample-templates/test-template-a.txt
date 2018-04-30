@@ -6,12 +6,12 @@
   <div>
   {-#if IsEmployed-}
     <span>You are employed</span>
-  {-#/if-}
+  {-/if-}
   </div>
   <div>
   {-#each Certifications-}
     <span>{$}</span>
-  {-#/each-}
+  {-/each-}
   </div>
   <div>
     {>SubContent}

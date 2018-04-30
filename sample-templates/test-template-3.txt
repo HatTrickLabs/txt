@@ -3,11 +3,11 @@ Name:	{$.FirstName} {LastName}
 Dob:	{ (Dob ) => formatBirthDate  }
 {#if IsEmployed-}
 he is employed!!!
-{ #/   if-}
+{ /   if-}
 Certifications:
 {#each Certifications-}
 {..\FirstName} {($) => toUpper}
-{#/each-}
+{/each-}
 
 {FirstName} {LastName}
 {(FirstName) => toUpper} {(LastName) => toUpper}

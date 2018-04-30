@@ -7,33 +7,33 @@ Your title lower cased would be {(Title) => ToLower}
 Education List:
 {#each Education-}
 - {$}
-{#/each-}
+{/each-}
 
 Past/Current Addresses:
 {#each Addresses-}
 {$.Street}
 {$.City}, {$.State} {$.Zip}
 ---------------------------------------------
-{#/each-}
+{/each-}
 
 {#each Items-}
 {$.Name}
 {#each SubItems-}
 {..\$.Prop} => {$} {..\..\$.FirstName}
-{#/each-}
-{#/each-}
+{/each-}
+{/each-}
 
 ********
 {#if Wage-}
 {Wage.Value} as {Wage.Currency}
-{#/if-}
+{/if-}
 {#if !Wage-}
 ...No wage found...
-{#/if-}
+{/if-}
 
 {#if (Title) => IsDeveloper-}
 Yes, he is a developer.
-{#/if}
+{/if}
 
 {#each () => GetAddresses-}
 {#if ($.Zip) => ShouldRenderAddress-}
@@ -41,4 +41,4 @@ Yes, he is a developer.
 {$.City}, {$.State} {$.Zip}
 ---------------------------------------------
 {#/if}
-{#/each-}
+{/each-}
