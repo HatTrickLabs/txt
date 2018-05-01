@@ -1,0 +1,5 @@
+  <ul>
+    {-#each Localities-}
+    <li>{$.City}, {$.State}</li>
+    {-/each-}
+  </ul>

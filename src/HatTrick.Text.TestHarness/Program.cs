@@ -15,6 +15,13 @@ namespace HatTrick.Text.TestHarness
         #endregion
 
         #region main
+        //basic tags
+        //conditional blocks
+        //each blocks
+        //whitespace control, escaping { and }
+        //chars and comments
+        //lambda expressions
+        //partials(sub templates)
         static void Main(string[] args)
         {
             _sw = new System.Diagnostics.Stopwatch();
@@ -25,9 +32,9 @@ namespace HatTrick.Text.TestHarness
             TestEachBlocks();
             TestWhitespaceControl();
             TestLambdaExpressions();
-            //TestTemplateLastCharacterIsATag();
-            //TestTemplateEngineWhitespaceFormatting();
-            //TestTemplateComplexConditions();
+            TestPartials();
+            TestComplexConditions();
+            TestAbsoluteChaos();
 
 
             Console.WriteLine("processing complete, press [Enter] to exit");
@@ -156,10 +163,10 @@ namespace HatTrick.Text.TestHarness
         }
         #endregion
 
-        #region test partials
+        #region test lambda expressions
         public static void TestLambdaExpressions()
         {
-            //this template demonstrates utilizing lambda expressions for callbacks to ...
+            //this template demonstrates delegation back into code via lambda expressions...
             string template = File.ReadAllText(@"..\..\..\..\sample-templates\lambda-expressions.txt");
 
             var person = new
@@ -230,10 +237,61 @@ namespace HatTrick.Text.TestHarness
         }
         #endregion
 
-        #region test template complex conditions
-        private static void TestTemplateComplexConditions()
+        #region test partials
+        public static void TestPartials()
         {
-            string template = File.ReadAllText(@"..\..\..\..\sample-templates\test-template-5.txt");
+            //this template demonstrates delegation back into code via lambda expressions...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\partials.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                CurrentAddress = new
+                {
+                    Line1 = "111 Main St.",
+                    Line2 = "Suite 211",
+                    City = "Dallas",
+                    State = "TX",
+                    Zip = "75201"
+                },
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new string[] { "MCSE", "MCITP", "MCTS" },
+                Localities = new[]
+                {
+                    new { City = "Dallas", State = "TX" },
+                    new { City = "Plano", State = "TX" },
+                    new { City = "Durango", State = "CO" },
+                    new { City = "Portland", State = "OR" },
+                    new { City = "Salt Lake City", State = "Utah" },
+                    new { City = "Austin", State = "TX" },
+                },
+                CertsListTemplate = "<ul>{#each Certifications}<li>{$}</li>{/each}</ul>",
+                LocalitiesTemplate = File.ReadAllText(@"..\..\..\..\sample-templates\partials-chunk.txt")
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+
+            Console.WriteLine($"partials template execution avg ticks: {totalTicks / 25}");
+        }
+        #endregion
+
+        #region test template complex conditions
+        private static void TestComplexConditions()
+        {
+            //see test Truthy below...  Also conditions can be driven by bool, enumerable, null/not null, and lambda results...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\complex-conditions.txt");
 
             var person = new
             {
@@ -261,8 +319,88 @@ namespace HatTrick.Text.TestHarness
             };
             ngin.LambdaRepo.Register(nameof(getObjective), getObjective);
 
+            string result;
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
 
-            string result = ngin.Merge(person);
+            Console.WriteLine($"complex conditions template execution avg ticks: {totalTicks / 25}");
+        }
+        #endregion
+
+        #region test absolute chaos
+        private static void TestAbsoluteChaos()
+        {
+            //this template demonstrates delegation back into code via lambda expressions...
+            string template = File.ReadAllText(@"..\..\..\..\sample-templates\absolute-chaos.txt");
+
+            var person = new
+            {
+                FirstName = "James",
+                LastName = "Doe",
+                CurrentAddress = new
+                {
+                    Line1 = "111 Main St.",
+                    Line2 = "Suite 211",
+                    City = "Dallas",
+                    State = "TX",
+                    Zip = "75201"
+                },
+                IsEmployed = true,
+                Employer = "Microsoft",
+                Certifications = new string[] { "MCSE", "MCITP", "MCTS" },
+                Localities = new[]
+                {
+                    new { City = "Dallas", State = "TX" },
+                    new { City = "Plano", State = "TX" },
+                    new { City = "Durango", State = "CO" },
+                    new { City = "Portland", State = "OR" },
+                    new { City = "Salt Lake City", State = "Utah" },
+                    new { City = "Austin", State = "TX" },
+                },
+                CertsListTemplate = "<ul>{#each Certifications}<li>{$}</li>{/each}</ul>",
+                LocalitiesTemplate = File.ReadAllText(@"..\..\..\..\sample-templates\partials-chunk.txt"),
+                ExcitedCityTemplate = "-> {$.City} !!!"
+            };
+
+            Func<Array, string, bool> workedIn = (theLocalities, city) =>
+            {
+                foreach (var local in theLocalities)
+                {
+                    if (string.Compare(((dynamic)local).City, city, true) == 0)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            Func<string, bool> isPlano = (city) =>
+            {
+                return string.Compare(city, "plano", true) == 0;
+            };
+
+            string result;
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(workedIn), workedIn);
+            ngin.LambdaRepo.Register(nameof(isPlano), isPlano);
+
+            long totalTicks = 0;
+            for (int i = 0; i < 25; i++)
+            {
+                _sw.Restart();
+                result = ngin.Merge(person);
+                _sw.Stop();
+                totalTicks += _sw.ElapsedTicks;
+            }
+
+            
+Console.WriteLine($"absolute chaos execution avg ticks: {totalTicks / 25}");
         }
         #endregion
 
