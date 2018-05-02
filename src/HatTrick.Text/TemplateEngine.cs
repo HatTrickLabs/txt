@@ -382,10 +382,10 @@ namespace HatTrick.Text
             this.EnsureRightTrim(tag, out rightTrimMarker, false);
 
             int len = (leftTrimMarker && rightTrimMarker)
-            ? (tag.Length - 5)
-            : (leftTrimMarker || rightTrimMarker)
-                ? tag.Length - 4
-                : (tag.Length - 3);
+                ? (tag.Length - 5)
+                : (leftTrimMarker || rightTrimMarker)
+                    ? tag.Length - 4
+                    : (tag.Length - 3);
 
             int start = leftTrimMarker ? 3 : 2;
 
