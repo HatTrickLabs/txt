@@ -24,6 +24,9 @@ namespace HatTrick.Text
         private Action<char> _appendToTag;
 
         private int _maxStack = 15;
+
+        private string _lastKnownTag;
+        private int _lastTagLineNumber;
         #endregion
 
         #region interface
@@ -120,6 +123,8 @@ namespace HatTrick.Text
         #region handle tag
         private void HandleTag(string tag, object bindTo)
         {
+            _lastKnownTag = tag;
+            _lastTagLineNumber = _lineCount;
             if (this.IsIfTag(tag)) //# if logic tag (boolean switch)
             {
                 this.HandleIfTag(tag, bindTo);
@@ -562,7 +567,7 @@ namespace HatTrick.Text
                 this.RollTill(emitTagTo, '}', true);
 
                 if (tag.Length == 0)
-                { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
+                { throw new MergeException($"enountered un-closed tag > 'till' condition never found{Environment.NewLine}Last Open Tag:{_lastKnownTag}{Environment.NewLine}Last Open Tag Line #:{_lastTagLineNumber}{Environment.NewLine}"); }
 
                 if (!till(tag.ToString()))
                 {
