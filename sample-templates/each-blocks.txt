@@ -5,12 +5,12 @@
 <body>
 <div>This person has the following certifications:</div>
 <ul>
-{#each Certifications}
+{-#each Certifications-}
   <li>{$}</li>
-{/each}
+{-/each-}
 </ul>
 <div>This person typically works from one of the following localities:</div>
-{#each Localities}
+{#each Localities-}
   <p>{$.City}, {$.State}</p>
 {/each}
 </body>

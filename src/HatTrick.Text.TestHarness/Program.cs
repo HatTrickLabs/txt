@@ -26,15 +26,15 @@ namespace HatTrick.Text.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            TestTruthy();
-            TestSimpleTags();
-            TestConditionalBlocks();
+            //TestTruthy();
+            //TestSimpleTags();
+            //TestConditionalBlocks();
             TestEachBlocks();
-            TestWhitespaceControl();
-            TestLambdaExpressions();
-            TestPartials();
-            TestComplexConditions();
-            TestAbsoluteChaos();
+            //TestWhitespaceControl();
+            //TestLambdaExpressions();
+            //TestPartials();
+            //TestComplexConditions();
+            //TestAbsoluteChaos();
 
 
             Console.WriteLine("processing complete, press [Enter] to exit");
@@ -115,6 +115,10 @@ namespace HatTrick.Text.TestHarness
 
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register("Test", () => "{FirstName} {LastName}");
+
+            ngin.ProgressListener += (l, t) => { Console.WriteLine($"Progress: @ {l}\t{t}"); };
+
             long totalTicks = 0;
             for (int i = 0; i < 25; i++)
             {

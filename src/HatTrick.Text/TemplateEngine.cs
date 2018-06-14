@@ -9,7 +9,8 @@ namespace HatTrick.Text
     {
         #region internals
         private int _index;
-        private int _lineCount;
+        private int _lineNum;
+        private Action<int, string> _progress;
 
         private string _template;
 
@@ -23,10 +24,7 @@ namespace HatTrick.Text
         private StringBuilder _tag;
         private Action<char> _appendToTag;
 
-        private int _maxStack = 15;
-
-        private string _lastKnownTag;
-        private int _lastTagLineNumber;
+        private int _maxStack = 10;
         #endregion
 
         #region interface
@@ -35,13 +33,24 @@ namespace HatTrick.Text
 
         public LambdaRepository LambdaRepo
         { get { return (_lambdaRepo == null) ? _lambdaRepo = new LambdaRepository() : _lambdaRepo; } }
+
+        public Action<int, string> ProgressListener
+        {
+            get
+            {
+                return _progress;
+            }
+            set
+            {
+                _progress = value;
+            }
+        }
         #endregion
 
         #region constructors
         public TemplateEngine(string template)
         {
             _index = 0;
-            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
             _template = template;
             _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
@@ -90,12 +99,20 @@ namespace HatTrick.Text
         }
         #endregion
 
+        #region with progress listener
+        private TemplateEngine WithProgressListener(Action<int, string> listener)
+        {
+            _progress = listener;
+            return this; 
+        }
+        #endregion
+
         #region merge
         public string Merge(object bindTo)
         {
             _result.Clear();
             _index = 0;
-            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
+            _lineNum = string.IsNullOrEmpty(_template) ? 0 : 1;
 
             char eot = (char)3; //end of text....
 
@@ -108,6 +125,7 @@ namespace HatTrick.Text
                     if (this.RollTill(_appendToTag, '}', true))
                     {
                         string tag = _tag.ToString();
+                        _progress?.Invoke(_lineNum, tag);
                         this.HandleTag(tag, bindTo);
                     }
                     //else
@@ -123,8 +141,6 @@ namespace HatTrick.Text
         #region handle tag
         private void HandleTag(string tag, object bindTo)
         {
-            _lastKnownTag = tag;
-            _lastTagLineNumber = _lineCount;
             if (this.IsIfTag(tag)) //# if logic tag (boolean switch)
             {
                 this.HandleIfTag(tag, bindTo);
@@ -272,6 +288,7 @@ namespace HatTrick.Text
             if (render)
             {
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
+                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(this.SuppressWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -363,6 +380,7 @@ namespace HatTrick.Text
                 TemplateEngine subEngine;
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(contentBlock.ToString())
+                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(this.SuppressWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -401,6 +419,7 @@ namespace HatTrick.Text
             { throw new MergeException($"#sub template tag / tag reflected value is not typeof string: {target}"); }
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
+                .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(this.SuppressWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
@@ -511,7 +530,7 @@ namespace HatTrick.Text
             {
                 if (c == '\n')
                 {
-                    _lineCount += 1;
+                    _lineNum += 1;
                 }
                 if (c == '{' || c == '}')
                 {
@@ -567,7 +586,7 @@ namespace HatTrick.Text
                 this.RollTill(emitTagTo, '}', true);
 
                 if (tag.Length == 0)
-                { throw new MergeException($"enountered un-closed tag > 'till' condition never found{Environment.NewLine}Last Open Tag:{_lastKnownTag}{Environment.NewLine}Last Open Tag Line #:{_lastTagLineNumber}{Environment.NewLine}"); }
+                { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
 
                 if (!till(tag.ToString()))
                 {
@@ -662,7 +681,7 @@ namespace HatTrick.Text
                 if (lookFor == Environment.NewLine)
                 {
                     _index += newLineLength;
-                    _lineCount += 1;
+                    _lineNum += 1;
                 }
             }
         }
