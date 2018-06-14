@@ -45,7 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Breadcrumb.cs" />
     <Compile Include="LambdaInvocationException.cs" />
     <Compile Include="LambdaRepository.cs" />
     <Compile Include="ScopeChain.cs" />
