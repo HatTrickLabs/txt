@@ -120,16 +120,19 @@ namespace HatTrick.Text
 
             bool singleQuoted = false;
             bool doubleQuoted = false;
+            char prev = '\0';
             Action<char> appendToTag = (c) => 
             {
-                if (c == '"')
+                if (c == '"' && prev != '\\' && !singleQuoted)
                 { doubleQuoted = !doubleQuoted; }
 
-                if (c == '\'')
+                if (c == '\'' && prev != '\\' && !doubleQuoted)
                 { singleQuoted = !singleQuoted; }
 
                 if (c != ' ' || (doubleQuoted || singleQuoted))
                 { _tag.Append(c); }
+
+                prev = c;
             };
 
             while (this.Peek() != eot)

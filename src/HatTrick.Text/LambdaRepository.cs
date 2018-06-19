@@ -95,7 +95,7 @@ namespace HatTrick.Text
                     {
                         sb.Length -= 1;
                     }
-                    else
+                    else if (!singleQuoted)
                     {
                         doubleQuoted = !doubleQuoted;
                     }
@@ -106,7 +106,7 @@ namespace HatTrick.Text
                     {
                         sb.Length -= 1;
                     }
-                    else
+                    else if (!doubleQuoted)
                     {
                         singleQuoted = !singleQuoted;
                     }
