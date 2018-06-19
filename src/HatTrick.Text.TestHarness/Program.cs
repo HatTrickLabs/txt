@@ -29,9 +29,9 @@ namespace HatTrick.Text.TestHarness
             //TestTruthy();
             //TestSimpleTags();
             //TestConditionalBlocks();
-            TestEachBlocks();
+            //TestEachBlocks();
             //TestWhitespaceControl();
-            //TestLambdaExpressions();
+            TestLambdaExpressions();
             //TestPartials();
             //TestComplexConditions();
             //TestAbsoluteChaos();

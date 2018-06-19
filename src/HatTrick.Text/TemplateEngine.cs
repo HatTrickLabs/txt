@@ -22,7 +22,7 @@ namespace HatTrick.Text
         private Action<char> _appendToResult;
 
         private StringBuilder _tag;
-        private Action<char> _appendToTag;
+        //private Action<char> _appendToTag;
 
         private int _maxStack = 10;
         #endregion
@@ -57,7 +57,7 @@ namespace HatTrick.Text
 
             _appendToResult = (c) => { _result.Append(c); };
 
-            _appendToTag = (c) => { if (c != ' ') { _tag.Append(c); } };
+            //_appendToTag = (c) => { if (c != ' ') { _tag.Append(c); } };
 
             _scopeChain = new ScopeChain();
         }
@@ -118,11 +118,25 @@ namespace HatTrick.Text
 
             _tag.Clear();
 
+            bool singleQuoted = false;
+            bool doubleQuoted = false;
+            Action<char> appendToTag = (c) => 
+            {
+                if (c == '"')
+                { doubleQuoted = !doubleQuoted; }
+
+                if (c == '\'')
+                { singleQuoted = !singleQuoted; }
+
+                if (c != ' ' || (doubleQuoted || singleQuoted))
+                { _tag.Append(c); }
+            };
+
             while (this.Peek() != eot)
             {
                 if (this.RollTill(_appendToResult, '{', false))
                 {
-                    if (this.RollTill(_appendToTag, '}', true))
+                    if (this.RollTill(appendToTag, '}', true))
                     {
                         string tag = _tag.ToString();
                         _progress?.Invoke(_lineNum, tag);
@@ -456,33 +470,11 @@ namespace HatTrick.Text
                 //{("keyVal") => GetSomething}
                 //{(true) => GetSomething}
 
-                string[] leftRight = tag.Split(new char[] { '=', '>' }, StringSplitOptions.RemoveEmptyEntries);
+                string name;
+                object[] parameters;
+                this.ExtractLambda(tag, localScope, out name, out parameters);
 
-                //TODO: JRod, if params contains a string literal that contains a comma or open paren or close paren this BREAKS...
-                string[] args = leftRight[0].Split(new char[] { '(', ')', ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-                object[] parameters = new object[args.Length];
-                for (int i = 0; i < args.Length; i++)
-                {
-                    if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
-                    {
-                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
-                    }
-                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
-                    {
-                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
-                    }
-                    else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
-                    {
-                        parameters[i] = bool.Parse(args[i]);
-                    }
-                    else
-                    {
-                        parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
-                    }
-                }
-
-                target = this.LambdaRepo.Invoke(leftRight[1], parameters);
+                target = this.LambdaRepo.Invoke(name, parameters);
             }
             else
             {
@@ -490,6 +482,36 @@ namespace HatTrick.Text
             }
 
             return target;
+        }
+        #endregion
+
+        #region extract lambda
+        private void ExtractLambda(string tag, object localScope, out string name, out object[] parameters)
+        {
+            string[] args;
+            _lambdaRepo.ParseKnown(tag, out name, out args);
+
+            parameters = new object[args.Length];
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
+                {
+                    parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                }
+                else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
+                {
+                    parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                }
+                else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
+                {
+                    parameters[i] = bool.Parse(args[i]);
+                }
+                else
+                {
+                    parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
+                }
+            }
         }
         #endregion
 
