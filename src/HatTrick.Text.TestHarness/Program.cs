@@ -29,9 +29,9 @@ namespace HatTrick.Text.TestHarness
             //TestTruthy();
             //TestSimpleTags();
             //TestConditionalBlocks();
-            TestEachBlocks();
+            //TestEachBlocks();
             //TestWhitespaceControl();
-            //TestLambdaExpressions();
+            TestLambdaExpressions();
             //TestPartials();
             //TestComplexConditions();
             //TestAbsoluteChaos();
@@ -221,12 +221,18 @@ namespace HatTrick.Text.TestHarness
                 return cssToggle ? "light" : "dark";
             };
 
+            Func<string, string> literalChaos = (s) =>
+            {
+                return s;
+            };
+
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             //register lambdas...
             ngin.LambdaRepo.Register(nameof(formatAddress), formatAddress);
             ngin.LambdaRepo.Register(nameof(join), join);
             ngin.LambdaRepo.Register(nameof(getRowCssClass), getRowCssClass);
+            ngin.LambdaRepo.Register(nameof(literalChaos), literalChaos);
 
             long totalTicks = 0;
             for (int i = 0; i < 25; i++)

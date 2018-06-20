@@ -4,7 +4,7 @@ We see that your current address is as follows:
 {(CurrentAddress) => formatAddress}
 
 We also see that you have the following certifications:
-{(Certifications, "| ") => join}
+{(Certifications, '",    "') => join}
 
 Now we are going to render some localities in alternating colors:
 <table>
@@ -19,3 +19,5 @@ Now we are going to render some localities in alternating colors:
   </tr>
 {/each-}
 </table>
+
+{("<div id=\"divTest\"></div>") => literalChaos}

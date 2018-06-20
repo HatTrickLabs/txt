@@ -50,6 +50,87 @@ namespace HatTrick.Text
         }
         #endregion
 
+        #region parse 
+        public void ParseKnown(string expression, out string name, out string[] parameters)
+        {
+            name = null;
+            parameters = null;
+
+            string op = "=>";
+            int opIndex = expression.IndexOf(op);
+
+            if (opIndex < 0)
+            {
+                throw new ArgumentException("provided value is not a valid lambda", nameof(expression));
+            }
+
+            name = expression.Substring(opIndex + 2);
+
+            if (!_lambdas.ContainsKey(name))
+            { throw new MergeException($"Encountered function that does not exist in lambda repo: {name}"); }
+
+            System.Reflection.MethodInfo mi = _lambdas[name].Method;
+
+            int paramsCount = mi.GetParameters().Length;
+
+            parameters = new string[paramsCount];
+            int at = -1;
+
+            string left = expression.Substring(0, opIndex);
+
+            char c;
+            StringBuilder sb = new StringBuilder();
+            bool singleQuoted = false;
+            bool doubleQuoted = false;
+            for (int i = 0; i < left.Length; i++)
+            {
+                c = left[i];
+                if (c == '(' || c == ')')
+                {
+                    continue;
+                }
+                else if (c == '"')
+                {
+                    if (doubleQuoted && i > 0 && left[i - 1] == '\\')
+                    {
+                        sb.Length -= 1;
+                    }
+                    else if (!singleQuoted)
+                    {
+                        doubleQuoted = !doubleQuoted;
+                    }
+                }
+                else if (c == '\'')
+                {
+                    if (singleQuoted && i > 0 && left[i - 1] == '\\')
+                    {
+                        sb.Length -= 1;
+                    }
+                    else if (!doubleQuoted)
+                    {
+                        singleQuoted = !singleQuoted;
+                    }
+                }
+                else if (c == ',')
+                {
+                    if (!(singleQuoted || doubleQuoted))
+                    {
+                        parameters[++at] = sb.ToString();
+                        sb.Clear();
+                        continue;
+                    }
+                }
+
+                sb.Append(c);
+            }
+
+            if (parameters.Length > 0)
+            {
+                parameters[++at] = sb.ToString(); //final...
+            }
+        }
+        #endregion
+
         #region invoke
         public object Invoke(string name, params object[] parms)
         {
