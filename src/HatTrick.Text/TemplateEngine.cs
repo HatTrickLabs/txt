@@ -474,10 +474,10 @@ namespace HatTrick.Text
                 //{(true) => GetSomething}
 
                 string name;
-                object[] parameters;
-                this.ExtractLambda(tag, localScope, out name, out parameters);
+                object[] arguments;
+                this.ExtractLambda(tag, localScope, out name, out arguments);
 
-                target = this.LambdaRepo.Invoke(name, parameters);
+                target = this.LambdaRepo.Invoke(name, arguments);
             }
             else
             {
@@ -489,32 +489,54 @@ namespace HatTrick.Text
         #endregion
 
         #region extract lambda
-        private void ExtractLambda(string tag, object localScope, out string name, out object[] parameters)
+        private void ExtractLambda(string tag, object localScope, out string name, out object[] arguments)
         {
             string[] args;
             _lambdaRepo.ParseKnown(tag, out name, out args);
 
-            parameters = new object[args.Length];
+            arguments = new object[args.Length];
 
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
                 {
-                    parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
                 else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
                 {
-                    parameters[i] = args[i].Substring(1, (args[i].Length - 2));
+                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
                 else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
                 {
-                    parameters[i] = bool.Parse(args[i]);
+                    arguments[i] = bool.Parse(args[i]);
+                }
+                else if (this.TextContains(args[i], ':', out int at))//numeric literal...
+                {
+                    string value = args[i].Substring(0, at);
+                    string suffix = args[i].Substring(at + 1);
+
+                    arguments[i] = this.LambdaRepo.ParseNumericLiteral(value, suffix);
                 }
                 else
                 {
-                    parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
+                    arguments[i] = this.ResolveTarget(args[i], localScope); //recursive
                 }
             }
+        }
+        #endregion
+
+        #region text contains
+        private bool TextContains(string text, char value, out int at)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                at = -1;
+            }
+            else
+            {
+                at = text.IndexOf(value);
+            }
+            return at > 0;
         }
         #endregion
 
