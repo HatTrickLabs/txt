@@ -19,3 +19,5 @@ Now we are going to render some localities in alternating colors:
   </tr>
 {/each-}
 </table>
+
+{("<div id=\"divTest\"></div>") => literalChaos}
