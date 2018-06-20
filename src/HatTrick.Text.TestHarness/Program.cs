@@ -226,6 +226,11 @@ namespace HatTrick.Text.TestHarness
                 return s;
             };
 
+            Func<int, decimal, decimal> numericLiteral = (cnt, price) =>
+            {
+                return (cnt * price);
+            };
+
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
             //register lambdas...
@@ -233,6 +238,7 @@ namespace HatTrick.Text.TestHarness
             ngin.LambdaRepo.Register(nameof(join), join);
             ngin.LambdaRepo.Register(nameof(getRowCssClass), getRowCssClass);
             ngin.LambdaRepo.Register(nameof(literalChaos), literalChaos);
+            ngin.LambdaRepo.Register(nameof(numericLiteral), numericLiteral);
 
             long totalTicks = 0;
             for (int i = 0; i < 25; i++)

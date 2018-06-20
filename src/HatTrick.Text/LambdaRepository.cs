@@ -50,7 +50,7 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region parse 
+        #region parse known
         public void ParseKnown(string expression, out string name, out string[] parameters)
         {
             name = null;
@@ -128,6 +128,58 @@ namespace HatTrick.Text
             {
                 parameters[++at] = sb.ToString(); //final...
             }
+        }
+        #endregion
+
+        #region parse numeric literal
+        public object ParseNumericLiteral(string value, string suffix)
+        {
+            bool parsed = false;
+            object output = null;
+            switch (suffix)
+            {
+                case "int":
+                    {
+                        parsed = int.TryParse(value, out int val);
+                        output = val;
+                    }
+                    break;
+                case "long":
+                    {
+                        parsed = long.TryParse(value, out long val);
+                        output = val;
+                    }
+                    break;
+                case "decimal":
+                case "dec":
+                    {
+                        parsed = decimal.TryParse(value, out decimal val);
+                        output = val;
+                    }
+                    break;
+                case "double":
+                case "dbl":
+                    {
+                        parsed = double.TryParse(value, out double val);
+                        output = val;
+                    }
+                    break;
+                case "byte":
+                    {
+                        parsed = byte.TryParse(value, out byte val);
+                        output = val;
+                    }
+                    break;
+                default:
+                    throw new MergeException($"encountered unknown numeric literal suffix: {suffix}");
+            }
+
+            if (!parsed)
+            {
+                throw new MergeException($"unable to parse provided numerical literal: {value}:{suffix}");
+            }
+
+            return output;
         }
         #endregion
 
