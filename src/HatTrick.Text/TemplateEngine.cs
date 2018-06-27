@@ -32,18 +32,12 @@ namespace HatTrick.Text
         { get; set; }
 
         public LambdaRepository LambdaRepo
-        { get { return (_lambdaRepo == null) ? _lambdaRepo = new LambdaRepository() : _lambdaRepo; } }
+        { get { return _lambdaRepo;  } }
 
         public Action<int, string> ProgressListener
         {
-            get
-            {
-                return _progress;
-            }
-            set
-            {
-                _progress = value;
-            }
+            get { return _progress; }
+            set { _progress = value; }
         }
         #endregion
 
@@ -57,9 +51,8 @@ namespace HatTrick.Text
 
             _appendToResult = (c) => { _result.Append(c); };
 
-            //_appendToTag = (c) => { if (c != ' ') { _tag.Append(c); } };
-
             _scopeChain = new ScopeChain();
+            _lambdaRepo = new LambdaRepository();
         }
         #endregion
 
@@ -145,8 +138,8 @@ namespace HatTrick.Text
                         _progress?.Invoke(_lineNum, tag);
                         this.HandleTag(tag, bindTo);
                     }
-                    //else
-                    //TODO: JRod, encountered un-closed tag...
+                    else
+                    { throw new MergeException($"enountered un-closed tag; '}}' never found"); }
                 }
                 _tag.Clear();
             }
@@ -633,7 +626,7 @@ namespace HatTrick.Text
                 this.RollTill(emitTagTo, '}', true);
 
                 if (tag.Length == 0)
-                { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
+                { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
                 if (!till(tag.ToString()))
                 {

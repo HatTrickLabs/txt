@@ -26,15 +26,15 @@ namespace HatTrick.Text.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            //TestTruthy();
-            //TestSimpleTags();
-            //TestConditionalBlocks();
-            //TestEachBlocks();
-            //TestWhitespaceControl();
+            TestTruthy();
+            TestSimpleTags();
+            TestConditionalBlocks();
+            TestEachBlocks();
+            TestWhitespaceControl();
             TestLambdaExpressions();
-            //TestPartials();
-            //TestComplexConditions();
-            //TestAbsoluteChaos();
+            TestPartials();
+            TestComplexConditions();
+            TestAbsoluteChaos();
 
 
             Console.WriteLine("processing complete, press [Enter] to exit");
