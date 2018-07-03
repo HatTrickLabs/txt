@@ -114,7 +114,7 @@ We see you currently hold the following certs:
   - {$}
 {/each}
 {#if !Certifications}
-We see you currently do not have ANY certs...
+  - We see you currently do not have ANY certs...
 {/if}
 ```
 
