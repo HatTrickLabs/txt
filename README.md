@@ -27,7 +27,7 @@ Hello Jerrod Eiman, this is just a test.
 
 ##### Notes:
 - The engine uses single brackets for tags.
-- If a template contains non-tag brackets, they can be escaped by doubling them up i.e. {{ abc }} will render { abc }.
+- If a template contains non-tag brackets, they can be escaped by doubling them up. {{ abc }} will render { abc } into the output.
 
 
 ### Simple Tags with Compound Expressions
@@ -205,8 +205,43 @@ var person = new
 <p>How can we be of assistance?</p>
 ```
 
+##### Notes:
+- Comment tags can span multiple lines.
+
+
 ### Whitespace control
-When using block tags ( {#if}, {#each}, {>}, {!} )
+By default, all text outside {tag}s is emmitted to output on *Merge*.  Cleanly formatted templates can result in gnarled rendered output.  When using any non-simple tags ( {#if}, {#each}, {>}, {!} ), the white space trim marker can be applied to the tag for whitespace control.
+
+##### Data:
+```c#
+var person = new 
+{ 
+	Certifications = new[] { "mcse", "mcitp", "mcts" },
+	Name = new { First = "Jerrod", Last = "Eiman"}, 
+};
+```
+
+##### Default Template:
+```mustache
+<p>Hello {Name.First}</p>
+<div>
+{#if Certifications}
+<p>We see you have the following certs:</p>
+<ul>
+    {#each Certifications}
+    <li>{$}</li>
+    {/each}
+</ul>
+{/if}
+{#if !Certifications}
+We see you don't have any certs.
+{/if}
+```
+
+##### Default Output:
+```
+
+```
 
 
 ### Lambda Expressions (Helper Functions)
