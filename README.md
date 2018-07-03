@@ -11,18 +11,15 @@ string result = ngin.Merge(fullName);
 ### Simple Tags
 
 ##### Data:
-
 ```c#
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
 ```
 ##### Template:
-
 ```mustache
 Hello {FirstName} {LastName}, this is just a test.
 ```
 
 ##### Result:
-
 ```
 Hello Jerrod Eiman, this is just a test.
 ```
@@ -31,7 +28,6 @@ Hello Jerrod Eiman, this is just a test.
 ### Simple Tags with Compound Expressions
 
 ##### Data:
-
 ```c#
 var person = new 
 { 
@@ -48,13 +44,11 @@ var person = new
 ```
 
 ##### Template:
-
 ```mustache
 Hello {Name.First}, we see you currently live in {Address.City}, {Address.State}.
 ```
 
 ##### Result: 
-
 ```
 Hello Jerrod, we see you currently live in Dallas, TX.
 ```
@@ -63,7 +57,6 @@ Hello Jerrod, we see you currently live in Dallas, TX.
 ### Conditional Template Blocks:
 
 ##### Data:
-
 ```c#
 var person = new 
 { 
@@ -74,27 +67,29 @@ var person = new
 ```
 
 ##### Template:
-
 ```mustache
-{FirstName} {LastName} {#if IsEmployed}is currently employed at {Employer}{/if}{#if !IsEmployed}is currently unemployed{/if}
+{Name.First} {Name.Last} {#if IsEmployed}is currently employed at {Employer}{/if}{#if !IsEmployed}is currently unemployed{/if}.
 ```
 
 ##### Result:
-
 ```
 Jerrod Eiman is currently employed at Hat Trick Labs.
 ```
 
 ##### Notes: 
 - The second if block is negated with the ! logic negation operator.
-- Condition blocks are not rendered for falsey values.  Falsey values include: false, null, 0, empty string, empty collection.
+- Condition blocks are not rendered for falsey values.  Falsey values include:
+	* false boolean
+	* null
+	* numeric zero
+	* empty string
+	* empty collection
 - Missing values are not considered Falsey.  Attempted bind to a property that does not exist on the bound object will throw an exception.
 
 
 ### Iteration Template Blocks
 
 ##### Data:
-
 ```c#
 var person = new 
 { 
@@ -103,7 +98,6 @@ var person = new
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
 ```
-
 ##### Template:
 
 ```mustache
@@ -119,7 +113,6 @@ We see you currently hold the following certs:
 ```
 
 ##### Result:
-
 ```
 Hello Jerrod Eiman,
 
@@ -129,18 +122,17 @@ We see you currently hold  the following certs:
   - mcts
 ```
 
-Notes:
-- Each blocks bound to Falsy values (null or empty) result in no block content rendered.
-- The $ reserved varible always references the root value of local scope (this) and can be used in any tag within a template.
+##### Notes:
+- An each block bound to a Falsy value (null or empty) will result in no block content rendered.
+- The $ reserved varible always references the root value of local scope (this).  $ can be used in any tag within a template.
 - the ..\ operator can be used to walk the scope chain.
+
 
 
 ### Partial Templates Blocks
 
 ##### Data:
-
 ```c#
-string parital = "<li><bold>{$.Id}</bold> - {$.LastName}, {$.FirstName}</li>;
 var attendees = new
 { 
 	People = new []
@@ -149,12 +141,11 @@ var attendees = new
 		{ Id = 2, FirstName = "John", LastName = "Doe"},
 		{ Id = 3, FirstName = "Jane", LastName = "Smith"}
 	},
-	RsvpFormat = partial
+	RsvpFormat = "<li><bold>{$.Id}</bold> - {$.LastName}, {$.FirstName}</li>"
 }
 ```
 
 ##### Template:
-
 ```mustache
 <ul>
 	{#each People}	
@@ -164,7 +155,6 @@ var attendees = new
 ```
 
 ##### Result:
-
 ```
 <ul>
 	<li><bold>1</bold> - Eiman, Jerrod</li>
@@ -177,7 +167,6 @@ var attendees = new
 ### Lambda Expressions (Helper Functions)
 
 ##### Data:
-
 ```c#
 var person = new 
 { 
@@ -187,7 +176,6 @@ var person = new
 ```
 
 ##### Code:
-
 ```c#
 Func<string[], string, string> Join = (values, delimiter) =>
 {
@@ -196,14 +184,12 @@ Func<string[], string, string> Join = (values, delimiter) =>
 ```
 
 ##### Template:
-
 ```mustache
 <p>{Name.First} {Name.Last} has the following certs:</p>
 <p>{(Certifications, ', ') => Join}</p>
 ```
 
 ##### Result:
-
 ```
 <p>Jerrod Eiman has the following certs:</p>
 <p>mcse, mcitp, mcts</p>
