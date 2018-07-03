@@ -25,6 +25,10 @@ Hello {FirstName} {LastName}, this is just a test.
 Hello Jerrod Eiman, this is just a test.
 ```
 
+##### Notes:
+- The engine uses single brackets for tags.
+- If a template contains non-tag brackets, they can be escaped by doubling them up i.e. {{ abc }} will render { abc }.
+
 
 ### Simple Tags with Compound Expressions
 Simple {tag}s can contain compound bind expressions to reference data from nested object structures.
@@ -191,7 +195,7 @@ var person = new
 
 ##### Template:
 ```mustachio
-<p>Hello {Name.First},</p>{! We want to keep an informal greeting here. }
+<p>Hello {Name.First},</p>{! we want to keep this greeting informal }
 <p>How can we be of assistance?</p>
 ```
 
@@ -200,6 +204,10 @@ var person = new
 <p>Hello Jerrod,</p>
 <p>How can we be of assistance?</p>
 ```
+
+### Whitespace control
+When using block tags ( {#if}, {#each}, {>}, {!} )
+
 
 ### Lambda Expressions (Helper Functions)
 
