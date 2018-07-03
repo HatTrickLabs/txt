@@ -10,18 +10,18 @@ string result = ngin.Merge(fullName);
 
 ### Simple Tags
 
-Data:
+##### Data:
 
 ```c#
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
 ```
-Template:
+##### Template:
 
 ```mustache
 Hello {FirstName} {LastName}, this is just a test.
 ```
 
-Result:
+##### Result:
 
 ```
 Hello Jerrod Eiman, this is just a test.
@@ -30,7 +30,7 @@ Hello Jerrod Eiman, this is just a test.
 
 ### Simple Tags with Compound Expressions
 
-Data:
+##### Data:
 
 ```c#
 var person = new 
@@ -47,13 +47,13 @@ var person = new
 };
 ```
 
-Template:
+##### Template:
 
 ```mustache
 Hello {Name.First}, we see you currently live in {Address.City}, {Address.State}.
 ```
 
-Result: 
+##### Result: 
 
 ```
 Hello Jerrod, we see you currently live in Dallas, TX.
@@ -62,7 +62,7 @@ Hello Jerrod, we see you currently live in Dallas, TX.
 
 ### Conditional Template Blocks:
 
-Data:
+##### Data:
 
 ```c#
 var person = new 
@@ -73,19 +73,19 @@ var person = new
 };
 ```
 
-Template:
+##### Template:
 
 ```mustache
 {FirstName} {LastName} {#if IsEmployed}is currently employed at {Employer}{/if}{#if !IsEmployed}is currently unemployed{/if}
 ```
 
-Result:
+##### Result:
 
 ```
 Jerrod Eiman is currently employed at Hat Trick Labs.
 ```
 
-Notes: 
+##### Notes: 
 - The second if block is negated with the ! logic negation operator.
 - Condition blocks are not rendered for falsey values.  Falsey values include: false, null, 0, empty string, empty collection.
 - Missing values are not considered Falsey.  Attempted bind to a property that does not exist on the bound object will throw an exception.
@@ -93,7 +93,7 @@ Notes:
 
 ### Iteration Template Blocks
 
-Data:
+##### Data:
 
 ```c#
 var person = new 
@@ -104,7 +104,7 @@ var person = new
 };
 ```
 
-Template:
+##### Template:
 
 ```mustache
 Hello {Name.First} {Name.Last},
@@ -118,7 +118,7 @@ We see you currently hold the following certs:
 {/if}
 ```
 
-Result:
+##### Result:
 
 ```
 Hello Jerrod Eiman,
@@ -137,7 +137,7 @@ Notes:
 
 ### Partial Templates Blocks
 
-Data:
+##### Data:
 
 ```c#
 string parital = "<li><bold>{$.Id}</bold> - {$.LastName}, {$.FirstName}</li>;
@@ -153,7 +153,7 @@ var attendees = new
 }
 ```
 
-Template:
+##### Template:
 
 ```mustache
 <ul>
@@ -163,7 +163,7 @@ Template:
 </ul>
 ```
 
-Result:
+##### Result:
 
 ```
 <ul>
@@ -176,7 +176,7 @@ Result:
 
 ### Lambda Expressions (Helper Functions)
 
-Data:
+##### Data:
 
 ```c#
 var person = new 
@@ -186,7 +186,7 @@ var person = new
 };
 ```
 
-Code:
+##### Code:
 
 ```c#
 Func<string[], string, string> Join = (values, delimiter) =>
@@ -195,21 +195,20 @@ Func<string[], string, string> Join = (values, delimiter) =>
 };
 ```
 
-Template:
+##### Template:
 
 ```mustache
 <p>{Name.First} {Name.Last} has the following certs:</p>
 <p>{(Certifications, ', ') => Join}</p>
 ```
 
-
-Result:
+##### Result:
 
 ```
 <p>Jerrod Eiman has the following certs:</p>
 <p>mcse, mcitp, mcts</p>
 ```
 
-Notes:
+##### Notes:
 - Lambda expressions can be used for simple tags, #if tags, #each tags, and >parital tags.
 
