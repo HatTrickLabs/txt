@@ -9,6 +9,7 @@ string result = ngin.Merge(fullName);
 ```
 
 ### Simple Tags
+In its simplest form, the template engine can be used to inject data into text templates via {tag} replacement.
 
 ##### Data:
 ```c#
@@ -26,6 +27,7 @@ Hello Jerrod Eiman, this is just a test.
 
 
 ### Simple Tags with Compound Expressions
+Simple {tag}s can contain compound bind expressions to reference data from nested object structures.
 
 ##### Data:
 ```c#
@@ -55,6 +57,7 @@ Hello Jerrod, we see you currently live in Dallas, TX.
 
 
 ### Conditional Template Blocks:
+The {#if} tag allows for conditionally rendering template blocks based on evaluation of truthy/falsy conditions.
 
 ##### Data:
 ```c#
@@ -68,12 +71,19 @@ var person = new
 
 ##### Template:
 ```mustache
-{Name.First} {Name.Last} {#if IsEmployed}is currently employed at {Employer}{/if}{#if !IsEmployed}is currently unemployed{/if}.
+Hello {Name.First} {Name.Last},
+{#if IsEmployed}
+We see you are currently employed at {Employer}.
+{/if}
+{#if !IsEmployed}
+We see you are currently unemployed.
+{/if}
 ```
 
 ##### Result:
 ```
-Jerrod Eiman is currently employed at Hat Trick Labs.
+Hello Jerrod Eiman,
+We see you are currently employed at Hat Trick Labs.
 ```
 
 ##### Notes: 
@@ -88,6 +98,8 @@ Jerrod Eiman is currently employed at Hat Trick Labs.
 
 
 ### Iteration Template Blocks
+The {#each} tag allows for conditional rendering based on collection types.  The {#each} tag will iterate over each item in the provided
+collection and render the contained text block.  The contained text block operates within the scope context of the iterated item.
 
 ##### Data:
 ```c#
@@ -124,12 +136,14 @@ We see you currently hold  the following certs:
 
 ##### Notes:
 - An each block bound to a Falsy value (null or empty) will result in no block content rendered.
+- Each tags work on any object that implements the System.Collections.IEnumerable interface.
 - The $ reserved varible always references the root value of local scope (this).  $ can be used in any tag within a template.
 - the ..\ operator can be used to walk the scope chain.
 
 
 
 ### Partial Templates Blocks
+The partial template {>tag} is used to inject sub template content.  
 
 ##### Data:
 ```c#
@@ -163,6 +177,29 @@ var attendees = new
 </ul>
 ```
 
+
+### Template Comments
+The template engine supports {! comment } tags.  
+
+##### Data:
+```c#
+var person = new 
+{ 
+	Name = new { First = "Jerrod", Last = "Eiman"}, 
+};
+```
+
+##### Template:
+```mustachio
+<p>Hello {Name.First},</p>{! We want to keep an informal greeting here. }
+<p>How can we be of assistance?</p>
+```
+
+##### Result:
+```
+<p>Hello Jerrod,</p>
+<p>How can we be of assistance?</p>
+```
 
 ### Lambda Expressions (Helper Functions)
 
