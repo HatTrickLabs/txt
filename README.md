@@ -5,7 +5,7 @@ var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
 string template = "Hello {FirstName} {LastName}, this is just a test.";
 TemplateEngine ngin = new TemplateEngine(template);
 string result = ngin.Merge(fullName);
-//result: Hello Jerrod Eiman, this is just a test.
+//result = Hello Jerrod Eiman, this is just a test.
 ```
 
 ### Simple Tags
@@ -31,6 +31,8 @@ Hello Jerrod Eiman, this is just a test.
 ### Simple Tags with Compound Expressions
 
 Data:
+
+```c#
 var person = new 
 { 
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
@@ -43,29 +45,45 @@ var person = new
 		Zip = "77777" 
 	} 
 };
+```
 
 Template:
+
+```mustache
 Hello {Name.First}, we see you currently live in {Address.City}, {Address.State}.
+```
 
 Result: 
+
+```
 Hello Jerrod, we see you currently live in Dallas, TX.
+```
 
 
 ### Conditional Template Blocks:
 
 Data:
+
+```c#
 var person = new 
 { 
 	IsEmployed = true, 
 	Employer = "Hat Trick Labs"
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
+```
 
 Template:
+
+```mustache
 {FirstName} {LastName} {#if IsEmployed}is currently employed at {Employer}{/if}{#if !IsEmployed}is currently unemployed{/if}
+```
 
 Result:
+
+```
 Jerrod Eiman is currently employed at Hat Trick Labs.
+```
 
 Notes: 
 - The second if block is negated with the ! logic negation operator.
@@ -76,33 +94,40 @@ Notes:
 ### Iteration Template Blocks
 
 Data:
+
+```c#
 var person = new 
 { 
 	Employer = "Hat Trick Labs",
 	Certifications = new[] { "mcse", "mcitp", "mcts" },
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
+```
 
 Template:
+
+```mustache
 Hello {Name.First} {Name.Last},
 
-{#if Certifications}
 We see you currently hold the following certs:
 {#each Certifications}
   - {$}
 {/each}
-{/if}
 {#if !Certifications}
 We see you currently do not have ANY certs...
 {/if}
+```
 
 Result:
+
+```
 Hello Jerrod Eiman,
 
 We see you currently hold  the following certs:
   - mcse
   - mcitp
   - mcts
+```
 
 Notes:
 - Each blocks bound to Falsy values (null or empty) result in no block content rendered.
@@ -113,6 +138,8 @@ Notes:
 ### Partial Templates Blocks
 
 Data:
+
+```c#
 string parital = "<li><bold>{$.Id}</bold> - {$.LastName}, {$.FirstName}</li>;
 var attendees = new
 { 
@@ -124,44 +151,64 @@ var attendees = new
 	},
 	RsvpFormat = partial
 }
+```
 
 Template:
+
+```mustache
 <ul>
 	{#each People}	
 	{>RsvpFormat}
 	{/each}
 </ul>
+```
 
 Result:
+
+```
 <ul>
 	<li><bold>1</bold> - Eiman, Jerrod</li>
 	<li><bold>2</bold> - Doe, John</li>
 	<li><bold>3</bold> - Smith, Jane</li>
 </ul>
+```
 
 
 ### Lambda Expressions (Helper Functions)
 
 Data:
+
+```c#
 var person = new 
 { 
 	Certifications = new[] { "mcse", "mcitp", "mcts" },
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
+```
 
 Code:
+
+```c#
 Func<string[], string, string> Join = (values, delimiter) =>
 {
 	return string.Join(values, delimiter);
 };
+```
 
 Template:
+
+```mustache
 <p>{Name.First} {Name.Last} has the following certs:</p>
 <p>{(Certifications, ', ') => Join}</p>
+```
+
 
 Result:
+
+```
 <p>Jerrod Eiman has the following certs:</p>
 <p>mcse, mcitp, mcts</p>
+```
 
 Notes:
 - Lambda expressions can be used for simple tags, #if tags, #each tags, and >parital tags.
