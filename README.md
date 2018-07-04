@@ -210,7 +210,7 @@ var person = new
 
 
 ### Whitespace control
-By default, all text outside {tag}s is emmitted to output on *Merge*.  Cleanly formatted templates can result in gnarled rendered output.  When using any non-simple tags ( {#if}, {#each}, {>}, {!} ), the white space trim marker can be applied to the tag for whitespace control.
+By default, all text outside {tag}s is emmitted to output.  Cleanly formatted templates can result in gnarled render results.  When using any non-simple tags ( {#if}, {#each}, {>}, {!} ), the white space trim marker can be applied to the tag for whitespace control.
 
 ##### Data:
 ```c#
@@ -288,6 +288,10 @@ We see you don't have any certs.
 </div>
 ```
 
+##### Notes:
+- Left trim markers *{-#if}* will trim all preceding whitespace NOT INCLUDING newline(s).
+- Right  trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
+- To force trim on all applicable tags without including trim markers, the SuppressWhitespace class property can be set to *true*.
 
 ### Lambda Expressions (Helper Functions)
 
