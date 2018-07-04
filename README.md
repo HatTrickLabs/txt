@@ -236,11 +236,56 @@ var person = new
 {#if !Certifications}
 We see you don't have any certs.
 {/if}
+</div>
 ```
 
 ##### Default Output:
 ```
+<p>Hello Jerrod</p>
+<div>
 
+<ul>
+    
+    <li>mcse</li>
+    
+    <li>mcitp</li>
+    
+    <li>mcts</li>
+    
+</ul>
+
+
+</div>
+```
+
+##### Whitespace Controlled Template
+```mustache
+<p>Hello {Name.First}</p>
+<div>
+{-#if Certifications-}
+<p>We see you have the following certs:</p>
+<ul>
+    {-#each Certifications-}
+    <li>{$}</li>
+    {-/each-}
+</ul>
+{-/if-}
+{-#if !Certifications-}
+We see you don't have any certs.
+{-/if-}
+</div>
+```
+
+##### Whitespace Controlled Output:
+```
+<p>Hello Jerrod</p>
+<div>
+<ul>
+    <li>mcse</li>
+    <li>mcitp</li>
+    <li>mcts</li>
+</ul>
+</div>
 ```
 
 
