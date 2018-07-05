@@ -2,14 +2,18 @@
 
 ```c#
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
+
 string template = "Hello {FirstName} {LastName}, this is just a test.";
+
 TemplateEngine ngin = new TemplateEngine(template);
+
 string result = ngin.Merge(fullName);
+
 //result = Hello Jerrod Eiman, this is just a test.
 ```
 
 ### Simple Tags
-In its simplest form, the template engine can be used to inject data into text templates via {tag} replacement.
+In its simplest form, the template engine can be used to inject data into text templates via *{tag}* replacement.
 
 ##### Data:
 ```c#
@@ -31,7 +35,7 @@ Hello Jerrod Eiman, this is just a test.
 
 
 ### Simple Tags with Compound Expressions
-Simple {tag}s can contain compound bind expressions to reference data from nested object structures.
+Simple *{tag}s* can contain compound bind expressions to reference data from nested object structures.
 
 ##### Data:
 ```c#
@@ -61,7 +65,7 @@ Hello Jerrod, we see you currently live in Dallas, TX.
 
 
 ### Conditional Template Blocks:
-The {#if} tag allows for conditionally rendering template blocks based on evaluation of truthy/falsy conditions.
+The *{#if}* tag allows for conditionally rendering template blocks based on evaluation of *truthy/falsy* conditions.
 
 ##### Data:
 ```c#
@@ -92,17 +96,17 @@ We see you are currently employed at Hat Trick Labs.
 
 ##### Notes: 
 - The second if block is negated with the ! logic negation operator.
-- Condition blocks are not rendered for falsey values.  Falsey values include:
+- Conditional blocks are not rendered for falsey values.  *Falsey* values include:
 	* false boolean
 	* null
 	* numeric zero
 	* empty string
 	* empty collection
-- Missing values are not considered Falsey.  Attempted bind to a property that does not exist on the bound object will throw an exception.
+- Missing values are not considered *Falsey*.  An expression that attempts to bind a non-existant property from the bound object will throw an exception.
 
 
 ### Iteration Template Blocks
-The {#each} tag allows for conditional rendering based on collection types.  The {#each} tag will iterate over each item in the provided
+The *{#each}* tag allows for conditional rendering based on collection types.  *{#each}* tags iterate over items in the provided
 collection and render the contained text block.  The contained text block operates within the scope context of the iterated item.
 
 ##### Data:
@@ -119,10 +123,12 @@ var person = new
 ```mustache
 Hello {Name.First} {Name.Last},
 
+{#if Certifications}
 We see you currently hold the following certs:
-{#each Certifications}
+  {#each Certifications}
   - {$}
-{/each}
+  {/each}
+{/if}
 {#if !Certifications}
   - We see you currently do not have ANY certs...
 {/if}
@@ -139,15 +145,15 @@ We see you currently hold  the following certs:
 ```
 
 ##### Notes:
-- An each block bound to a Falsy value (null or empty) will result in no block content rendered.
-- Each tags work on any object that implements the System.Collections.IEnumerable interface.
-- The $ reserved varible always references the root value of local scope (this).  $ can be used in any tag within a template.
+- An each block bound to a *falsy* value (null or empty) will result in no block content rendered.
+- Each tags work on any object that implements the *System.Collections.IEnumerable* interface.
+- The $ reserved varible always references the root value of local scope (*this*).  $ can be used in any tag within a template.
 - the ..\ operator can be used to walk the scope chain.
 
 
 
 ### Partial Templates Blocks
-The partial template {>tag} is used to inject sub template content.  
+The partial template *{>tag}* is used to inject sub template content.  
 
 ##### Data:
 ```c#
@@ -206,11 +212,11 @@ var person = new
 ```
 
 ##### Notes:
-- Comment tags can span multiple lines.
+- *{!Comment}* tags can span multiple lines.
 
 
 ### Whitespace control
-By default, all text outside {tag}s is emmitted to output.  Cleanly formatted templates can result in gnarled render results.  When using any non-simple tags ( {#if}, {#each}, {>}, {!} ), the white space trim marker can be applied to the tag for whitespace control.
+By default, all text that resides outside of a *{tag}* is emmitted to output.  Cleanly formatted templates can result in gnarled render results.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}* ), the white space trim marker(s) can be applied to the tag for whitespace control.
 
 ##### Data:
 ```c#
@@ -290,8 +296,8 @@ We see you don't have any certs.
 
 ##### Notes:
 - Left trim markers *{-#if}* will trim all preceding whitespace NOT INCLUDING newline(s).
-- Right  trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
-- To force trim on all applicable tags without including trim markers, the SuppressWhitespace class property can be set to *true*.
+- Right trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
+- To force trim on all applicable tags without including the trim markers, set *TemplateEngine.SuppressWhitespace = true*.
 
 ### Lambda Expressions (Helper Functions)
 
