@@ -31,7 +31,7 @@ Hello Jerrod Eiman, this is just a test.
 
 ##### Notes:
 - The engine uses single brackets for tags.
-- If a template contains non-tag brackets, they can be escaped by doubling them up. {{ abc }} will render { abc } into the output.
+- If a template contains any non-tag brackets, they can be escaped by doubling them up. {{ abc }} will render { abc } into the output.
 
 
 ### Simple Tags with Compound Expressions
