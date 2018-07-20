@@ -301,6 +301,30 @@ We see you don't have any certs.
 
 ### Lambda Expressions (Helper Functions)
 
+##### Lambda Usage
+```c#
+var person = new 
+{ 
+	Certifications = new[] { "mcse", "mcitp", "mcts" },
+	Name = new { First = "Jerrod", Last = "Eiman"}, 
+};
+
+string template = "Hello {FirstName} {LastName} we see who have these certs: {(', ', Certifications) => join}.";
+
+Func<string, object[], string> join = (delim, values) =>
+{
+	return string.Join(delim, values);
+};
+
+TemplateEngine ngin = new TemplateEngine(template);
+
+ngin.LambdaRepo.Register(nameof(join), join);
+
+string result = ngin.Merge(person);
+
+//result = Hello Jerrod Eiman we see who have these certs: mcse, mcitp, mcts.
+```
+
 ##### Data:
 ```c#
 var person = new 
