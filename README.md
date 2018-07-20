@@ -325,35 +325,10 @@ string result = ngin.Merge(person);
 //result = Hello Jerrod Eiman we see who have these certs: mcse, mcitp, mcts.
 ```
 
-##### Data:
-```c#
-var person = new 
-{ 
-	Certifications = new[] { "mcse", "mcitp", "mcts" },
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
-};
-```
-
-##### Code:
-```c#
-Func<string[], string, string> Join = (values, delimiter) =>
-{
-	return string.Join(values, delimiter);
-};
-```
-
-##### Template:
-```mustache
-<p>{Name.First} {Name.Last} has the following certs:</p>
-<p>{(Certifications, ', ') => Join}</p>
-```
-
-##### Result:
-```
-<p>Jerrod Eiman has the following certs:</p>
-<p>mcse, mcitp, mcts</p>
-```
-
 ##### Notes:
-- Lambda expressions can be used for simple tags, #if tags, #each tags, and >parital tags.
+- Lambda expressions can be used for *{simple}*, *{#if}*, *{#each}*, and *{>parital}* tags.
+- Lambda arguments can be any value from the bound object, a string literal, a numeric literal, or boolean *true/false*.
+- String literal args can be enclosed in single or double quotes.
+- Numeric literal types are controlled via type suffix i.e. (223:int)
+- Allowed numeric literal types: int, long, decimal, double, byte
 
