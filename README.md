@@ -309,7 +309,7 @@ var person = new
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
 
-string template = "Hello {FirstName} {LastName} we see who have these certs: {(', ', Certifications) => join}.";
+string template = "Hello {FirstName} {LastName} we see you have these certs: {(', ', Certifications) => join}.";
 
 Func<string, object[], string> join = (delim, values) =>
 {
