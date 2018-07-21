@@ -26,15 +26,15 @@ namespace HatTrick.Text.TestHarness
         {
             _sw = new System.Diagnostics.Stopwatch();
 
-            TestTruthy();
-            TestSimpleTags();
-            TestConditionalBlocks();
-            TestEachBlocks();
-            TestWhitespaceControl();
+            //TestTruthy();
+            //TestSimpleTags();
+            //TestConditionalBlocks();
+            //TestEachBlocks();
+            //TestWhitespaceControl();
             TestLambdaExpressions();
-            TestPartials();
-            TestComplexConditions();
-            TestAbsoluteChaos();
+            //TestPartials();
+            //TestComplexConditions();
+            //TestAbsoluteChaos();
 
 
             Console.WriteLine("processing complete, press [Enter] to exit");
@@ -113,9 +113,11 @@ namespace HatTrick.Text.TestHarness
                 }
             };
 
+            Func<string> Test = () => "{FirstName} {LastName}";
+
             string result;
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.LambdaRepo.Register("Test", () => "{FirstName} {LastName}");
+            ngin.LambdaRepo.Register("Test", Test);
 
             ngin.ProgressListener += (l, t) => { Console.WriteLine($"Progress: @ {l}\t{t}"); };
 
@@ -235,7 +237,7 @@ namespace HatTrick.Text.TestHarness
             TemplateEngine ngin = new TemplateEngine(template);
             //register lambdas...
             ngin.LambdaRepo.Register(nameof(formatAddress), formatAddress);
-            ngin.LambdaRepo.Register(nameof(join), join);
+            ngin.LambdaRepo.Register(nameof(string.Join), (Func<string, object[], string>)string.Join);
             ngin.LambdaRepo.Register(nameof(getRowCssClass), getRowCssClass);
             ngin.LambdaRepo.Register(nameof(literalChaos), literalChaos);
             ngin.LambdaRepo.Register(nameof(numericLiteral), numericLiteral);

@@ -116,12 +116,15 @@ namespace HatTrick.Text
             char prev = '\0';
             Action<char> appendToTag = (c) => 
             {
+                //if double quote & not escaped & not already insdie single quotes...
                 if (c == '"' && prev != '\\' && !singleQuoted)
                 { doubleQuoted = !doubleQuoted; }
 
+                //if single quote & not escaped & not already inside double quotes...
                 if (c == '\'' && prev != '\\' && !doubleQuoted)
                 { singleQuoted = !singleQuoted; }
 
+                //only append a space if inside double or single quotes...
                 if (c != ' ' || (doubleQuoted || singleQuoted))
                 { _tag.Append(c); }
 
@@ -309,7 +312,7 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region is truth
+        #region is true
         public bool IsTrue(object val)
         {
             bool? bit;
