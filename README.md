@@ -1,16 +1,12 @@
-### Usage:
-
+### Basic Usage:
 ```c#
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
-
 string template = "Hello {FirstName} {LastName}, this is just a test.";
-
 TemplateEngine ngin = new TemplateEngine(template);
-
 string result = ngin.Merge(fullName);
-
 //result = Hello Jerrod Eiman, this is just a test.
 ```
+
 
 ### Simple Tags
 In its simplest form, the template engine can be used to inject data into text templates via *{tag}* replacement.
@@ -20,7 +16,7 @@ In its simplest form, the template engine can be used to inject data into text t
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
 ```
 ##### Template:
-```mustache
+```
 Hello {FirstName} {LastName}, this is just a test.
 ```
 
@@ -54,7 +50,7 @@ var person = new
 ```
 
 ##### Template:
-```mustache
+```
 Hello {Name.First}, we see you currently live in {Address.City}, {Address.State}.
 ```
 
@@ -78,7 +74,7 @@ var person = new
 ```
 
 ##### Template:
-```mustache
+```
 Hello {Name.First} {Name.Last},
 {#if IsEmployed}
 We see you are currently employed at {Employer}.
@@ -118,9 +114,9 @@ var person = new
 	Name = new { First = "Jerrod", Last = "Eiman"}, 
 };
 ```
-##### Template:
 
-```mustache
+##### Template:
+```
 Hello {Name.First} {Name.Last},
 
 {#if Certifications}
@@ -170,7 +166,7 @@ var attendees = new
 ```
 
 ##### Template:
-```mustache
+```
 <ul>
 	{#each People}	
 	{>RsvpFormat}
@@ -200,7 +196,7 @@ var person = new
 ```
 
 ##### Template:
-```mustachio
+```
 <p>Hello {Name.First},</p>{! we want to keep this greeting informal }
 <p>How can we be of assistance?</p>
 ```
@@ -228,7 +224,7 @@ var person = new
 ```
 
 ##### Default Template:
-```mustache
+```
 <p>Hello {Name.First}</p>
 <div>
 {#if Certifications}
@@ -265,7 +261,7 @@ We see you don't have any certs.
 ```
 
 ##### Whitespace Controlled Template
-```mustache
+```
 <p>Hello {Name.First}</p>
 <div>
 {-#if Certifications-}
