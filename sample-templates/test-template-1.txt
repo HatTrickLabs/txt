@@ -1,6 +1,0 @@
-<html>
-<head><title>{DocTitle}</title></head>
-<body>
-<p>{DocBody}</p>
-</body>
-</html>

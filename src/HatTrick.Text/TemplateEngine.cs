@@ -9,7 +9,8 @@ namespace HatTrick.Text
     {
         #region internals
         private int _index;
-        private int _lineCount;
+        private int _lineNum;
+        private Action<int, string> _progress;
 
         private string _template;
 
@@ -21,9 +22,9 @@ namespace HatTrick.Text
         private Action<char> _appendToResult;
 
         private StringBuilder _tag;
-        private Action<char> _appendToTag;
+        //private Action<char> _appendToTag;
 
-        private int _maxStack = 15;
+        private int _maxStack = 10;
         #endregion
 
         #region interface
@@ -31,23 +32,27 @@ namespace HatTrick.Text
         { get; set; }
 
         public LambdaRepository LambdaRepo
-        { get { return (_lambdaRepo == null) ? _lambdaRepo = new LambdaRepository() : _lambdaRepo; } }
+        { get { return _lambdaRepo;  } }
+
+        public Action<int, string> ProgressListener
+        {
+            get { return _progress; }
+            set { _progress = value; }
+        }
         #endregion
 
         #region constructors
-        public TemplateEngine(string template) //TODO: JRod, allow stream as template...
+        public TemplateEngine(string template)
         {
             _index = 0;
-            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
             _template = template;
             _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
 
             _appendToResult = (c) => { _result.Append(c); };
 
-            _appendToTag = (c) => { if (c != ' ') { _tag.Append(c); } };
-
             _scopeChain = new ScopeChain();
+            _lambdaRepo = new LambdaRepository();
         }
         #endregion
 
@@ -79,7 +84,7 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region with max stack depth
+        #region with white space suppression
         private TemplateEngine WithWhitespaceSuppression(bool suppress)
         {
             this.SuppressWhitespace = suppress;
@@ -87,28 +92,57 @@ namespace HatTrick.Text
         }
         #endregion
 
+        #region with progress listener
+        private TemplateEngine WithProgressListener(Action<int, string> listener)
+        {
+            _progress = listener;
+            return this; 
+        }
+        #endregion
+
         #region merge
-        public string Merge(object bindTo) //TODO, JRod, allow stream output...
+        public string Merge(object bindTo)
         {
             _result.Clear();
             _index = 0;
-            _lineCount = string.IsNullOrEmpty(_template) ? 0 : 1;
+            _lineNum = string.IsNullOrEmpty(_template) ? 0 : 1;
 
             char eot = (char)3; //end of text....
 
             _tag.Clear();
 
+            bool singleQuoted = false;
+            bool doubleQuoted = false;
+            char prev = '\0';
+            Action<char> appendToTag = (c) => 
+            {
+                //if double quote & not escaped & not already insdie single quotes...
+                if (c == '"' && prev != '\\' && !singleQuoted)
+                { doubleQuoted = !doubleQuoted; }
+
+                //if single quote & not escaped & not already inside double quotes...
+                if (c == '\'' && prev != '\\' && !doubleQuoted)
+                { singleQuoted = !singleQuoted; }
+
+                //only append a space if inside double or single quotes...
+                if (c != ' ' || (doubleQuoted || singleQuoted))
+                { _tag.Append(c); }
+
+                prev = c;
+            };
+
             while (this.Peek() != eot)
             {
                 if (this.RollTill(_appendToResult, '{', false))
                 {
-                    if (this.RollTill(_appendToTag, '}', true))
+                    if (this.RollTill(appendToTag, '}', true))
                     {
                         string tag = _tag.ToString();
+                        _progress?.Invoke(_lineNum, tag);
                         this.HandleTag(tag, bindTo);
                     }
-                    //else
-                    //TODO: JRod, encountered un-closed tag...
+                    else
+                    { throw new MergeException($"enountered un-closed tag; '}}' never found"); }
                 }
                 _tag.Clear();
             }
@@ -159,10 +193,9 @@ namespace HatTrick.Text
         {
             return tag.Length > 4
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == '/')
-                && (tag[3] == '/' || tag[3] == 'i')
-                && (tag[4] == 'i' || tag[4] == 'f');
+                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[2] == '/' || tag[2] == 'i')
+                && (tag[3] == 'i' || tag[3] == 'f');
         }
         #endregion
 
@@ -182,14 +215,13 @@ namespace HatTrick.Text
         #region is end each tag
         public bool IsEndEachTag(string tag)
         {
-            return tag.Length > 6 
+            return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == '/')
-                && (tag[3] == '/' || tag[3] == 'e')
-                && (tag[4] == 'e' || tag[4] == 'a')
-                && (tag[5] == 'a' || tag[5] == 'c')
-                && (tag[6] == 'c' || tag[6] == 'h');
+                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[2] == '/' || tag[2] == 'e')
+                && (tag[3] == 'e' || tag[3] == 'a')
+                && (tag[4] == 'a' || tag[4] == 'c')
+                && (tag[5] == 'c' || tag[5] == 'h');
         }
         #endregion
 
@@ -221,7 +253,8 @@ namespace HatTrick.Text
         #region handle basic tag
         private void HandleBasicTag(string tag, object bindTo)
         {
-            object target = this.ResolveTarget(tag.Substring(1, (tag.Length - 2)), bindTo);
+            string bindAs = tag.Substring(1, (tag.Length - 2));
+            object target = this.ResolveTarget(bindAs, bindTo);
 
             _result.Append(target ?? string.Empty);
         }
@@ -268,6 +301,7 @@ namespace HatTrick.Text
             if (render)
             {
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
+                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(this.SuppressWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -278,7 +312,7 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region is truth
+        #region is true
         public bool IsTrue(object val)
         {
             bool? bit;
@@ -359,6 +393,7 @@ namespace HatTrick.Text
                 TemplateEngine subEngine;
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(contentBlock.ToString())
+                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(this.SuppressWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -383,10 +418,10 @@ namespace HatTrick.Text
             this.EnsureRightTrim(tag, out rightTrimMarker, false);
 
             int len = (leftTrimMarker && rightTrimMarker)
-            ? (tag.Length - 5)
-            : (leftTrimMarker || rightTrimMarker)
-                ? tag.Length - 4
-                : (tag.Length - 3);
+                ? (tag.Length - 5)
+                : (leftTrimMarker || rightTrimMarker)
+                    ? tag.Length - 4
+                    : (tag.Length - 3);
 
             int start = leftTrimMarker ? 3 : 2;
 
@@ -397,6 +432,7 @@ namespace HatTrick.Text
             { throw new MergeException($"#sub template tag / tag reflected value is not typeof string: {target}"); }
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
+                .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(this.SuppressWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
@@ -433,32 +469,11 @@ namespace HatTrick.Text
                 //{("keyVal") => GetSomething}
                 //{(true) => GetSomething}
 
-                string[] leftRight = tag.Split(new char[] { '=', '>' }, StringSplitOptions.RemoveEmptyEntries);
+                string name;
+                object[] arguments;
+                this.ExtractLambda(tag, localScope, out name, out arguments);
 
-                string[] args = leftRight[0].Split(new char[] { '(', ')', ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-                object[] parameters = new object[args.Length];
-                for (int i = 0; i < args.Length; i++)
-                {
-                    if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
-                    {
-                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
-                    }
-                    else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
-                    {
-                        parameters[i] = args[i].Substring(1, (args[i].Length - 2));
-                    }
-                    else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
-                    {
-                        parameters[i] = bool.Parse(args[i]);
-                    }
-                    else
-                    {
-                        parameters[i] = this.ResolveTarget(args[i], localScope); //recursive
-                    }
-                }
-
-                target = this.LambdaRepo.Invoke(leftRight[1], parameters);
+                target = this.LambdaRepo.Invoke(name, arguments);
             }
             else
             {
@@ -466,6 +481,58 @@ namespace HatTrick.Text
             }
 
             return target;
+        }
+        #endregion
+
+        #region extract lambda
+        private void ExtractLambda(string tag, object localScope, out string name, out object[] arguments)
+        {
+            string[] args;
+            _lambdaRepo.ParseKnown(tag, out name, out args);
+
+            arguments = new object[args.Length];
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
+                {
+                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
+                }
+                else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
+                {
+                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
+                }
+                else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
+                {
+                    arguments[i] = bool.Parse(args[i]);
+                }
+                else if (this.TextContains(args[i], ':', out int at))//numeric literal...
+                {
+                    string value = args[i].Substring(0, at);
+                    string suffix = args[i].Substring(at + 1);
+
+                    arguments[i] = this.LambdaRepo.ParseNumericLiteral(value, suffix);
+                }
+                else
+                {
+                    arguments[i] = this.ResolveTarget(args[i], localScope); //recursive
+                }
+            }
+        }
+        #endregion
+
+        #region text contains
+        private bool TextContains(string text, char value, out int at)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                at = -1;
+            }
+            else
+            {
+                at = text.IndexOf(value);
+            }
+            return at > 0;
         }
         #endregion
 
@@ -506,7 +573,7 @@ namespace HatTrick.Text
             {
                 if (c == '\n')
                 {
-                    _lineCount += 1;
+                    _lineNum += 1;
                 }
                 if (c == '{' || c == '}')
                 {
@@ -562,7 +629,7 @@ namespace HatTrick.Text
                 this.RollTill(emitTagTo, '}', true);
 
                 if (tag.Length == 0)
-                { throw new MergeException($"enountered un-closed tag > 'till' condition never found"); }
+                { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
                 if (!till(tag.ToString()))
                 {
@@ -657,109 +724,9 @@ namespace HatTrick.Text
                 if (lookFor == Environment.NewLine)
                 {
                     _index += newLineLength;
-                    _lineCount += 1;
+                    _lineNum += 1;
                 }
             }
-        }
-        #endregion
-
-        #region scope chain
-        public class ScopeChain
-        {
-            #region internals
-            private List<object> _items;
-            #endregion
-
-            #region constructors
-            public ScopeChain()
-            {
-                _items = new List<object>();
-            }
-            #endregion
-
-            #region push
-            public void Push(object item)
-            {
-                _items.Add(item);
-            }
-            #endregion
-
-            #region pop
-            public object Pop()
-            {
-                int lastIndex = _items.Count - 1;
-                object item = _items[lastIndex];
-                _items.RemoveAt(lastIndex);
-                return item;
-            }
-            #endregion
-
-            #region get
-            public object ReachBack(int back)
-            {
-                int count = _items.Count;
-                object item = _items[count - back];
-                return item;
-            }
-            #endregion
-        }
-        #endregion
-
-        #region lambda repository
-        public class LambdaRepository
-        {
-            #region internals
-            Dictionary<string, Delegate> _lambdas;
-            #endregion
-
-            #region constructors
-            public LambdaRepository()
-            {
-                _lambdas = new Dictionary<string, Delegate>();
-            }
-            #endregion
-
-            #region add
-            public void Add(string name, Delegate lambda)
-            {
-                if (_lambdas.ContainsKey(name))
-                {
-                    throw new ArgumentException($"A lambda with the provided name: {name} has already been added");
-                }
-                _lambdas.Add(name, lambda);
-            }
-            #endregion
-
-            #region remove
-            public void Remove(string name)
-            {
-                if (!_lambdas.ContainsKey(name))
-                {
-                    throw new ArgumentException($"No lambda exists for the provided name: {name}");
-                }
-                _lambdas.Remove(name);
-            }
-            #endregion
-
-            #region invoke
-            public object Invoke(string name, params object[] parms)
-            {
-                if (!_lambdas.ContainsKey(name))
-                { throw new MergeException($"Encountered lambda that does not exist in lambda repo: {name}"); }
-
-                System.Reflection.MethodInfo mi = _lambdas[name].Method;
-
-                int paramsCount = mi.GetParameters().Length;
-
-                if (paramsCount != parms.Length)
-                {
-                    string msg = $"Attempted lambda invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
-                    throw new MergeException(msg);
-                }
-
-                return _lambdas[name].DynamicInvoke(parms);
-            }
-            #endregion
         }
         #endregion
     }

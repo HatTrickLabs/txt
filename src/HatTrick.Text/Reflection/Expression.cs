@@ -10,7 +10,7 @@ namespace HatTrick.Text.Reflection
         public static class Expression
         {
             #region reflect item
-            public static object ReflectItem(object sourceObject, string itemExpression)
+            public static object ReflectItem(object sourceObject, string itemExpression, bool throwOnNoPropExists = true)
             {
                 if (sourceObject == null) { throw new ArgumentNullException(nameof(sourceObject)); }
                 if (itemExpression == null) { throw new ArgumentNullException(nameof(itemExpression)); }
@@ -23,6 +23,7 @@ namespace HatTrick.Text.Reflection
                 PropertyInfo p;
 
                 int memberAccessorIdx = itemExpression.IndexOf('.');
+                //TODO: JRod, the following will be more efficient if utilizing span<char> instead of substring...
                 string thisExpression = (memberAccessorIdx > -1) ? itemExpression.Substring(0, memberAccessorIdx) : itemExpression;
 
                 //if the caller is reflecting data from a dictionary, attempt dictionary lookup
@@ -53,13 +54,12 @@ namespace HatTrick.Text.Reflection
                     o = ReflectItem(o, itemExpression.Substring(++memberAccessorIdx, itemExpression.Length - memberAccessorIdx));
                 }
 
-                //if p ends up null, a null object was encountered before reaching the expression's final object... throw exception
-                //TODO: Jerrod, reconsider this, may just want to return a null value... or, override with option of break vs. return null.
-                if (!itemExists)
+                if (!itemExists && throwOnNoPropExists)
                 {
-                    throw new NoPropertyExistsException($"Property does not exist on source object.  Property_Name: {itemExpression}, Bound_Object_Type:  {sourceObject.GetType()}");
+                    throw new NoPropertyExistsException($"Property does not exist on source object. Property: {itemExpression}, Bound Type: {sourceObject.GetType()}");
                 }
-                return o;
+
+                return itemExists ? o : null;
             }
             #endregion
         }
