@@ -1,9 +1,13 @@
 ### Basic Usage:
 ```c#
 var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
+
 string template = "Hello {FirstName} {LastName}, this is just a test.";
+
 TemplateEngine ngin = new TemplateEngine(template);
+
 string result = ngin.Merge(fullName);
+
 //result = Hello Jerrod Eiman, this is just a test.
 ```
 
