@@ -300,6 +300,7 @@ We see you don't have any certs.
 - To force trim on all applicable tags without including the trim markers, set *TemplateEngine.SuppressWhitespace = true*.
 
 ### Lambda Expressions (Helper Functions)
+Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.
 
 ##### Lambda Usage
 ```c#
@@ -327,8 +328,8 @@ string result = ngin.Merge(person);
 
 ##### Notes:
 - Lambda expressions can be used for *{simple}*, *{#if}*, *{#each}*, and *{>parital}* tags.
-- Lambda arguments can be any value from the bound object, a string literal, a numeric literal, or boolean *true/false*.
+- Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
 - String literal args can be enclosed in single or double quotes.
-- Numeric literal types are controlled via type suffix i.e. (223:int)
+- Numeric literals are typed via as suffix i.e. (223:int)
 - Allowed numeric literal types: int, long, decimal, double, byte
 
