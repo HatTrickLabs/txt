@@ -1,0 +1,5 @@
+Hello {Name.First} {Name.Last},
+
+{#if IsEmployed}
+We see you are currently employed.
+{/if}

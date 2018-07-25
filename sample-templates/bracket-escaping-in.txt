@@ -1,0 +1,11 @@
+This template by {Name} has some actual brackets that need escaped.
+
+Here is some junk source code:
+
+static void Main(string[] args)
+{{
+    Console.WriteLine("Hello {Name}!");
+}}
+
+{{ escapped }} {Name}
+{{ escaped {Name} }}
