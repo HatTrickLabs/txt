@@ -25,6 +25,12 @@ namespace HatTrick.Text.TestHarness
             BindObjectSupport();
             ThrowOnNoItemExists();
             TruthyFalsey();
+            SimpleConditionalBlocks();
+            NegatedConditionalBlocks();
+            SimpleWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            GlobalWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            SimpleIterationBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+
 
             Console.WriteLine("processing complete, press [Enter] to exit");
             Console.ReadLine();
@@ -286,7 +292,6 @@ namespace HatTrick.Text.TestHarness
         }
         #endregion
 
-
         #region simple conditional blocks
         static void SimpleConditionalBlocks()
         {
@@ -297,11 +302,125 @@ namespace HatTrick.Text.TestHarness
             {
                 Name = new { First = "Charlie", Last = "Brown" },
                 IsEmployed = true,
-                Spouse = default(object),//null
-
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region negated conditionals blocks
+        static void NegatedConditionalBlocks()
+        {
+            string name = "negated-conditional-blocks";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                IsEmployed = true,
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region simple whitespace control
+        static void SimpleWhitespaceControl()
+        {
+            string name = "simple-whitespace-control";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                IsEmployed = true,
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region global whitespace control
+        static void GlobalWhitespaceControl()
+        {
+            string name = "global-whitespace-control";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                IsEmployed = true,
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region simple iteration blocks
+        static void SimpleIterationBlocks()
+        {
+            string name = "simple-iteration-blocks";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                Certifications = new[] 
+                {
+                    new { Cert = "Microsoft Certified Architect", Abbr = "MCA", AttainedAt = DateTime.Parse("2016-05-01").ToString("MM/dd/yyyy") },
+                    new { Cert = "Red Hat Certified Engineer", Abbr = "RHCE", AttainedAt = DateTime.Parse("2017-06-01").ToString("MM/dd/yyyy") },
+                    new { Cert = "Linux Professional Institute Certification", Abbr = "LPIC", AttainedAt = DateTime.Parse("2018-04-16").ToString("MM/dd/yyyy") },
+                },
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);

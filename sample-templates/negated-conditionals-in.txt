@@ -1,8 +1,0 @@
-Hello {Name.First} {Name.Last},
-
-{#if IsEmployed}
-We see you are currently employed.
-{/if}
-{#if !IsEmployed}
-We see you currently do not have a job.
-{/if}

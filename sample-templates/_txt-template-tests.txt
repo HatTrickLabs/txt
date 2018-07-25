@@ -7,15 +7,15 @@
 6)  truthy/falsey
 7) simple conditional blocks
 8) negated conditonals
-x) simple iteration blocks
+9) simple whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
+10) global whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
+11) simple iteration blocks
 x) null/empty IEnumerable targets
 x) $ scope
 x) walking the scope chain ..\..\
 x) simple partial blocks
 x) simple template comments
 x) multi-line template comments (todo: test comments containing brackets)
-x) simple whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
-x) global whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
 x) simple lambda expressions
 x) complex lambda expressions (multi-param, string literals, numeric literals)a
 x) lamba expression driven block tags ({#if}, {#each}, {>partial})
