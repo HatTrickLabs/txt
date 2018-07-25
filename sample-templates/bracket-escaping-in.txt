@@ -7,5 +7,5 @@ static void Main(string[] args)
     Console.WriteLine("Hello {Name}!");
 }}
 
-{{ escapped }} {Name}
+{{ escaped }} {Name}
 {{ escaped {Name} }}
