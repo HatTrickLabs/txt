@@ -10,10 +10,9 @@
 9) simple whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
 10) global whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
 11) simple iteration blocks
-x) null/empty IEnumerable targets
-x) $ scope
-x) walking the scope chain ..\..\
-x) simple partial blocks
+12) throw on non IEnumerable iteration target
+13) walking the scope chain ..\..\
+14) simple partial blocks
 x) simple template comments
 x) multi-line template comments (todo: test comments containing brackets)
 x) simple lambda expressions

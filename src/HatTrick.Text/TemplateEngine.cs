@@ -133,9 +133,9 @@ namespace HatTrick.Text
 
             while (this.Peek() != eot)
             {
-                if (this.RollTill(_appendToResult, '{', false))
+                if (this.RollTill(_appendToResult, '{', false, false))
                 {
-                    if (this.RollTill(appendToTag, '}', true))
+                    if (this.RollTill(appendToTag, '}', true, false))
                     {
                         string tag = _tag.ToString();
                         _progress?.Invoke(_lineNum, tag);
@@ -559,12 +559,12 @@ namespace HatTrick.Text
         #endregion
 
         #region roll till
-        private bool RollTill(Action<char> emitTo, char till, bool greedy)
+        private bool RollTill(Action<char> emitTo, char till, bool greedy, bool isSubBlock)
         {
-            return this.RollTill(emitTo, (c) => c == till, greedy);
+            return this.RollTill(emitTo, (c) => c == till, greedy, isSubBlock);
         }
 
-        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy)
+        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy, bool isSubBlock)
         {
             bool found = false;
             char eot = (char)3;
@@ -581,6 +581,10 @@ namespace HatTrick.Text
                     if (c == next)
                     {
                         emitTo(c);
+                        if (isSubBlock)
+                        {
+                            emitTo(next);
+                        }
                         _index += 2;
                         continue;
                     }
@@ -616,7 +620,7 @@ namespace HatTrick.Text
             do
             {
                 //look for the next tag...
-                this.RollTill(emitTo, '{', false);
+                this.RollTill(emitTo, '{', false, true);
 
                 tag.Clear();
                 tagIsContent = false;
@@ -626,7 +630,7 @@ namespace HatTrick.Text
                     if (c != ' ') { tag.Append(c); }
                 };
 
-                this.RollTill(emitTagTo, '}', true);
+                this.RollTill(emitTagTo, '}', true, true);
 
                 if (tag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
@@ -713,7 +717,7 @@ namespace HatTrick.Text
                     return !(c == ' ' || c == '\t');
                 };
 
-                bool found = this.RollTill(emitTo, isNotWhitespace, false);
+                bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
 
                 int newLineLength = Environment.NewLine.Length;
 

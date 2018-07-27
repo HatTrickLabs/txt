@@ -1,0 +1,9 @@
+These are {Name.First} {Name.Last}'s favorite foods...
+{#each Favorite.Things}
+{..\$.Name.First}'s favorite {Name}s:
+{#each Values}
+- {..\..\$.Name.First} likes {$}.
+{/each}
+
+{/each}
+Wow!! {Name.First} {Name.Last} has issues...

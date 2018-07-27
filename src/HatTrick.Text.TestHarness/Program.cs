@@ -18,6 +18,7 @@ namespace HatTrick.Text.TestHarness
         static void Main(string[] args)
         {
             _sw = new System.Diagnostics.Stopwatch();
+            _sw.Start();
 
             SimpleTags();
             BracketEscaping();
@@ -30,9 +31,12 @@ namespace HatTrick.Text.TestHarness
             SimpleWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
             GlobalWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
             SimpleIterationBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            ThrowOnNonIEnumerableIterationTarget();
+            WalkingTheScopeChain();
+            SimplePartialBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
 
-
-            Console.WriteLine("processing complete, press [Enter] to exit");
+            _sw.Stop();
+            Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
             Console.ReadLine();
         }
         #endregion
@@ -417,6 +421,97 @@ namespace HatTrick.Text.TestHarness
                     new { Cert = "Linux Professional Institute Certification", Abbr = "LPIC", AttainedAt = DateTime.Parse("2018-04-16").ToString("MM/dd/yyyy") },
                 },
                 PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region throw on non ienumerable iteration target
+        static void ThrowOnNonIEnumerableIterationTarget()
+        {
+            string name = "throw-on-non-ienumerable-iteration-target";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+
+            bool passed = false;
+            try
+            {
+                string result = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                passed = true;
+            }
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region walking the scope chain
+        static void WalkingTheScopeChain()
+        {
+            string name = "walking-the-scope-chain";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                Favorite = new
+                {
+                   Things = new object[]
+                   {
+                       new { Name = "Local", Values = new[] { "El Paso", "Houston", "Austin" } },
+                       new { Name = "Junk Food", Values = new[] { "Black Licorice", "Candy Corn", "Good & Plenty" } }
+                   },
+                }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region simple partial blocks
+        static void SimplePartialBlocks()
+        {
+            string name = "simple-partial-blocks";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                Addresses = new Address[]
+                {
+                    new Address { Line1 = "123 Main St", Line2 = "Apt 200", City = "Dallas", State = "TX", Zip = "75001" },
+                    new Address { Line1 = "321 Main St", Line2 = "Apt 210", City = "San Antonio", State = "TX", Zip = "78006" },
+                    new Address { Line1 = "400 W. 4th", Line2 = "Apt 198", City = "Lubbock", State = "TX", Zip = "79401" },
+                    new Address { Line1 = "W 66th", Line2 = "Apt 222", City = "Austin", State = "TX", Zip = "73301" },
+                },
+                NewLine = Environment.NewLine,
+                AddressTemplate = @"{$.Line1}{..\$.NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}"
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
