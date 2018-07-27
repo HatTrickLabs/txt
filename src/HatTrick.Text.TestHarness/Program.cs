@@ -34,6 +34,11 @@ namespace HatTrick.Text.TestHarness
             ThrowOnNonIEnumerableIterationTarget();
             WalkingTheScopeChain();
             SimplePartialBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            SimpleTemplateComments();
+            MultiLineTemplateComments();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            SimpleLambdaExpressions();
+            XXX();
+
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -512,6 +517,195 @@ namespace HatTrick.Text.TestHarness
                 },
                 NewLine = Environment.NewLine,
                 AddressTemplate = @"{$.Line1}{..\$.NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}"
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region simple template comments
+        static void SimpleTemplateComments()
+        {
+            string name = "simple-template-comments";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region multi line comments
+        static void MultiLineTemplateComments()
+        {
+            string name = "multi-line-template-comments";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Classes = new[]
+                {
+                    new
+                    {
+                        Name = "Person",
+                        Properties = new[]
+                        {
+                            new { TypeShorthand = "string", Name = "FirstName" },
+                            new { TypeShorthand = "string", Name = "LastName" },
+                            new { TypeShorthand = "int", Name = "Age" },
+                        }
+                    },
+                     new
+                    {
+                        Name = "Address",
+                        Properties = new[]
+                        {
+                            new { TypeShorthand = "string", Name = "Line1" },
+                            new { TypeShorthand = "string", Name = "Line2" },
+                            new { TypeShorthand = "string", Name = "City" },
+                            new { TypeShorthand = "string", Name = "State" },
+                            new { TypeShorthand = "string", Name = "Zip" },
+                        }
+                    }
+                }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region simple lambda expressions
+        static void SimpleLambdaExpressions()
+        {
+            string name = "simple-lambda-expressions";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Spanish = new[] { "Uno", "Dos", "Tres", "Cuatro", "Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diez" },
+                English = new[] { "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten" }
+            };
+
+            int at = 0;
+            Func<string> GetAlternatingClass = () =>
+            {
+                return (at++ % 2) == 1 ? "dark" : "light";
+            };
+
+            Func<string, string> ResolveEnglishTranslation = (value) =>
+            {
+                int idx = data.Spanish.ToList().FindIndex(s => string.Compare(s, value, true) == 0);
+                return (data.English.Length > idx) ? data.English[idx] : "N/A";
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(GetAlternatingClass), GetAlternatingClass);
+            ngin.LambdaRepo.Register(nameof(ResolveEnglishTranslation), ResolveEnglishTranslation);
+
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region complex lambda expressions
+        static void ComplexLambdaExpressions()
+        {
+            string name = "complex-lambda-expressions";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                Certifications = new[]
+                {
+                    new { Cert = "Microsoft Certified Architect", Abbr = "MCA", AttainedAt = DateTime.Parse("2016-05-01").ToString("MM/dd/yyyy") },
+                    new { Cert = "Red Hat Certified Engineer", Abbr = "RHCE", AttainedAt = DateTime.Parse("2017-06-01").ToString("MM/dd/yyyy") },
+                    new { Cert = "Linux Professional Institute Certification", Abbr = "LPIC", AttainedAt = DateTime.Parse("2018-04-16").ToString("MM/dd/yyyy") },
+                },
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true;
+
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion  
+
+        #region xxx
+        static void XXX()
+        {
+            string name = "xxx";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                NamespaceRoot = "HatTrick.Common",
+                Model = new
+                {
+                    Enums = new object[]
+                    {
+                        new
+                        {
+                            Name = "AddressType",
+                            Items = new[]
+                            {
+                                new { FriendlyName = "Physical", Description = "Physical Address", Key = "0", Value = "Physical" },
+                                new { FriendlyName = "Mailing", Description = "Mailing Address", Key = "1", Value = "Mailing" },
+                                new { FriendlyName = "Secondary", Description = "Secondary Address", Key = "2", Value = "Secondary" },
+                            }
+                        },
+                        new
+                        {
+                            Name = "CardType",
+                            Items = new[]
+                            {
+                                new { FriendlyName = "Visa", Description = "Visa", Key = "0", Value = "Visa" },
+                                new { FriendlyName = "Master Card", Description = "Master Card", Key = "1", Value = "MC" },
+                                new { FriendlyName = "Amex", Description = "American Express", Key = "2", Value = "Amex" },
+                            }
+                        }
+                    }
+                }
             };
 
             TemplateEngine ngin = new TemplateEngine(template);

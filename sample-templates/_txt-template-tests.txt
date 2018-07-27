@@ -13,8 +13,8 @@
 12) throw on non IEnumerable iteration target
 13) walking the scope chain ..\..\
 14) simple partial blocks
-x) simple template comments
-x) multi-line template comments (todo: test comments containing brackets)
-x) simple lambda expressions
+15) simple template comments
+16) multi-line template comments (todo: test comments containing brackets)
+17) simple lambda expressions
 x) complex lambda expressions (multi-param, string literals, numeric literals)a
 x) lamba expression driven block tags ({#if}, {#each}, {>partial})

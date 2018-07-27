@@ -1,0 +1,27 @@
+import System;
+
+namespace Common
+{{
+	{#each Classes}
+	#region {$.Name}
+	public class {$.Name}
+	{{
+		#interface
+		{#each Properties}
+		public {$.TypeShorthand} {$.Name} {{ get; set; }}
+		{/each}
+		#endregion
+
+		#region constructors
+		public Person() {{ }}
+		#endregion
+	{!
+		//TODO: Remove
+		public void Scrub(string value)
+		{{
+		   throw new NotImplementedException();
+		}}}
+	}}
+	#endregion
+	{/each}
+}}
