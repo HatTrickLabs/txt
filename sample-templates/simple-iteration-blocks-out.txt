@@ -1,6 +1,6 @@
 Hello Charlie Brown,
 
-We see you currently earned the following certifications:
+We see you have earned the following certifications:
 - 05/01/2016 => MCA (Microsoft Certified Architect)
 - 06/01/2017 => RHCE (Red Hat Certified Engineer)
 - 04/16/2018 => LPIC (Linux Professional Institute Certification)

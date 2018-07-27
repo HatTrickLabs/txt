@@ -37,7 +37,8 @@ namespace HatTrick.Text.TestHarness
             SimpleTemplateComments();
             MultiLineTemplateComments();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
             SimpleLambdaExpressions();
-            XXX();
+            ComplexLambdaExpressions();
+            //XXX();
 
 
             _sw.Stop();
@@ -658,7 +659,17 @@ namespace HatTrick.Text.TestHarness
                 PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
             };
 
+            Func<string, int, string> TrimTo = (value, len) =>
+            {
+                if (string.IsNullOrEmpty(value) || value.Length <= len)
+                    return value;
+                else
+                    return value.Substring(0, (len - 3)) + "...";
+            };
+
             TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(string.Join), (Func<string, object[], string>)string.Join);
+            ngin.LambdaRepo.Register(nameof(TrimTo), TrimTo);
             ngin.SuppressWhitespace = true;
 
             string result = ngin.Merge(data);

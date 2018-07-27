@@ -1,7 +1,7 @@
 Hello {Name.First} {Name.Last},
 
 {#if Certifications}
-We see you currently earned the following certifications:
+We see you have earned the following certifications:
 {#each Certifications}
 - {$.AttainedAt} => {$.Abbr} ({$.Cert})
 {/each}
