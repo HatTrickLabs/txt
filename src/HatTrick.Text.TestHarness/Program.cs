@@ -680,7 +680,29 @@ namespace HatTrick.Text.TestHarness
 
             RenderOutput(name, passed);
         }
-        #endregion  
+        #endregion
+
+        #region lambda expression driven blocks
+        static void LambdaExpressionDrivenBlocks()
+        {
+            string name = "lambda-expression-driven-blocks";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
 
         #region xxx
         static void XXX()

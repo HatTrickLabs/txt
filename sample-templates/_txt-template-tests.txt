@@ -16,5 +16,5 @@
 15) simple template comments
 16) multi-line template comments (todo: test comments containing brackets)
 17) simple lambda expressions
-x) complex lambda expressions (multi-param, string literals, numeric literals)a
-x) lamba expression driven block tags ({#if}, {#each}, {>partial})
+18) complex lambda expressions (multi-param, string literals, numeric literals)a
+19) lamba expression driven block tags ({#if}, {#each}, {>partial})

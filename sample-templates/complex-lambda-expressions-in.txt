@@ -7,7 +7,7 @@ We see you have earned the following certifications:
 {/each}
 
 You attained these certifications while working at one of the following:
-{(',   ', $.PreviousEmployers) => Join}
+{(', ', $.PreviousEmployers) => Join}
 {/if}
 {#if !Certifications}
 You have earned ZERO certifiations...
