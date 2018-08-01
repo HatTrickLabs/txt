@@ -21,8 +21,8 @@ namespace HatTrick.Text
         private StringBuilder _result;
         private Action<char> _appendToResult;
 
-        private StringBuilder _tag;
-        //private Action<char> _appendToTag;
+        private TagBuilder _tag;
+        private TagBuilder _blockedTag;
 
         private int _maxStack = 10;
         #endregion
@@ -45,8 +45,12 @@ namespace HatTrick.Text
         public TemplateEngine(string template)
         {
             _index = 0;
+
             _template = template;
-            _tag = new StringBuilder(60);
+
+            _tag = new TagBuilder();
+            _blockedTag = new TagBuilder();
+
             _result = new StringBuilder((int)(template.Length * 1.3));
 
             _appendToResult = (c) => { _result.Append(c); };
@@ -109,33 +113,13 @@ namespace HatTrick.Text
 
             char eot = (char)3; //end of text....
 
-            _tag.Clear();
-
-            bool singleQuoted = false;
-            bool doubleQuoted = false;
-            char prev = '\0';
-            Action<char> appendToTag = (c) => 
-            {
-                //if double quote & not escaped & not already insdie single quotes...
-                if (c == '"' && prev != '\\' && !singleQuoted)
-                { doubleQuoted = !doubleQuoted; }
-
-                //if single quote & not escaped & not already inside double quotes...
-                if (c == '\'' && prev != '\\' && !doubleQuoted)
-                { singleQuoted = !singleQuoted; }
-
-                //only append a space if inside double or single quotes...
-                if (c != ' ' || (doubleQuoted || singleQuoted))
-                { _tag.Append(c); }
-
-                prev = c;
-            };
+            _tag.Reset();
 
             while (this.Peek() != eot)
             {
                 if (this.RollTill(_appendToResult, '{', false, false))
                 {
-                    if (this.RollTill(appendToTag, '}', true, false))
+                    if (this.RollTill(_tag.Append, '}', true, false))
                     {
                         string tag = _tag.ToString();
                         _progress?.Invoke(_lineNum, tag);
@@ -144,7 +128,7 @@ namespace HatTrick.Text
                     else
                     { throw new MergeException($"enountered un-closed tag; '}}' never found"); }
                 }
-                _tag.Clear();
+                _tag.Reset();
             }
 
             return _result.ToString();
@@ -613,32 +597,26 @@ namespace HatTrick.Text
         private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
         {
             endTag = null;
-            int offset = 1;// i.e. we are inside 1 if tag and looking for its /if tag but must account for contained if tags...
+            int offset = 1;// i.e. we are inside 1 #if tag and looking for its /if tag but must account for contained #if tags...
 
-            StringBuilder tag = new StringBuilder(30);
             bool tagIsContent;
             do
             {
                 //look for the next tag...
                 this.RollTill(emitTo, '{', false, true);
 
-                tag.Clear();
+                _blockedTag.Reset();
                 tagIsContent = false;
 
-                Action<char> emitTagTo = (c) =>
-                {
-                    if (c != ' ') { tag.Append(c); }
-                };
+                this.RollTill(_blockedTag.Append, '}', true, true);
 
-                this.RollTill(emitTagTo, '}', true, true);
-
-                if (tag.Length == 0)
+                if (_blockedTag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
-                if (!till(tag.ToString()))
+                if (!till(_blockedTag.ToString()))
                 {
                     tagIsContent = true;
-                    if (ensuring(tag.ToString()))
+                    if (ensuring(_blockedTag.ToString()))
                     {
                         offset += 1;
                     }
@@ -652,14 +630,14 @@ namespace HatTrick.Text
                     }
                     else
                     {
-                        endTag = tag.ToString();
+                        endTag = _blockedTag.ToString();
                     }
                 }
                 if (tagIsContent)
                 {
-                    for (int i = 0; i < tag.Length; i++)
+                    for (int i = 0; i < _blockedTag.Length; i++)
                     {
-                        emitTo(tag[i]);
+                        emitTo(_blockedTag[i]);
                     }
                 }
 
