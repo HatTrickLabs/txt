@@ -38,6 +38,7 @@ namespace HatTrick.Text.TestHarness
             MultiLineTemplateComments();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
             SimpleLambdaExpressions();
             ComplexLambdaExpressions();
+            LambdaExpressionDrivenBlocks();//failing because of issue #23, stripped whitespace from blocked lambda string literal
             //XXX();
 
 
@@ -690,13 +691,76 @@ namespace HatTrick.Text.TestHarness
 
             var data = new
             {
+                User = new
+                {
+                    Id = 11111,
+                    UserName = "cbrown",
+                    Name = new { First = "Charlie", Last = "Brown" },
+                    BirthDate = DateTime.Parse("5-10-1998"),
+                    Address = new
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+                LoginAttempts = new[]
+                {
+                    new { At = DateTime.Now.AddDays(-1), Success = true, SessionDurationMinutes = 23 },
+                    new { At = DateTime.Now.AddDays(-3), Success = false, SessionDurationMinutes = 0 },
+                    new { At = DateTime.Now.AddDays(-5), Success = true, SessionDurationMinutes = 24 },
+                    new { At = DateTime.Now.AddDays(-9), Success = true, SessionDurationMinutes = 7 },
+                    new { At = DateTime.Now.AddDays(-14), Success = true, SessionDurationMinutes = 39 },
+                    new { At = DateTime.Now.AddDays(-17), Success = true, SessionDurationMinutes = 9 },
+                    new { At = DateTime.Now.AddDays(-32), Success = true, SessionDurationMinutes = 18 },
+                    new { At = DateTime.Now.AddDays(-41), Success = true, SessionDurationMinutes = 24 },
+                }
             };
 
-            TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
-            string result = ngin.Merge(data);
+            Func<string, string> ResolvePartial = (nameKey) =>
+            {
+                string partial = ResolveTemplateInput(nameKey);
+                return partial;
+            };
 
-            string expected = ResolveTemplateOutput(name);
+            Func<DateTime, bool> IsMinor = (birthDate) =>
+            {
+                int yrs = (int)Math.Floor((DateTime.Now - birthDate).TotalDays / 365);
+                return yrs < 18;
+            };
+
+            DateTime now = DateTime.Now;
+            Func<Array, int, Array> Resolve30DayLoginAttemptsOfMinDuration = (attempts, minimumDuration) =>
+            {
+                var set = attempts.OfType<dynamic>().ToList().FindAll
+                (
+                    a => a.Success && a.SessionDurationMinutes > minimumDuration && (now - (DateTime)a.At).TotalDays <= 30
+                );
+                return set.ToArray();
+            };
+
+            Func<DateTime, string, string> FormatDateTime = (dt, format) =>
+            {
+                return dt.ToString(format);
+            };
+
+
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            ngin.LambdaRepo.Register(nameof(ResolvePartial), ResolvePartial);
+            ngin.LambdaRepo.Register(nameof(IsMinor), IsMinor);
+            ngin.LambdaRepo.Register(nameof(Resolve30DayLoginAttemptsOfMinDuration), Resolve30DayLoginAttemptsOfMinDuration);
+            ngin.LambdaRepo.Register(nameof(FormatDateTime), FormatDateTime);
+
+            string result = ngin.Merge(data);
+               
+
+            string expected = ResolveTemplateOutput(name)
+                .Replace("####now-1####", now.AddDays(-1).ToString("MM-dd-yyyy hh:mm"))
+                .Replace("####now-5####", now.AddDays(-5).ToString("MM-dd-yyyy hh:mm"))
+                .Replace("####now-14####", now.AddDays(-14).ToString("MM-dd-yyyy hh:mm")); ;
 
             bool passed = string.Compare(result, expected, false) == 0;
 
@@ -762,7 +826,7 @@ namespace HatTrick.Text.TestHarness
     }
     #endregion
 
-    #region name classe
+    #region name class
     public class Name
     {
         public string First { get; set; }

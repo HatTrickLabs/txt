@@ -1,0 +1,18 @@
+<h4>User's Current Address:</h4>
+<div class="address">
+    <span class="address-line1">123 Main St.</span>
+    <span class="address-line2">Suite 200</span>
+    <span class="address-city-state-zip">Dallas, TX 77777</span>
+<div>
+<hr/>
+<div>
+    <span>This user is over the age of 18.</span>
+</div>
+<div>
+    <h4>User's 30 day Login History of Session Length > 20 min:</h4>
+    <ul>
+        <li>At: ####now-1#### Duration: 23 minutes</li>
+        <li>At: ####now-5#### Duration: 24 minutes</li>
+        <li>At: ####now-14#### Duration: 39 minutes</li>
+    </ul>
+</div>
