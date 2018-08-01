@@ -1,0 +1,14 @@
+<h3>English to Spanish Translation Table</h3>
+<table>
+<tr class="tbl-head">
+	<th>Spanish</th>
+	<th>English</th>
+</tr>
+{#each Spanish}
+<tr class="{() => GetAlternatingClass}">
+	<td>{$}</td>
+	<td>{($) => ResolveEnglishTranslation}</td>
+</tr>
+{/each}
+</table>
+<hr>

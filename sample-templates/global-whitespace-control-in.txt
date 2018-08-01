@@ -1,0 +1,26 @@
+Hello {Name.First} {Name.Last},
+
+{#if IsEmployed}
+We see you are currently employed @ {CurrentEmployer}.
+{/if}
+{#if !IsEmployed}
+We see you are currently unemployed =(.
+{/if}
+{#if Certifications}
+We also see you hold some technical certifications.
+{/if}
+{#if !Certifications}
+We see you currently hold no technical certifications.
+{/if}
+{#if Spouse}
+You are currently married to {Spouse}.
+{/if}
+{#if !Spouse}
+You are currently single.
+{/if}
+{#if PreviousEmployers}
+You have employment history on record.
+{/if}
+{#if !PreviousEmployers}
+You have no employment history on record.
+{/if}

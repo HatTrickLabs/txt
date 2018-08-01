@@ -1,0 +1,8 @@
+Hello Charlie Brown,
+
+This is a simple test run against several different types of bound object.
+
+Address:
+123 Main St.
+Suite 200
+Dallas, TX 77777

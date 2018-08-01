@@ -1,0 +1,6 @@
+Hello {Name.First} {Name.Last},
+
+This iteration block should throw an exception:
+{#each Name}
+- {$}
+{/each}

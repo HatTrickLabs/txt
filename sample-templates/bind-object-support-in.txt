@@ -1,0 +1,8 @@
+Hello {Name.First} {Name.Last},
+
+This is a simple test run against several different types of bound object.
+
+Address:
+{Address.Line1}
+{Address.Line2}
+{Address.City}, {Address.State} {Address.Zip}

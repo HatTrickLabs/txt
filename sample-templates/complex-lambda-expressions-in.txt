@@ -1,0 +1,14 @@
+Hello {Name.First} {Name.Last},
+
+{#if Certifications}
+We see you have earned the following certifications:
+{#each Certifications}
+- {$.AttainedAt} => {$.Abbr} ({($.Cert, 35:int) => TrimTo})
+{/each}
+
+You attained these certifications while working at one of the following:
+{(', ', $.PreviousEmployers) => Join}
+{/if}
+{#if !Certifications}
+You have earned ZERO certifiations...
+{/if}
