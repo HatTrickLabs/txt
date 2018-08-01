@@ -37,8 +37,8 @@ namespace HatTrick.Text.TestHarness
             SimpleTemplateComments();
             MultiLineTemplateComments();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
             SimpleLambdaExpressions();
-            ComplexLambdaExpressions();
-            LambdaExpressionDrivenBlocks();//failing because of issue #23, stripped whitespace from blocked lambda string literal
+            ComplexLambdaExpressions();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            LambdaExpressionDrivenBlocks();
             //XXX();
 
 
