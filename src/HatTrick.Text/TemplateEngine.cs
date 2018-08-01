@@ -675,7 +675,19 @@ namespace HatTrick.Text
                 {
                     idx -= 1;
                 }
-                from.Length = idx + 1;
+
+                int len = Environment.NewLine.Length;
+
+                string lookingFor = len == 1
+                    ? new string(from[idx], 1)
+                    : new string(from[idx - 1], 1) + new string(from[idx], 1);
+
+                if (lookingFor == Environment.NewLine)
+                {
+                    idx -= len;
+                }
+
+                from.Length = (idx + 1);
             }
         }
         #endregion
@@ -696,18 +708,6 @@ namespace HatTrick.Text
                 };
 
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
-
-                int newLineLength = Environment.NewLine.Length;
-
-                string lookFor = newLineLength == 1
-                    ? Char.ToString(this.Peek())
-                    : Char.ToString(this.Peek()) + Char.ToString(this.PeekAt(_index + 1));
-
-                if (lookFor == Environment.NewLine)
-                {
-                    _index += newLineLength;
-                    _lineNum += 1;
-                }
             }
         }
         #endregion
