@@ -29,9 +29,9 @@ namespace HatTrick.Text
         #endregion
 
         #region interface
-        //[Obsolete("This property is now obsolete and will be removed in the future, use 'TrimWhitespace' instead.")]
-        //public bool SuppressWhitespace
-        //{ set { _trimWhitespace = value; } }
+        [Obsolete("This property is now obsolete and will be removed in the future, use 'TrimWhitespace' instead.")]
+        public bool SuppressWhitespace
+        { set { _trimWhitespace = value; } }
 
         public bool TrimWhitespace
         {
