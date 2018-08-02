@@ -1,0 +1,14 @@
+<h4>User's Current Address:</h4>
+{>('address-partial') => ResolvePartial}
+<hr/>
+<div>
+    <span>This user is {#if ($.User.BirthDate) => IsMinor}under{/if}{#if !($.User.BirthDate) => IsMinor}over{/if} the age of 18.</span>
+</div>
+<div>
+    <h4>User's 30 day Login History of Session Length > 20 min:</h4>
+    <ul>
+        {-#each ($.LoginAttempts, 20:int) => Resolve30DayLoginAttemptsOfMinDuration-}
+        <li>At: {($.At, 'MM-dd-yyyy hh:mm') => FormatDateTime} Duration: {$.SessionDurationMinutes} minutes</li>
+        {-/each-}
+    </ul>
+</div>

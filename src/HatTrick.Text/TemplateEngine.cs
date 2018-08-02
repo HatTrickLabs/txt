@@ -21,15 +21,23 @@ namespace HatTrick.Text
         private StringBuilder _result;
         private Action<char> _appendToResult;
 
-        private StringBuilder _tag;
-        //private Action<char> _appendToTag;
+        private TagBuilder _tag;
+        private TagBuilder _blockedTag;
 
         private int _maxStack = 10;
+        private bool _trimWhitespace;
         #endregion
 
         #region interface
+        [Obsolete("This property is now obsolete and will be removed in the future, use 'TrimWhitespace' instead.")]
         public bool SuppressWhitespace
-        { get; set; }
+        { set { _trimWhitespace = value; } }
+
+        public bool TrimWhitespace
+        {
+            get { return _trimWhitespace; }
+            set { _trimWhitespace = true; }
+        }
 
         public LambdaRepository LambdaRepo
         { get { return _lambdaRepo;  } }
@@ -45,8 +53,12 @@ namespace HatTrick.Text
         public TemplateEngine(string template)
         {
             _index = 0;
+
             _template = template;
-            _tag = new StringBuilder(60);
+
+            _tag = new TagBuilder();
+            _blockedTag = new TagBuilder();
+
             _result = new StringBuilder((int)(template.Length * 1.3));
 
             _appendToResult = (c) => { _result.Append(c); };
@@ -87,7 +99,7 @@ namespace HatTrick.Text
         #region with white space suppression
         private TemplateEngine WithWhitespaceSuppression(bool suppress)
         {
-            this.SuppressWhitespace = suppress;
+            _trimWhitespace = suppress;
             return this;
         }
         #endregion
@@ -109,33 +121,13 @@ namespace HatTrick.Text
 
             char eot = (char)3; //end of text....
 
-            _tag.Clear();
-
-            bool singleQuoted = false;
-            bool doubleQuoted = false;
-            char prev = '\0';
-            Action<char> appendToTag = (c) => 
-            {
-                //if double quote & not escaped & not already insdie single quotes...
-                if (c == '"' && prev != '\\' && !singleQuoted)
-                { doubleQuoted = !doubleQuoted; }
-
-                //if single quote & not escaped & not already inside double quotes...
-                if (c == '\'' && prev != '\\' && !doubleQuoted)
-                { singleQuoted = !singleQuoted; }
-
-                //only append a space if inside double or single quotes...
-                if (c != ' ' || (doubleQuoted || singleQuoted))
-                { _tag.Append(c); }
-
-                prev = c;
-            };
+            _tag.Reset();
 
             while (this.Peek() != eot)
             {
-                if (this.RollTill(_appendToResult, '{', false))
+                if (this.RollTill(_appendToResult, '{', false, false))
                 {
-                    if (this.RollTill(appendToTag, '}', true))
+                    if (this.RollTill(_tag.Append, '}', true, false))
                     {
                         string tag = _tag.ToString();
                         _progress?.Invoke(_lineNum, tag);
@@ -144,7 +136,7 @@ namespace HatTrick.Text
                     else
                     { throw new MergeException($"enountered un-closed tag; '}}' never found"); }
                 }
-                _tag.Clear();
+                _tag.Reset();
             }
 
             return _result.ToString();
@@ -263,7 +255,7 @@ namespace HatTrick.Text
         #region handle if tag
         private void HandleIfTag(string tag, object bindTo)
         {
-            bool force = this.SuppressWhitespace;
+            bool force = _trimWhitespace;
             bool leftTrimMark;
             bool rightTrimMark;
             this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
@@ -302,7 +294,7 @@ namespace HatTrick.Text
             {
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
-                    .WithWhitespaceSuppression(this.SuppressWhitespace)
+                    .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
                     .WithLambdaRepository(_lambdaRepo);
@@ -352,7 +344,7 @@ namespace HatTrick.Text
         #region handle each tag
         private void HandleEachTag(string tag, object bindTo)
         {
-            bool force = this.SuppressWhitespace;
+            bool force = _trimWhitespace;
             bool leftTrimMark;
             bool rightTrimMark;
             this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
@@ -394,7 +386,7 @@ namespace HatTrick.Text
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(contentBlock.ToString())
                     .WithProgressListener(_progress)
-                    .WithWhitespaceSuppression(this.SuppressWhitespace)
+                    .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
                     .WithLambdaRepository(_lambdaRepo);
@@ -433,7 +425,7 @@ namespace HatTrick.Text
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
                 .WithProgressListener(_progress)
-                .WithWhitespaceSuppression(this.SuppressWhitespace)
+                .WithWhitespaceSuppression(_trimWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
                 .WithLambdaRepository(_lambdaRepo);
@@ -559,12 +551,12 @@ namespace HatTrick.Text
         #endregion
 
         #region roll till
-        private bool RollTill(Action<char> emitTo, char till, bool greedy)
+        private bool RollTill(Action<char> emitTo, char till, bool greedy, bool isSubBlock)
         {
-            return this.RollTill(emitTo, (c) => c == till, greedy);
+            return this.RollTill(emitTo, (c) => c == till, greedy, isSubBlock);
         }
 
-        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy)
+        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy, bool isSubBlock)
         {
             bool found = false;
             char eot = (char)3;
@@ -581,6 +573,10 @@ namespace HatTrick.Text
                     if (c == next)
                     {
                         emitTo(c);
+                        if (isSubBlock)
+                        {
+                            emitTo(next);
+                        }
                         _index += 2;
                         continue;
                     }
@@ -609,32 +605,26 @@ namespace HatTrick.Text
         private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
         {
             endTag = null;
-            int offset = 1;// i.e. we are inside 1 if tag and looking for its /if tag but must account for contained if tags...
+            int offset = 1;// i.e. we are inside 1 #if tag and looking for its /if tag but must account for contained #if tags...
 
-            StringBuilder tag = new StringBuilder(30);
             bool tagIsContent;
             do
             {
                 //look for the next tag...
-                this.RollTill(emitTo, '{', false);
+                this.RollTill(emitTo, '{', false, true);
 
-                tag.Clear();
+                _blockedTag.Reset();
                 tagIsContent = false;
 
-                Action<char> emitTagTo = (c) =>
-                {
-                    if (c != ' ') { tag.Append(c); }
-                };
+                this.RollTill(_blockedTag.Append, '}', true, true);
 
-                this.RollTill(emitTagTo, '}', true);
-
-                if (tag.Length == 0)
+                if (_blockedTag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
-                if (!till(tag.ToString()))
+                if (!till(_blockedTag.ToString()))
                 {
                     tagIsContent = true;
-                    if (ensuring(tag.ToString()))
+                    if (ensuring(_blockedTag.ToString()))
                     {
                         offset += 1;
                     }
@@ -648,14 +638,14 @@ namespace HatTrick.Text
                     }
                     else
                     {
-                        endTag = tag.ToString();
+                        endTag = _blockedTag.ToString();
                     }
                 }
                 if (tagIsContent)
                 {
-                    for (int i = 0; i < tag.Length; i++)
+                    for (int i = 0; i < _blockedTag.Length; i++)
                     {
-                        emitTo(tag[i]);
+                        emitTo(_blockedTag[i]);
                     }
                 }
 
@@ -693,7 +683,19 @@ namespace HatTrick.Text
                 {
                     idx -= 1;
                 }
-                from.Length = idx + 1;
+
+                int len = Environment.NewLine.Length;
+
+                string lookingFor = len == 1
+                    ? new string(from[idx], 1)
+                    : new string(from[idx - 1], 1) + new string(from[idx], 1);
+
+                if (lookingFor == Environment.NewLine)
+                {
+                    idx -= len;
+                }
+
+                from.Length = (idx + 1);
             }
         }
         #endregion
@@ -713,19 +715,7 @@ namespace HatTrick.Text
                     return !(c == ' ' || c == '\t');
                 };
 
-                bool found = this.RollTill(emitTo, isNotWhitespace, false);
-
-                int newLineLength = Environment.NewLine.Length;
-
-                string lookFor = newLineLength == 1
-                    ? Char.ToString(this.Peek())
-                    : Char.ToString(this.Peek()) + Char.ToString(this.PeekAt(_index + 1));
-
-                if (lookFor == Environment.NewLine)
-                {
-                    _index += newLineLength;
-                    _lineNum += 1;
-                }
+                bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
             }
         }
         #endregion

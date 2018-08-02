@@ -1,0 +1,5 @@
+<div class="address">
+    <span class="address-line1">{User.Address.Line1}</span>
+    <span class="address-line2">{User.Address.Line2}</span>
+    <span class="address-city-state-zip">{User.Address.City}, {User.Address.State} {User.Address.Zip}</span>
+<div>

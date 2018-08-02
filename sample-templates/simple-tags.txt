@@ -1,1 +1,0 @@
-Hello {FirstName} {LastName}, you have been accepted for the following position: {Title}.

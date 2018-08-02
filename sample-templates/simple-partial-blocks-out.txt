@@ -1,0 +1,17 @@
+Charlie Brown's Address History:
+
+123 Main St
+Apt 200
+Dallas, TX 75001
+
+321 Main St
+Apt 210
+San Antonio, TX 78006
+
+400 W. 4th
+Apt 198
+Lubbock, TX 79401
+
+W 66th
+Apt 222
+Austin, TX 73301
