@@ -48,6 +48,7 @@
     <Compile Include="LambdaRepository.cs" />
     <Compile Include="ScopeChain.cs" />
     <Compile Include="StringInterpolation.cs" />
+    <Compile Include="TagBuilder.cs" />
     <Compile Include="TemplateEngine.cs" />
     <Compile Include="MergeException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

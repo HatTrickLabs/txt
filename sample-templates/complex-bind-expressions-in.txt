@@ -1,0 +1,3 @@
+Hello {Name.First} {Name.Last},
+
+We see that you currently live in {Address.City}, {Address.State}.

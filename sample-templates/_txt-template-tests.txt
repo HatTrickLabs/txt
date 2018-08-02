@@ -1,0 +1,20 @@
+
+1)  simple tags
+2)  bracket escaping
+3)  complex bind expressions
+4)  bind object support (dynamic, simple poco, dictionary)
+5)  throw on no item exists (bind error)
+6)  truthy/falsey
+7) simple conditional blocks
+8) negated conditonals
+9) simple whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
+10) global whitespace control ({#if}{/if}, {#each}{/each}, {!comment}, {>partial})
+11) simple iteration blocks
+12) throw on non IEnumerable iteration target
+13) walking the scope chain ..\..\
+14) simple partial blocks
+15) simple template comments
+16) multi-line template comments (todo: test comments containing brackets)
+17) simple lambda expressions
+18) complex lambda expressions (multi-param, string literals, numeric literals)a
+19) lamba expression driven block tags ({#if}, {#each}, {>partial})

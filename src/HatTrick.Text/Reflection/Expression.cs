@@ -19,14 +19,13 @@ namespace HatTrick.Text.Reflection
                 object o = sourceObject;
 
                 var itemExists = false;
-                IDictionary idict;
-                PropertyInfo p;
 
                 int memberAccessorIdx = itemExpression.IndexOf('.');
                 //TODO: JRod, the following will be more efficient if utilizing span<char> instead of substring...
                 string thisExpression = (memberAccessorIdx > -1) ? itemExpression.Substring(0, memberAccessorIdx) : itemExpression;
 
                 //if the caller is reflecting data from a dictionary, attempt dictionary lookup
+                IDictionary idict;
                 if ((idict = sourceObject as IDictionary) != null)
                 {
                     if (idict.Contains(thisExpression))
@@ -39,12 +38,22 @@ namespace HatTrick.Text.Reflection
                 {
                     Type t = o.GetType();
 
-                    p = t.GetProperty(thisExpression);
+                    PropertyInfo p = t.GetProperty(thisExpression);
 
                     if (p != null)
                     {
                         itemExists = true;
                         o = p.GetValue(o, null);
+                    }
+                    else
+                    {
+                        FieldInfo f = t.GetField(thisExpression);
+
+                        if (f != null)
+                        {
+                            itemExists = true;
+                            o = f.GetValue(o);
+                        }
                     }
                 }
 

@@ -1,0 +1,16 @@
+Hello {Name.First} {Name.Last},
+
+{#if Certifications}
+We see you have earned the following certifications:
+{#each Certifications}
+- {$.AttainedAt} => {$.Abbr} ({$.Cert})
+{/each}
+
+You attained these certifications while working at one of the following:
+{#each PreviousEmployers}
+- {$}
+{/each}
+{/if}
+{#if !Certifications}
+You have earned ZERO certifiations...
+{/if}

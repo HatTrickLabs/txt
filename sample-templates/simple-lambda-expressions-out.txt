@@ -1,0 +1,48 @@
+<h3>English to Spanish Translation Table</h3>
+<table>
+<tr class="tbl-head">
+	<th>Spanish</th>
+	<th>English</th>
+</tr>
+<tr class="light">
+	<td>Uno</td>
+	<td>One</td>
+</tr>
+<tr class="dark">
+	<td>Dos</td>
+	<td>Two</td>
+</tr>
+<tr class="light">
+	<td>Tres</td>
+	<td>Three</td>
+</tr>
+<tr class="dark">
+	<td>Cuatro</td>
+	<td>Four</td>
+</tr>
+<tr class="light">
+	<td>Cinco</td>
+	<td>Five</td>
+</tr>
+<tr class="dark">
+	<td>Seis</td>
+	<td>Six</td>
+</tr>
+<tr class="light">
+	<td>Siete</td>
+	<td>Seven</td>
+</tr>
+<tr class="dark">
+	<td>Ocho</td>
+	<td>Eight</td>
+</tr>
+<tr class="light">
+	<td>Nueve</td>
+	<td>Nine</td>
+</tr>
+<tr class="dark">
+	<td>Diez</td>
+	<td>Ten</td>
+</tr>
+</table>
+<hr>
