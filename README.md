@@ -1,6 +1,6 @@
 ### Basic Usage:
 ```c#
-var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
+var fullName = new { FirstName = "John", LastName = "Doe"};
 
 string template = "Hello {FirstName} {LastName}, this is just a test.";
 
@@ -8,7 +8,7 @@ TemplateEngine ngin = new TemplateEngine(template);
 
 string result = ngin.Merge(fullName);
 
-//result = Hello Jerrod Eiman, this is just a test.
+//result = Hello John Doe, this is just a test.
 ```
 
 
@@ -17,7 +17,7 @@ In its simplest form, the template engine can be used to inject data into text t
 
 ##### Data:
 ```c#
-var fullName = new { FirstName = "Jerrod", LastName = "Eiman"};
+var fullName = new { FirstName = "John", LastName = "Doe"};
 ```
 ##### Template:
 ```
@@ -26,7 +26,7 @@ Hello {FirstName} {LastName}, this is just a test.
 
 ##### Result:
 ```
-Hello Jerrod Eiman, this is just a test.
+Hello John Doe, this is just a test.
 ```
 
 ##### Notes:
@@ -41,7 +41,7 @@ Simple *{tag}s* can contain compound bind expressions to reference data from nes
 ```c#
 var person = new 
 { 
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 	Address = new 
 	{ 
 		Line1 = "123 Main St.", 
@@ -60,7 +60,7 @@ Hello {Name.First}, we see you currently live in {Address.City}, {Address.State}
 
 ##### Result: 
 ```
-Hello Jerrod, we see you currently live in Dallas, TX.
+Hello John, we see you currently live in Dallas, TX.
 ```
 
 
@@ -73,7 +73,7 @@ var person = new
 { 
 	IsEmployed = true, 
 	Employer = "Hat Trick Labs"
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 };
 ```
 
@@ -90,7 +90,7 @@ We see you are currently unemployed.
 
 ##### Result:
 ```
-Hello Jerrod Eiman,
+Hello John Doe,
 We see you are currently employed at Hat Trick Labs.
 ```
 
@@ -115,7 +115,7 @@ var person = new
 { 
 	Employer = "Hat Trick Labs",
 	Certifications = new[] { "mcse", "mcitp", "mcts" },
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 };
 ```
 
@@ -136,7 +136,7 @@ We see you currently hold the following certs:
 
 ##### Result:
 ```
-Hello Jerrod Eiman,
+Hello John Doe,
 
 We see you currently hold  the following certs:
   - mcse
@@ -161,7 +161,7 @@ var attendees = new
 { 
 	People = new []
 	{
-		{ Id = 1, FirstName = "Jerrod", LastName = "Eiman"},
+		{ Id = 1, FirstName = "John", LastName = "Doe"},
 		{ Id = 2, FirstName = "John", LastName = "Doe"},
 		{ Id = 3, FirstName = "Jane", LastName = "Smith"}
 	},
@@ -181,7 +181,7 @@ var attendees = new
 ##### Result:
 ```
 <ul>
-	<li><bold>1</bold> - Eiman, Jerrod</li>
+	<li><bold>1</bold> - Doe, John</li>
 	<li><bold>2</bold> - Doe, John</li>
 	<li><bold>3</bold> - Smith, Jane</li>
 </ul>
@@ -195,7 +195,7 @@ The template engine supports {! comment } tags.
 ```c#
 var person = new 
 { 
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 };
 ```
 
@@ -207,7 +207,7 @@ var person = new
 
 ##### Result:
 ```
-<p>Hello Jerrod,</p>
+<p>Hello John,</p>
 <p>How can we be of assistance?</p>
 ```
 
@@ -223,7 +223,7 @@ By default, all text that resides outside of a *{tag}* is emmitted to output.  C
 var person = new 
 { 
 	Certifications = new[] { "mcse", "mcitp", "mcts" },
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 };
 ```
 
@@ -247,7 +247,7 @@ We see you don't have any certs.
 
 ##### Default Output:
 ```
-<p>Hello Jerrod</p>
+<p>Hello John</p>
 <div>
 
 <ul>
@@ -284,7 +284,7 @@ We see you don't have any certs.
 
 ##### Whitespace Controlled Output:
 ```
-<p>Hello Jerrod</p>
+<p>Hello John</p>
 <div>
 <ul>
     <li>mcse</li>
@@ -307,7 +307,7 @@ Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, com
 var person = new 
 { 
 	Certifications = new[] { "mcse", "mcitp", "mcts" },
-	Name = new { First = "Jerrod", Last = "Eiman"}, 
+	Name = new { First = "John", Last = "Doe"}, 
 };
 
 string template = "Hello {FirstName} {LastName} we see you have these certs: {(', ', Certifications) => join}.";
@@ -323,7 +323,7 @@ ngin.LambdaRepo.Register(nameof(join), join);
 
 string result = ngin.Merge(person);
 
-//result = Hello Jerrod Eiman we see who have these certs: mcse, mcitp, mcts.
+//result = Hello John Doe we see who have these certs: mcse, mcitp, mcts.
 ```
 
 ##### Notes:
