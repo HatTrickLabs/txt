@@ -28,19 +28,18 @@ namespace HatTrick.Text.TestHarness
             TruthyFalsey();
             SimpleConditionalBlocks();
             NegatedConditionalBlocks();
-            SimpleWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
-            GlobalWhitespaceControl();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
-            SimpleIterationBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            SimpleWhitespaceControl();
+            GlobalWhitespaceControl();
+            SimpleIterationBlocks();
             ThrowOnNonIEnumerableIterationTarget();
             WalkingTheScopeChain();
-            SimplePartialBlocks();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            SimplePartialBlocks();
             SimpleTemplateComments();
-            MultiLineTemplateComments();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            MultiLineTemplateComments();
             SimpleLambdaExpressions();
-            ComplexLambdaExpressions();//failing because of the very LAST newline in the output (maybe swap newline trim from left to right)
+            ComplexLambdaExpressions();
             LambdaExpressionDrivenBlocks();
-            //XXX();
-
+            CodeGen();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -91,7 +90,7 @@ namespace HatTrick.Text.TestHarness
         #region output result
         static void RenderOutput(string name, bool passed, string context = null)
         {
-            Console.WriteLine($"{name}\t\t{(passed ? "Success" : "Failed")}\t\t{context}");
+            Console.WriteLine(string.Format("{0,-45} {1,-10} {2,-20}", name, passed ? "Success" : "Failed", context));
         }
         #endregion
 
@@ -183,6 +182,7 @@ namespace HatTrick.Text.TestHarness
             /************ Anonymous ************/
             var data = new
             {
+                Age = 25,
                 Name = new { First = "Charlie", Last = "Brown" },
                 Address = new
                 {
@@ -202,6 +202,7 @@ namespace HatTrick.Text.TestHarness
             /************ POCO ************/
             Person data2 = new Person()
             {
+                Age = 25,
                 Name = new Name() { First = "Charlie", Last = "Brown" },
                 Address = new Address()
                 {
@@ -222,6 +223,7 @@ namespace HatTrick.Text.TestHarness
             /************ Dictionary ************/
             Dictionary<string, object> data3 = new Dictionary<string, object>()
             {
+                { "Age", 25 },
                 { "Name", new Dictionary<string, string> { { "First", "Charlie" }, { "Last", "Brown" } } },
                 { "Address", new Dictionary<string, string> {
                     { "Line1", "123 Main St." },
@@ -401,7 +403,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -431,7 +433,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -454,7 +456,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
 
             bool passed = false;
             try
@@ -490,7 +492,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -522,7 +524,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -545,7 +547,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -592,7 +594,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -628,7 +630,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true;
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
             ngin.LambdaRepo.Register(nameof(GetAlternatingClass), GetAlternatingClass);
             ngin.LambdaRepo.Register(nameof(ResolveEnglishTranslation), ResolveEnglishTranslation);
 
@@ -671,7 +673,7 @@ namespace HatTrick.Text.TestHarness
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.LambdaRepo.Register(nameof(string.Join), (Func<string, object[], string>)string.Join);
             ngin.LambdaRepo.Register(nameof(TrimTo), TrimTo);
-            ngin.SuppressWhitespace = true;
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
 
             string result = ngin.Merge(data);
 
@@ -768,10 +770,10 @@ namespace HatTrick.Text.TestHarness
         }
         #endregion
 
-        #region xxx
-        static void XXX()
+        #region code gen
+        static void CodeGen()
         {
-            string name = "xxx";
+            string name = "code-gen";
             string template = ResolveTemplateInput(name);
 
             var data = new
@@ -806,7 +808,7 @@ namespace HatTrick.Text.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.SuppressWhitespace = true; //global flag for whitespace control...
+            //ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -818,9 +820,11 @@ namespace HatTrick.Text.TestHarness
         #endregion
     }
 
-    #region person
+    #region person class
     public class Person
     {
+        public int Age;
+
         public Name Name { get; set; }
         public Address Address { get; set; }
     }

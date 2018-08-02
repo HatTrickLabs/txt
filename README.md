@@ -295,8 +295,8 @@ We see you don't have any certs.
 ```
 
 ##### Notes:
-- Left trim markers *{-#if}* will trim all preceding whitespace NOT INCLUDING newline(s).
-- Right trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
+- Left trim markers *{-#if}* will trim all preceding whitespace INCLUDING the FIRST newline.
+- Right trim markers *{#if-}* will trim all trailing whitespace NOT INCLUDING newline(s).
 - To force trim on all applicable tags without including the trim markers, set *TemplateEngine.SuppressWhitespace = true*.
 
 ### Lambda Expressions (Helper Functions)

@@ -1,0 +1,30 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace HatTrick.Common
+{
+	#region AddressType
+	public enum AddressType : int
+	{
+		[Display(Name = "Physical", Description = "Physical Address")]
+		0 = Physical,
+		[Display(Name = "Mailing", Description = "Mailing Address")]
+		1 = Mailing,
+		[Display(Name = "Secondary", Description = "Secondary Address")]
+		2 = Secondary,
+	}
+	#endregion
+	
+	#region CardType
+	public enum CardType : int
+	{
+		[Display(Name = "Visa", Description = "Visa")]
+		0 = Visa,
+		[Display(Name = "Master Card", Description = "Master Card")]
+		1 = MC,
+		[Display(Name = "Amex", Description = "American Express")]
+		2 = Amex,
+	}
+	#endregion
+	
+}
