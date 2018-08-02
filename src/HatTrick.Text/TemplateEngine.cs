@@ -25,11 +25,19 @@ namespace HatTrick.Text
         private TagBuilder _blockedTag;
 
         private int _maxStack = 10;
+        private bool _trimWhitespace;
         #endregion
 
         #region interface
-        public bool SuppressWhitespace
-        { get; set; }
+        //[Obsolete("This property is now obsolete and will be removed in the future, use 'TrimWhitespace' instead.")]
+        //public bool SuppressWhitespace
+        //{ set { _trimWhitespace = value; } }
+
+        public bool TrimWhitespace
+        {
+            get { return _trimWhitespace; }
+            set { _trimWhitespace = true; }
+        }
 
         public LambdaRepository LambdaRepo
         { get { return _lambdaRepo;  } }
@@ -91,7 +99,7 @@ namespace HatTrick.Text
         #region with white space suppression
         private TemplateEngine WithWhitespaceSuppression(bool suppress)
         {
-            this.SuppressWhitespace = suppress;
+            _trimWhitespace = suppress;
             return this;
         }
         #endregion
@@ -247,7 +255,7 @@ namespace HatTrick.Text
         #region handle if tag
         private void HandleIfTag(string tag, object bindTo)
         {
-            bool force = this.SuppressWhitespace;
+            bool force = _trimWhitespace;
             bool leftTrimMark;
             bool rightTrimMark;
             this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
@@ -286,7 +294,7 @@ namespace HatTrick.Text
             {
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
-                    .WithWhitespaceSuppression(this.SuppressWhitespace)
+                    .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
                     .WithLambdaRepository(_lambdaRepo);
@@ -336,7 +344,7 @@ namespace HatTrick.Text
         #region handle each tag
         private void HandleEachTag(string tag, object bindTo)
         {
-            bool force = this.SuppressWhitespace;
+            bool force = _trimWhitespace;
             bool leftTrimMark;
             bool rightTrimMark;
             this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
@@ -378,7 +386,7 @@ namespace HatTrick.Text
                 _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(contentBlock.ToString())
                     .WithProgressListener(_progress)
-                    .WithWhitespaceSuppression(this.SuppressWhitespace)
+                    .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
                     .WithLambdaRepository(_lambdaRepo);
@@ -417,7 +425,7 @@ namespace HatTrick.Text
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
                 .WithProgressListener(_progress)
-                .WithWhitespaceSuppression(this.SuppressWhitespace)
+                .WithWhitespaceSuppression(_trimWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
                 .WithLambdaRepository(_lambdaRepo);
@@ -675,7 +683,19 @@ namespace HatTrick.Text
                 {
                     idx -= 1;
                 }
-                from.Length = idx + 1;
+
+                int len = Environment.NewLine.Length;
+
+                string lookingFor = len == 1
+                    ? new string(from[idx], 1)
+                    : new string(from[idx - 1], 1) + new string(from[idx], 1);
+
+                if (lookingFor == Environment.NewLine)
+                {
+                    idx -= len;
+                }
+
+                from.Length = (idx + 1);
             }
         }
         #endregion
@@ -696,18 +716,6 @@ namespace HatTrick.Text
                 };
 
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
-
-                int newLineLength = Environment.NewLine.Length;
-
-                string lookFor = newLineLength == 1
-                    ? Char.ToString(this.Peek())
-                    : Char.ToString(this.Peek()) + Char.ToString(this.PeekAt(_index + 1));
-
-                if (lookFor == Environment.NewLine)
-                {
-                    _index += newLineLength;
-                    _lineNum += 1;
-                }
             }
         }
         #endregion

@@ -14,13 +14,13 @@ namespace Common
 
 		#region constructors
 		public Person() {{ }}
-		#endregion
-	{!
+		#endregion{!
 		//TODO: Remove
 		public void Scrub(string value)
 		{{
 		   throw new NotImplementedException();
-		}}}
+		}}
+	}
 	}}
 	#endregion
 	{/each}
