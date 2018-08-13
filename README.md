@@ -146,7 +146,7 @@ We see you currently hold  the following certs:
 
 ##### Notes:
 - An each block bound to a *falsy* value (null or empty) will result in no block content rendered.
-- Each tags work on any object that implements the *System.Collections.IEnumerable* interface.
+- *{#each}* tags work on any object that implements the *System.Collections.IEnumerable* interface.
 - The $ reserved varible always references the root value of local scope (*this*).  $ can be used in any tag within a template.
 - the ..\ operator can be used to walk the scope chain.
 
