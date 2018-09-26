@@ -558,7 +558,7 @@ namespace HatTrick.Text.TestHarness
         }
         #endregion
 
-        #region multi line comments
+        #region multi line template comments
         static void MultiLineTemplateComments()
         {
             string name = "multi-line-template-comments";
