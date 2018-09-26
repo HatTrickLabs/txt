@@ -678,21 +678,24 @@ namespace HatTrick.Text
 
             if (leftTrimMark || force)
             {
+                int leLen = Environment.NewLine.Length; //new line len
+                bool lef = false; //line end found
                 int idx = from.Length - 1;
-                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' '))
+                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
                 {
-                    idx -= 1;
-                }
-
-                int len = Environment.NewLine.Length;
-
-                string lookingFor = len == 1
-                    ? new string(from[idx], 1)
-                    : new string(from[idx - 1], 1) + new string(from[idx], 1);
-
-                if (lookingFor == Environment.NewLine)
-                {
-                    idx -= len;
+                    if (from[idx] == '\n')
+                    {
+                        if (lef)
+                        {
+                            break;
+                        }
+                        lef = true;
+                        idx -= leLen;
+                    }
+                    else
+                    {
+                        idx -= 1;
+                    }
                 }
 
                 from.Length = (idx + 1);
