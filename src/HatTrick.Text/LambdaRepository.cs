@@ -50,11 +50,12 @@ namespace HatTrick.Text
         }
         #endregion
 
-        #region parse known
-        public void ParseKnown(string expression, out string name, out string[] parameters)
+        #region parse
+        public void Parse(string expression, out string name, out string[] arguments)
         {
+            //i.e. (arg1, arg2) => LambdaName
             name = null;
-            parameters = null;
+            arguments = null;
 
             string op = "=>";
             int opIndex = expression.IndexOf(op);
@@ -73,25 +74,33 @@ namespace HatTrick.Text
 
             int paramsCount = mi.GetParameters().Length;
 
-            parameters = new string[paramsCount];
-            int at = -1;
+            arguments = new string[paramsCount];
 
-            string left = expression.Substring(0, opIndex);
+            //left side of expression 
+            string argsExpr = expression.Substring(0, opIndex);
 
+            this.CaptureLambdaArgs(argsExpr, ref arguments);
+        }
+        #endregion
+
+        #region extract lambda args
+        private void CaptureLambdaArgs(string argsExpr, ref string[] args)
+        {
             char c;
+            int at = -1;
             StringBuilder sb = new StringBuilder();
             bool singleQuoted = false;
             bool doubleQuoted = false;
-            for (int i = 0; i < left.Length; i++)
+            for (int i = 0; i < argsExpr.Length; i++)
             {
-                c = left[i];
+                c = argsExpr[i];
                 if (c == '(' || c == ')')
                 {
                     continue;
                 }
                 else if (c == '"')
                 {
-                    if (doubleQuoted && i > 0 && left[i - 1] == '\\')
+                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == '\\')
                     {
                         sb.Length -= 1;
                     }
@@ -102,7 +111,7 @@ namespace HatTrick.Text
                 }
                 else if (c == '\'')
                 {
-                    if (singleQuoted && i > 0 && left[i - 1] == '\\')
+                    if (singleQuoted && i > 0 && argsExpr[i - 1] == '\\')
                     {
                         sb.Length -= 1;
                     }
@@ -115,18 +124,17 @@ namespace HatTrick.Text
                 {
                     if (!(singleQuoted || doubleQuoted))
                     {
-                        parameters[++at] = sb.ToString();
+                        args[++at] = sb.ToString();
                         sb.Clear();
                         continue;
                     }
                 }
-
                 sb.Append(c);
             }
 
-            if (parameters.Length > 0)
+            if (args.Length > 0)
             {
-                parameters[++at] = sb.ToString(); //final...
+                args[++at] = sb.ToString(); //final...
             }
         }
         #endregion

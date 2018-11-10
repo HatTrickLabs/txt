@@ -24,7 +24,7 @@ namespace HatTrick.Text
         private TagBuilder _tag;
         private TagBuilder _blockedTag;
 
-        private int _maxStack = 10;
+        private int _maxStack = 25;
         private bool _trimWhitespace;
         #endregion
 
@@ -89,6 +89,8 @@ namespace HatTrick.Text
         {
             if (depth < 0)
             {
+                //partial templates decrement the stack depth by 1 for each nested partial...
+                //If we get below zero the max depth has been consumed...
                 throw new MergeException($"stack depth overflow.  partial (sub template) stack depth cannot exceed {_maxStack}");
             }
             _maxStack = depth;
@@ -134,7 +136,7 @@ namespace HatTrick.Text
                         this.HandleTag(tag, bindTo);
                     }
                     else
-                    { throw new MergeException($"enountered un-closed tag; '}}' never found"); }
+                    { throw new MergeException("enountered un-closed tag; '}' never found"); }
                 }
                 _tag.Reset();
             }
@@ -330,6 +332,7 @@ namespace HatTrick.Text
                        || (flt = val as float?) != null && flt == 0
                        || (dec = val as decimal?) != null && dec == 0
                        || (c = val as char?) != null && c == '\0'
+                       || val == DBNull.Value 
                        || (ui = val as uint?) != null && ui == 0
                        || (ul = val as ulong?) != null && ul == 0
                        || (sht = val as short?) != null && sht == 0
@@ -350,14 +353,14 @@ namespace HatTrick.Text
             this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
             this.EnsureRightTrim(tag, out rightTrimMark, force);
 
-            StringBuilder contentBlock = new StringBuilder();
+            StringBuilder block = new StringBuilder();
 
-            Action<char> emitEnclosedTo = (s) => { contentBlock.Append(s); };
+            Action<char> emitEnclosedTo = (s) => { block.Append(s); };
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             string closeTag;
             this.RollBlockedContentTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
-            this.EnsureLeftTrim(contentBlock, closeTag, out bool _, force);
+            this.EnsureLeftTrim(block, closeTag, out bool _, force);
             this.EnsureRightTrim(closeTag, out bool _, force);
 
             int len = (leftTrimMark && rightTrimMark)
@@ -384,7 +387,7 @@ namespace HatTrick.Text
 
                 TemplateEngine subEngine;
                 _scopeChain.Push(bindTo);
-                subEngine = new TemplateEngine(contentBlock.ToString())
+                subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
@@ -421,7 +424,7 @@ namespace HatTrick.Text
 
             string tgt = (target as string);
             if (tgt == null)
-            { throw new MergeException($"#sub template tag / tag reflected value is not typeof string: {target}"); }
+            { throw new MergeException($"#sub template tag: {tag} reflected value is not typeof string: {target}"); }
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
                 .WithProgressListener(_progress)
@@ -480,10 +483,18 @@ namespace HatTrick.Text
         private void ExtractLambda(string tag, object localScope, out string name, out object[] arguments)
         {
             string[] args;
-            _lambdaRepo.ParseKnown(tag, out name, out args);
+            _lambdaRepo.Parse(tag, out name, out args);
 
-            arguments = new object[args.Length];
+            arguments = this.ParseLambdaArguments(localScope, args);
+        }
+        #endregion
 
+        #region parse lambda arguments
+        private object[] ParseLambdaArguments(object localScope, string[] args)
+        {
+            object[] arguments = new object[args.Length];
+
+            //TODO: JRod, refactor this to lex proper without the SubString calls... 
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
@@ -510,6 +521,7 @@ namespace HatTrick.Text
                     arguments[i] = this.ResolveTarget(args[i], localScope); //recursive
                 }
             }
+            return arguments;
         }
         #endregion
 
@@ -678,19 +690,19 @@ namespace HatTrick.Text
 
             if (leftTrimMark || force)
             {
-                int leLen = Environment.NewLine.Length; //new line len
-                bool lef = false; //line end found
+                int len = Environment.NewLine.Length; //new line len
+                bool found = false; //line end found
                 int idx = from.Length - 1;
                 while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
                 {
                     if (from[idx] == '\n')
                     {
-                        if (lef)
+                        if (found)
                         {
                             break;
                         }
-                        lef = true;
-                        idx -= leLen;
+                        found = true;
+                        idx -= len;
                     }
                     else
                     {
