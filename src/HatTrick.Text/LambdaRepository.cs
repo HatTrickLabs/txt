@@ -186,7 +186,6 @@ namespace HatTrick.Text
             {
                 throw new MergeException($"unable to parse provided numerical literal: {value}:{suffix}");
             }
-
             return output;
         }
         #endregion
@@ -206,7 +205,6 @@ namespace HatTrick.Text
                 string msg = $"Attempted function invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
                 throw new MergeException(msg);
             }
-
             return _lambdas[name].DynamicInvoke(parms);
         }
         #endregion
