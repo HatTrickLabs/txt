@@ -157,12 +157,13 @@ namespace HatTrick.Text
                 case TagKind.If:
                     {
                         string tag = _tag;
+                        bool left = this.Has(TrimMark.Left);
+                        bool right = this.Has(TrimMark.Right);
+                        int start = left ? 5 : 4;
 
-                        int start = this.Has(TrimMark.Left) ? 5 : 4;
-
-                        int len = (this.Has(TrimMark.Left) && this.Has(TrimMark.Right))
+                        int len = (left && right)
                             ? (tag.Length - 7)
-                            : (this.Has(TrimMark.Left) || this.Has(TrimMark.Right))
+                            : (left || right)
                                 ? tag.Length - 6
                                 : (tag.Length - 5);
 
@@ -172,12 +173,13 @@ namespace HatTrick.Text
                 case TagKind.Each:
                     {
                         string tag = _tag;
+                        bool left = this.Has(TrimMark.Left);
+                        bool right = this.Has(TrimMark.Right);
+                        int start = left ? 7 : 6;
 
-                        int start = this.Has(TrimMark.Left) ? 7 : 6;
-
-                        int len = (this.Has(TrimMark.Left) && this.Has(TrimMark.Right))
+                        int len = (left && right)
                             ? (tag.Length - 9)
-                            : (this.Has(TrimMark.Left) || this.Has(TrimMark.Right))
+                            : (left || right)
                                 ? tag.Length - 8
                                 : (tag.Length - 7);
                         
@@ -187,11 +189,13 @@ namespace HatTrick.Text
                 case TagKind.Partial:
                     {
                         string tag = _tag;
-                        int start = this.Has(TrimMark.Left) ? 3 : 2;
+                        bool left = this.Has(TrimMark.Left);
+                        bool right = this.Has(TrimMark.Right);
+                        int start = left ? 3 : 2;
 
-                        int len = (this.Has(TrimMark.Left) && this.Has(TrimMark.Right)) 
+                        int len = (left && right) 
                             ? (tag.Length - 5)
-                            : (this.Has(TrimMark.Left) || this.Has(TrimMark.Right))
+                            : (left || right)
                                 ? tag.Length - 4
                                 : (tag.Length - 3);
 

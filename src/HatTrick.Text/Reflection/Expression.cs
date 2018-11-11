@@ -21,7 +21,6 @@ namespace HatTrick.Text.Reflection
                 var itemExists = false;
 
                 int memberAccessorIdx = itemExpression.IndexOf('.');
-                //TODO: JRod, the following will be more efficient if utilizing span<char> instead of substring...
                 string thisExpression = (memberAccessorIdx > -1) ? itemExpression.Substring(0, memberAccessorIdx) : itemExpression;
 
                 //if the caller is reflecting data from a dictionary, attempt dictionary lookup
