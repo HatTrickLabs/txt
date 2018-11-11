@@ -21,8 +21,7 @@ namespace HatTrick.Text
         private StringBuilder _result;
         private Action<char> _appendToResult;
 
-        private TagBuilder _tag;
-        private TagBuilder _blockedTag;
+        private TagBuilder _tagBldr;
 
         private int _maxStack = 25;
         private bool _trimWhitespace;
@@ -56,8 +55,7 @@ namespace HatTrick.Text
 
             _template = template;
 
-            _tag = new TagBuilder();
-            _blockedTag = new TagBuilder();
+            _tagBldr = new TagBuilder();
 
             _result = new StringBuilder((int)(template.Length * 1.3));
 
@@ -123,131 +121,63 @@ namespace HatTrick.Text
 
             char eot = (char)3; //end of text....
 
-            _tag.Reset();
+            _tagBldr.Reset();
 
             while (this.Peek() != eot)
             {
                 if (this.RollTill(_appendToResult, '{', false, false))
                 {
-                    if (this.RollTill(_tag.Append, '}', true, false))
+                    if (this.RollTill(_tagBldr.Append, '}', true, false))
                     {
-                        string tag = _tag.ToString();
-                        _progress?.Invoke(_lineNum, tag);
+                        Tag tag = new Tag(_tagBldr.ToString());
+                        _progress?.Invoke(_lineNum, tag.ToString());
                         this.HandleTag(tag, bindTo);
                     }
                     else
                     { throw new MergeException("enountered un-closed tag; '}' never found"); }
                 }
-                _tag.Reset();
+                _tagBldr.Reset();
             }
-
             return _result.ToString();
         }
         #endregion
 
         #region handle tag
-        private void HandleTag(string tag, object bindTo)
+        private void HandleTag(Tag tag, object bindTo)
         {
-            if (this.IsIfTag(tag)) //# if logic tag (boolean switch)
+            switch (tag.Kind)
             {
-                this.HandleIfTag(tag, bindTo);
+                case TagKind.Simple:        //simple tag
+                    this.HandleSimpleTag(in tag, bindTo);
+                    break;
+                case TagKind.If:            //# if logic tag (boolean switch)
+                    this.HandleIfTag(in tag, bindTo);
+                    break;
+                case TagKind.Each:          //#each enumeration
+                    this.HandleEachTag(in tag, bindTo);
+                    break;
+                case TagKind.Partial:       //sub template tag
+                    this.HandlePartialTag(in tag, bindTo);
+                    break;
+                case TagKind.Comment:       //comment tag
+                    this.HandleCommentTag(in tag);
+                    break;
             }
-            else if (this.IsEachTag(tag)) //#each enumeration
-            {
-                this.HandleEachTag(tag, bindTo);
-            }
-            else if (this.IsPartialTag(tag)) //sub template tag
-            {
-                this.HandlePartialTag(tag, bindTo);
-            }
-            else if (this.IsCommentTag(tag)) //comment tag
-            {
-                this.HandleCommentTag(tag);
-            }
-            else //basic tag
-            {
-                this.HandleBasicTag(tag, bindTo);
-            }
-        }
-        #endregion
-
-        #region is if tag
-        public bool IsIfTag(string tag)
-        {
-            return tag.Length > 3
-                && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == 'i')
-                && (tag[3] == 'i' || tag[3] == 'f');
-        }
-        #endregion
-
-        #region is end if tag
-        public bool IsEndIfTag(string tag)
-        {
-            return tag.Length > 4
-                && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '/')
-                && (tag[2] == '/' || tag[2] == 'i')
-                && (tag[3] == 'i' || tag[3] == 'f');
-        }
-        #endregion
-
-        #region is each tag
-        public bool IsEachTag(string tag)
-        {
-            return tag.Length > 5
-                && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == 'e')
-                && (tag[3] == 'e' || tag[3] == 'a')
-                && (tag[4] == 'a' || tag[4] == 'c')
-                && (tag[5] == 'c' || tag[5] == 'h');
-        }
-        #endregion
-
-        #region is end each tag
-        public bool IsEndEachTag(string tag)
-        {
-            return tag.Length > 6
-                && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '/')
-                && (tag[2] == '/' || tag[2] == 'e')
-                && (tag[3] == 'e' || tag[3] == 'a')
-                && (tag[4] == 'a' || tag[4] == 'c')
-                && (tag[5] == 'c' || tag[5] == 'h');
-        }
-        #endregion
-
-        #region is comment tag
-        public bool IsCommentTag(string tag)
-        {
-            return tag[0] == '{' 
-                && (tag[1] == '!' || (tag[1] == '-' && tag[2] == '!'));
-        }
-        #endregion
-
-        #region is partial tag
-        public bool IsPartialTag(string tag)
-        {
-            return tag[0] == '{' 
-                && (tag[1] == '>' || (tag[1] == '-' && tag[2] == '>'));
-                
         }
         #endregion
 
         #region handle comment tag
-        private void HandleCommentTag(string tag)
+        private void HandleCommentTag(in Tag tag)
         {
-            this.EnsureLeftTrim(_result, tag, out bool _, false);
-            this.EnsureRightTrim(tag, out bool _, false);
+            this.EnsureLeftTrim(_result, in tag, false);
+            this.EnsureRightTrim(in tag, false);
         }
         #endregion
 
-        #region handle basic tag
-        private void HandleBasicTag(string tag, object bindTo)
+        #region handle simple tag
+        private void HandleSimpleTag(in Tag tag, object bindTo)
         {
-            string bindAs = tag.Substring(1, (tag.Length - 2));
+            string bindAs = tag.BindAs();
             object target = this.ResolveTarget(bindAs, bindTo);
 
             _result.Append(target ?? string.Empty);
@@ -255,34 +185,25 @@ namespace HatTrick.Text
         #endregion
 
         #region handle if tag
-        private void HandleIfTag(string tag, object bindTo)
+        private void HandleIfTag(in Tag tag, object bindTo)
         {
-            bool force = _trimWhitespace;
-            bool leftTrimMark;
-            bool rightTrimMark;
-            this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
-            this.EnsureRightTrim(tag, out rightTrimMark, force);
+            bool forceTrim = _trimWhitespace;
+
+            this.EnsureLeftTrim(_result, tag, forceTrim);
+            this.EnsureRightTrim(tag, forceTrim);
 
             StringBuilder block = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
 
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
-            string closeTag;
-            this.RollBlockedContentTill(emitEnclosedTo, this.IsEndIfTag, this.IsIfTag, out closeTag);
+            Tag closeTag;
+            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndIfTag, Tag.IsIfTag, out closeTag);
 
-            this.EnsureLeftTrim(block, closeTag, out bool _, force);
-            this.EnsureRightTrim(closeTag, out bool _, force);
+            this.EnsureLeftTrim(block, closeTag, forceTrim);
+            this.EnsureRightTrim(closeTag, forceTrim);
 
-            int start = leftTrimMark ? 5 : 4;
-
-            int len = (leftTrimMark && rightTrimMark)
-                ? (tag.Length - 7)
-                : (leftTrimMark || rightTrimMark)
-                    ? tag.Length - 6
-                    : (tag.Length - 5);
-
-            string bindAs = tag.Substring(start, len);
+            string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
 
             object target = this.ResolveTarget(negate ? bindAs.Substring(1) : bindAs, bindTo);
@@ -345,33 +266,23 @@ namespace HatTrick.Text
         #endregion
 
         #region handle each tag
-        private void HandleEachTag(string tag, object bindTo)
+        private void HandleEachTag(in Tag tag, object bindTo)
         {
-            bool force = _trimWhitespace;
-            bool leftTrimMark;
-            bool rightTrimMark;
-            this.EnsureLeftTrim(_result, tag, out leftTrimMark, force);
-            this.EnsureRightTrim(tag, out rightTrimMark, force);
+            bool forceTrim = _trimWhitespace;
+            this.EnsureLeftTrim(_result, tag, forceTrim);
+            this.EnsureRightTrim(tag, forceTrim);
 
             StringBuilder block = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
-            string closeTag;
-            this.RollBlockedContentTill(emitEnclosedTo, this.IsEndEachTag, this.IsEachTag, out closeTag);
-            this.EnsureLeftTrim(block, closeTag, out bool _, force);
-            this.EnsureRightTrim(closeTag, out bool _, force);
+            Tag closeTag;
+            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndEachTag, Tag.IsEachTag, out closeTag);
+            this.EnsureLeftTrim(block, closeTag, forceTrim);
+            this.EnsureRightTrim(closeTag, forceTrim);
 
-            int len = (leftTrimMark && rightTrimMark)
-                        ? (tag.Length - 9)
-                        : (leftTrimMark || rightTrimMark)
-                            ? tag.Length - 8
-                            : (tag.Length - 7);
-
-            int start = leftTrimMark ? 7 : 6;
-
-            string bindAs = tag.Substring(start, len);
+            string bindAs = tag.BindAs();
 
             object target = this.ResolveTarget(bindAs, bindTo);
 
@@ -405,22 +316,13 @@ namespace HatTrick.Text
         #endregion
 
         #region handle partial tag (sub templates)
-        private void HandlePartialTag(string tag, object bindTo)
+        private void HandlePartialTag(in Tag tag, object bindTo)
         {
-            bool leftTrimMarker;
-            bool rightTrimMarker;
-            this.EnsureLeftTrim(_result, tag, out leftTrimMarker, false);
-            this.EnsureRightTrim(tag, out rightTrimMarker, false);
+            this.EnsureLeftTrim(_result, tag, false);
+            this.EnsureRightTrim(tag, false);
 
-            int len = (leftTrimMarker && rightTrimMarker)
-                ? (tag.Length - 5)
-                : (leftTrimMarker || rightTrimMarker)
-                    ? tag.Length - 4
-                    : (tag.Length - 3);
-
-            int start = leftTrimMarker ? 3 : 2;
-
-            object target = this.ResolveTarget(tag.Substring(start, len), bindTo);
+            string bindAs = tag.BindAs();
+            object target = this.ResolveTarget(bindAs, bindTo);
 
             string tgt = (target as string);
             if (tgt == null)
@@ -440,50 +342,47 @@ namespace HatTrick.Text
         #endregion
 
         #region resolve target
-        private object ResolveTarget(string tag, object localScope)
+        private object ResolveTarget(string bindAs, object localScope)
         {
             object target = null;
-            if (tag.Length == 1 && tag[0] == '$') //append bindto obj
+            if (bindAs.Length == 1 && bindAs[0] == '$') //append bindto obj
             {
                 target = localScope;
             }
-            else if (tag[0] == '$' && tag[1] == '.') //reflect from bindto object
+            else if (bindAs[0] == '$' && bindAs[1] == '.') //reflect from bindto object
             {
-                string expression = tag.Substring(2, tag.Length - 2);//remove the $.
+                string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
                 target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             }
-            else if (tag[0] == '.' && tag[1] == '.' && tag[2] == '\\')
+            else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
             {
                 int lastIdxOf;
-                int cnt = this.CountPattern(tag, @"..\", out lastIdxOf);
-                target = this.ResolveTarget(tag.Substring(lastIdxOf + 3, tag.Length - (cnt * 3)), _scopeChain.ReachBack(cnt));
+                int cnt = this.CountPattern(bindAs, @"..\", out lastIdxOf);
+                target = this.ResolveTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.ReachBack(cnt));
             }
-            else if (tag.Contains("=>")) //lambda expression
+            else if (bindAs.Contains("=>")) //lambda expression
             {
                 //{($.abc, $.xyz) => ConcatToValues}
                 //{("keyVal") => GetSomething}
                 //{(true) => GetSomething}
-
                 string name;
                 object[] arguments;
-                this.ExtractLambda(tag, localScope, out name, out arguments);
-
+                this.ExtractLambda(bindAs, localScope, out name, out arguments);
                 target = this.LambdaRepo.Invoke(name, arguments);
             }
             else
             {
-                target = ReflectionHelper.Expression.ReflectItem(localScope, tag);
+                target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
             }
-
             return target;
         }
         #endregion
 
         #region extract lambda
-        private void ExtractLambda(string tag, object localScope, out string name, out object[] arguments)
+        private void ExtractLambda(string bindAs, object localScope, out string name, out object[] arguments)
         {
             string[] args;
-            _lambdaRepo.Parse(tag, out name, out args);
+            _lambdaRepo.Parse(bindAs, out name, out args);
 
             arguments = this.ParseLambdaArguments(localScope, args);
         }
@@ -497,7 +396,7 @@ namespace HatTrick.Text
             //TODO: JRod, refactor this to lex proper without the SubString calls... 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
+                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"')      //double quoted string literal...
                 {
                     arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
@@ -509,7 +408,7 @@ namespace HatTrick.Text
                 {
                     arguments[i] = bool.Parse(args[i]);
                 }
-                else if (this.TextContains(args[i], ':', out int at))//numeric literal...
+                else if (this.TextContains(args[i], ':', out int at))               //numeric literal...
                 {
                     string value = args[i].Substring(0, at);
                     string suffix = args[i].Substring(at + 1);
@@ -518,7 +417,7 @@ namespace HatTrick.Text
                 }
                 else
                 {
-                    arguments[i] = this.ResolveTarget(args[i], localScope); //recursive
+                    arguments[i] = this.ResolveTarget(args[i], localScope);         //recursive
                 }
             }
             return arguments;
@@ -614,29 +513,28 @@ namespace HatTrick.Text
         #endregion
 
         #region roll blocked content to action till
-        private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out string endTag)
+        private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out Tag endTag)
         {
-            endTag = null;
+            endTag = default;
             int offset = 1;// i.e. we are inside 1 #if tag and looking for its /if tag but must account for contained #if tags...
-
             bool tagIsContent;
             do
             {
                 //look for the next tag...
                 this.RollTill(emitTo, '{', false, true);
 
-                _blockedTag.Reset();
+                _tagBldr.Reset();
                 tagIsContent = false;
 
-                this.RollTill(_blockedTag.Append, '}', true, true);
+                this.RollTill(_tagBldr.Append, '}', true, true);
 
-                if (_blockedTag.Length == 0)
+                if (_tagBldr.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
-                if (!till(_blockedTag.ToString()))
+                if (!till(_tagBldr.ToString()))
                 {
                     tagIsContent = true;
-                    if (ensuring(_blockedTag.ToString()))
+                    if (ensuring(_tagBldr.ToString()))
                     {
                         offset += 1;
                     }
@@ -650,14 +548,14 @@ namespace HatTrick.Text
                     }
                     else
                     {
-                        endTag = _blockedTag.ToString();
+                        endTag = new Tag(_tagBldr.ToString());
                     }
                 }
                 if (tagIsContent)
                 {
-                    for (int i = 0; i < _blockedTag.Length; i++)
+                    for (int i = 0; i < _tagBldr.Length; i++)
                     {
-                        emitTo(_blockedTag[i]);
+                        emitTo(_tagBldr[i]);
                     }
                 }
 
@@ -678,20 +576,17 @@ namespace HatTrick.Text
                 idx += pattern.Length;
                 cnt += 1;
             }
-
             return cnt;
         }
         #endregion
 
         #region ensure left  trim
-        private void EnsureLeftTrim(StringBuilder from, string tag, out bool leftTrimMark, bool force)
+        private void EnsureLeftTrim(StringBuilder from, in Tag tag, bool force)
         {
-            leftTrimMark = tag[1] == '-';
-
-            if (leftTrimMark || force)
+            if (tag.Has(TrimMark.Left) || force)
             {
                 int len = Environment.NewLine.Length; //new line len
-                bool found = false; //line end found
+                bool found = false;//line end found
                 int idx = from.Length - 1;
                 while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
                 {
@@ -709,19 +604,16 @@ namespace HatTrick.Text
                         idx -= 1;
                     }
                 }
-
                 from.Length = (idx + 1);
             }
         }
         #endregion
 
         #region ensure right trim
-        private void EnsureRightTrim(string tag, out bool rightTrimMark, bool force)
+        private void EnsureRightTrim(in Tag tag, bool force)
         {
-            rightTrimMark = tag[tag.Length - 2] == '-';
-
             //if global trim trailing newline || tag has the newline trim marker..
-            if (rightTrimMark || force)
+            if (tag.Has(TrimMark.Right) || force)
             {
                 Action<char> emitTo = (c) => { }; //just throw the whitespace away...
 
@@ -729,7 +621,6 @@ namespace HatTrick.Text
                 {
                     return !(c == ' ' || c == '\t');
                 };
-
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
             }
         }

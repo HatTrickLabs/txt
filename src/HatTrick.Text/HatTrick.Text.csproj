@@ -48,12 +48,15 @@
     <Compile Include="LambdaRepository.cs" />
     <Compile Include="ScopeChain.cs" />
     <Compile Include="StringInterpolation.cs" />
+    <Compile Include="Tag.cs" />
     <Compile Include="TagBuilder.cs" />
+    <Compile Include="TagKind.cs" />
     <Compile Include="TemplateEngine.cs" />
     <Compile Include="MergeException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflection\Expression.cs" />
     <Compile Include="Reflection\NoPropertyExistsException.cs" />
+    <Compile Include="TrimMark.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
