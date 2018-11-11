@@ -365,11 +365,9 @@ namespace HatTrick.Text
                 //{($.abc, $.xyz) => ConcatToValues}
                 //{("keyVal") => GetSomething}
                 //{(true) => GetSomething}
-
                 string name;
                 object[] arguments;
                 this.ExtractLambda(bindAs, localScope, out name, out arguments);
-
                 target = this.LambdaRepo.Invoke(name, arguments);
             }
             else
@@ -398,7 +396,7 @@ namespace HatTrick.Text
             //TODO: JRod, refactor this to lex proper without the SubString calls... 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"') //double quoted string literal...
+                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"')      //double quoted string literal...
                 {
                     arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
@@ -410,7 +408,7 @@ namespace HatTrick.Text
                 {
                     arguments[i] = bool.Parse(args[i]);
                 }
-                else if (this.TextContains(args[i], ':', out int at))//numeric literal...
+                else if (this.TextContains(args[i], ':', out int at))               //numeric literal...
                 {
                     string value = args[i].Substring(0, at);
                     string suffix = args[i].Substring(at + 1);
@@ -419,7 +417,7 @@ namespace HatTrick.Text
                 }
                 else
                 {
-                    arguments[i] = this.ResolveTarget(args[i], localScope); //recursive
+                    arguments[i] = this.ResolveTarget(args[i], localScope);         //recursive
                 }
             }
             return arguments;
@@ -588,7 +586,7 @@ namespace HatTrick.Text
             if (tag.Has(TrimMark.Left) || force)
             {
                 int len = Environment.NewLine.Length; //new line len
-                bool found = false; //line end found
+                bool found = false;//line end found
                 int idx = from.Length - 1;
                 while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
                 {
@@ -606,7 +604,6 @@ namespace HatTrick.Text
                         idx -= 1;
                     }
                 }
-
                 from.Length = (idx + 1);
             }
         }
@@ -624,7 +621,6 @@ namespace HatTrick.Text
                 {
                     return !(c == ' ' || c == '\t');
                 };
-
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
             }
         }
