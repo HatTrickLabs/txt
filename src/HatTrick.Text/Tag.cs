@@ -48,6 +48,10 @@ namespace HatTrick.Text
             {
                 _kind = TagKind.Each;
             }
+            else if (Tag.IsWithTag(tag))
+            {
+                _kind = TagKind.With;
+            }
             else if (Tag.IsPartialTag(tag)) //sub template tag
             {
                 _kind = TagKind.Partial;
@@ -80,7 +84,7 @@ namespace HatTrick.Text
         #region is if tag
         public static bool IsIfTag(string tag)
         {
-            return tag.Length > 3
+            return tag.Length > 4
                 && tag[0] == '{'
                 && (tag[1] == '-' || tag[1] == '#')
                 && (tag[2] == '#' || tag[2] == 'i')
@@ -102,7 +106,7 @@ namespace HatTrick.Text
         #region is each tag
         public static bool IsEachTag(string tag)
         {
-            return tag.Length > 5
+            return tag.Length > 6
                 && tag[0] == '{'
                 && (tag[1] == '-' || tag[1] == '#')
                 && (tag[2] == '#' || tag[2] == 'e')
@@ -122,6 +126,32 @@ namespace HatTrick.Text
                 && (tag[3] == 'e' || tag[3] == 'a')
                 && (tag[4] == 'a' || tag[4] == 'c')
                 && (tag[5] == 'c' || tag[5] == 'h');
+        }
+        #endregion
+
+        #region is with tag
+        public static bool IsWithTag(string tag)
+        {
+            return tag.Length > 6
+                && tag[0] == '{'
+                && (tag[1] == '-' || tag[1] == '#')
+                && (tag[2] == '#' || tag[2] == 'w')
+                && (tag[3] == 'w' || tag[3] == 'i')
+                && (tag[4] == 'i' || tag[4] == 't')
+                && (tag[5] == 't' || tag[5] == 'h');
+        }
+        #endregion
+
+        #region is end with tag
+        public static bool IsEndWithTag(string tag)
+        {
+            return tag.Length > 6
+                && tag[0] == '{'
+                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[2] == '/' || tag[2] == 'w')
+                && (tag[3] == 'w' || tag[3] == 'i')
+                && (tag[4] == 'i' || tag[4] == 't')
+                && (tag[5] == 't' || tag[5] == 'h');
         }
         #endregion
 
@@ -183,6 +213,22 @@ namespace HatTrick.Text
                                 ? tag.Length - 8
                                 : (tag.Length - 7);
                         
+                        bindAs = tag.Substring(start, len);
+                    }
+                    break;
+                case TagKind.With:
+                    {
+                        string tag = _tag;
+                        bool left = this.Has(TrimMark.Left);
+                        bool right = this.Has(TrimMark.Right);
+                        int start = left ? 7 : 6;
+
+                        int len = (left && right)
+                            ? (tag.Length - 9)
+                            : (left || right)
+                                ? tag.Length - 8
+                                : (tag.Length - 7);
+
                         bindAs = tag.Substring(start, len);
                     }
                     break;

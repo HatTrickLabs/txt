@@ -1,0 +1,12 @@
+Hello Charlie Brown,
+
+This is a simple test run against several different types of bound object.
+
+Address:
+<div class="address">
+    <span class="address-line1">123 Main St.</span>
+    <span class="address-line2">Suite 200</span>
+    <span class="address-city-state-zip">Dallas, TX 77777</span>
+<div>
+Name Again: Charlie
+Built: 1925

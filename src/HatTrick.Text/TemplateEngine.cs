@@ -156,6 +156,9 @@ namespace HatTrick.Text
                 case TagKind.Each:          //#each enumeration
                     this.HandleEachTag(in tag, bindTo);
                     break;
+                case TagKind.With:
+                    this.HandleWithTag(in tag, bindTo);
+                    break;
                 case TagKind.Partial:       //sub template tag
                     this.HandlePartialTag(in tag, bindTo);
                     break;
@@ -312,6 +315,43 @@ namespace HatTrick.Text
                 }
                 _scopeChain.Pop();
             }
+        }
+        #endregion
+
+        #region handle with tag
+        private void HandleWithTag(in Tag tag, object bindTo)
+        {
+            bool forceTrim = _trimWhitespace;
+            this.EnsureLeftTrim(_result, tag, forceTrim);
+            this.EnsureRightTrim(tag, forceTrim);
+
+            StringBuilder block = new StringBuilder();
+
+            Action<char> emitEnclosedTo = (s) => { block.Append(s); };
+
+            //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
+            Tag closeTag;
+            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndWithTag, Tag.IsWithTag, out closeTag);
+            this.EnsureLeftTrim(block, closeTag, forceTrim);
+            this.EnsureRightTrim(closeTag, forceTrim);
+
+            string bindAs = tag.BindAs();
+
+            object target = this.ResolveTarget(bindAs, bindTo);
+
+            string itemContent;
+            TemplateEngine subEngine;
+            _scopeChain.Push(bindTo);
+            subEngine = new TemplateEngine(block.ToString())
+                .WithProgressListener(_progress)
+                .WithWhitespaceSuppression(_trimWhitespace)
+                .WithScopeChain(_scopeChain)
+                .WithMaxStack(_maxStack)
+                .WithLambdaRepository(_lambdaRepo);
+
+            itemContent = subEngine.Merge(target);
+            _result.Append(itemContent);
+            _scopeChain.Pop();
         }
         #endregion
 
