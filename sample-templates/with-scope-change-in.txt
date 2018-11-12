@@ -1,0 +1,14 @@
+Hello {Contact.Name.First} {Contact.Name.Last},
+
+This is a simple test run against several different types of bound object.
+
+{#with Structure.Address}
+Address:
+{> () => GetAddressPartial}
+{/with}
+{#with Structure}
+	{#with Address}
+Name Again: {..\..\Contact.Name.First}
+Built: {..\YearBuilt}
+	{/with}
+{/with}
