@@ -236,7 +236,7 @@ var account = new
 
 ##### Notes:
 - Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the with tag would have required repeating *Person.Address* 6 times.
-- Shifting of scope via *{#with}*  tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the parent template bound context.
+- Shifting of scope via *{#with}*  tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
 
 
 ### Template Comments
