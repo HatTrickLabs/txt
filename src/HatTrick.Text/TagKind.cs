@@ -9,6 +9,7 @@ namespace HatTrick.Text
         Simple,
         If,
         Each,
+        With,
         Partial,
         Comment
     }

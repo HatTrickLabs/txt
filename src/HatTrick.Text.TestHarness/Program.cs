@@ -39,6 +39,7 @@ namespace HatTrick.Text.TestHarness
             SimpleLambdaExpressions();
             ComplexLambdaExpressions();
             LambdaExpressionDrivenBlocks();
+            WithTagScopeChangeBlocks();
             CodeGen();
 
             _sw.Stop();
@@ -763,6 +764,50 @@ namespace HatTrick.Text.TestHarness
                 .Replace("####now-1####", now.AddDays(-1).ToString("MM-dd-yyyy hh:mm"))
                 .Replace("####now-5####", now.AddDays(-5).ToString("MM-dd-yyyy hh:mm"))
                 .Replace("####now-14####", now.AddDays(-14).ToString("MM-dd-yyyy hh:mm")); ;
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region with tag scope change blocks
+        static void WithTagScopeChangeBlocks()
+        {
+            string name = "with-scope-change";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Contact = new                {
+                    Name = new { First = "Charlie", Last = "Brown" },
+                },
+                Structure = new
+                {
+                    Type = "School",
+                    YearBuilt = 1925,
+                    Address = new
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+            };
+
+            Func<string> GetAddressPartial = () =>
+            {
+                return ResolveTemplateInput("address-partial-scoped");
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
 
             bool passed = string.Compare(result, expected, false) == 0;
 

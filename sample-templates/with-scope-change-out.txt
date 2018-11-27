@@ -1,0 +1,16 @@
+Hello Charlie Brown,
+
+Following is a simple test of shifting scope via the with tag.
+
+Address:
+<div class="address">
+    <span class="address-line1">123 Main St.</span>
+    <span class="address-line2">Suite 200</span>
+    <span class="address-city-state-zip">Dallas, TX 77777</span>
+<div>
+
+Following is test for shifting forward and backword through 
+the scope chain via the with tag and the ..\ shift construct
+
+Name Again: Charlie
+Built: 1925
