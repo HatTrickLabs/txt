@@ -40,15 +40,15 @@ namespace HatTrick.Text
         private void ResolveKind()
         {
             string tag = _tag;
-            if (Tag.IsIfTag(tag))          //# if logic tag (boolean switch)
+            if (Tag.IsIfTag(tag))           //# if logic tag (boolean switch)
             {
                 _kind = TagKind.If;
             }
-            else if (Tag.IsEachTag(tag))   //#each enumeration
+            else if (Tag.IsEachTag(tag))    //#each enumeration
             {
                 _kind = TagKind.Each;
             }
-            else if (Tag.IsWithTag(tag))
+            else if (Tag.IsWithTag(tag))    //#with tag
             {
                 _kind = TagKind.With;
             }
