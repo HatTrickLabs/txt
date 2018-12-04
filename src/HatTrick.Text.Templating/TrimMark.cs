@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HatTrick.Text
+namespace HatTrick.Text.Templating
 {
     #region trim mark enum
     [Flags]

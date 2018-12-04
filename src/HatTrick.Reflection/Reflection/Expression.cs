@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Reflection;
 
-namespace HatTrick.Text.Reflection
+namespace HatTrick.Reflection
 {
     //reflects nested class members; i.e. itemExpression="User.Address.City"....JRod
     public static partial class ReflectionHelper
@@ -10,22 +10,22 @@ namespace HatTrick.Text.Reflection
         public static class Expression
         {
             #region reflect item
-            public static object ReflectItem(object sourceObject, string itemExpression, bool throwOnNoPropExists = true)
+            public static object ReflectItem(object source, string expression, bool throwOnNoPropExists = true)
             {
-                if (sourceObject == null) { throw new ArgumentNullException(nameof(sourceObject)); }
-                if (itemExpression == null) { throw new ArgumentNullException(nameof(itemExpression)); }
+                if (source == null) { throw new ArgumentNullException(nameof(source)); }
+                if (expression == null) { throw new ArgumentNullException(nameof(expression)); }
 
                 //re-usable internal object o
-                object o = sourceObject;
+                object o = source;
 
                 var itemExists = false;
 
-                int memberAccessorIdx = itemExpression.IndexOf('.');
-                string thisExpression = (memberAccessorIdx > -1) ? itemExpression.Substring(0, memberAccessorIdx) : itemExpression;
+                int memberAccessorIdx = expression.IndexOf('.');
+                string thisExpression = (memberAccessorIdx > -1) ? expression.Substring(0, memberAccessorIdx) : expression;
 
                 //if the caller is reflecting data from a dictionary, attempt dictionary lookup
                 IDictionary idict;
-                if ((idict = sourceObject as IDictionary) != null)
+                if ((idict = source as IDictionary) != null)
                 {
                     if (idict.Contains(thisExpression))
                     {
@@ -59,12 +59,12 @@ namespace HatTrick.Text.Reflection
                 if (itemExists && o != null && memberAccessorIdx > -1)
                 {
                     //recursive call...
-                    o = ReflectItem(o, itemExpression.Substring(++memberAccessorIdx, itemExpression.Length - memberAccessorIdx));
+                    o = ReflectItem(o, expression.Substring(++memberAccessorIdx, expression.Length - memberAccessorIdx));
                 }
 
                 if (!itemExists && throwOnNoPropExists)
                 {
-                    throw new NoPropertyExistsException($"Property does not exist on source object. Property: {itemExpression}, Bound Type: {sourceObject.GetType()}");
+                    throw new NoPropertyExistsException($"Property does not exist on source object. Property: {expression}, Bound Type: {source.GetType()}");
                 }
 
                 return itemExists ? o : null;

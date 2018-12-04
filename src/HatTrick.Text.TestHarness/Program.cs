@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using HatTrick.Text;
 
-namespace HatTrick.Text.TestHarness
+namespace HatTrick.Text.Templating.TestHarness
 {
     class Program
     {
@@ -262,7 +262,7 @@ namespace HatTrick.Text.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (HatTrick.Text.Reflection.NoPropertyExistsException npe)
+            catch (HatTrick.Reflection.NoPropertyExistsException npe)
             {
                 passed = true;
             }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HatTrick.Text.Reflection
+namespace HatTrick.Reflection
 {
     public class NoPropertyExistsException : Exception
     {
