@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace HatTrick.Text
+namespace HatTrick.Text.Templating
 {
     public static class StringInterpolation
     {
