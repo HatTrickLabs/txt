@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HatTrick.Reflection, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\HatTrick.Reflection.1.0.0\lib\netstandard2.0\HatTrick.Reflection.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,12 +52,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Reflection\HatTrick.Reflection.csproj">
-      <Project>{0d7e946d-eb70-49d5-ac30-f1e4a6050896}</Project>
-      <Name>HatTrick.Reflection</Name>
-    </ProjectReference>
     <ProjectReference Include="..\HatTrick.Text.Templating\HatTrick.Text.Templating.csproj">
       <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
       <Name>HatTrick.Text.Templating</Name>

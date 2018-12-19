@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Reflection\HatTrick.Reflection.csproj" />
+    <PackageReference Include="HatTrick.Reflection" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
