@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.TestHarness",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.Interpolation", "HatTrick.Text.Interpolation\HatTrick.Text.Interpolation.csproj", "{8989D329-9750-4AEE-8A14-D116A664A500}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Reflection", "HatTrick.Reflection\HatTrick.Reflection.csproj", "{0D7E946D-EB70-49D5-AC30-F1E4A6050896}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatTrick.Reflection", "HatTrick.Reflection\HatTrick.Reflection.csproj", "{0D7E946D-EB70-49D5-AC30-F1E4A6050896}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
