@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>HatTrick.Text.TestHarness</RootNamespace>
-    <AssemblyName>HatTrick.Text.TestHarness</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <ProjectGuid>{0D7E946D-EB70-49D5-AC30-F1E4A6050896}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HatTrick.Reflection</RootNamespace>
+    <AssemblyName>HatTrick.Reflection</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,10 +21,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -44,21 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Reflection\HatTrick.Reflection.csproj">
-      <Project>{0d7e946d-eb70-49d5-ac30-f1e4a6050896}</Project>
-      <Name>HatTrick.Reflection</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\HatTrick.Text.Templating\HatTrick.Text.Templating.csproj">
-      <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
-      <Name>HatTrick.Text.Templating</Name>
-    </ProjectReference>
+    <Compile Include="Reflection\Expression.cs" />
+    <Compile Include="Reflection\NoPropertyExistsException.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
