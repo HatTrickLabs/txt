@@ -10,6 +10,7 @@
     <PackageLicenseUrl>https://github.com/HatTrickLabs/txt/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
