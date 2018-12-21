@@ -11,6 +11,8 @@
     <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageTags>text template templating engine mustache handlebars</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
