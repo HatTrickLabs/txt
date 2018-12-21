@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Authors>Jerrod Eiman</Authors>
+    <Company>Hat Trick Labs</Company>
+    <Description>Text templating utilities.</Description>
+    <Copyright>Hat Trick Labs</Copyright>
+    <PackageLicenseUrl>https://github.com/HatTrickLabs/txt/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>text template templating engine mustache handlebars</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HatTrick.Reflection" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>

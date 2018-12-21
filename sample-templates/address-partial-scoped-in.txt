@@ -1,0 +1,5 @@
+<div class="address">
+    <span class="address-line1">{Line1}</span>
+    <span class="address-line2">{Line2}</span>
+    <span class="address-city-state-zip">{City}, {State} {Zip}</span>
+<div>

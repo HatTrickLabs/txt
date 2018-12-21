@@ -102,6 +102,7 @@ We see you are currently employed at Hat Trick Labs.
 	* numeric zero
 	* empty string
 	* empty collection
+	* DBNull.Value
 - Missing values are not considered *Falsey*.  An expression that attempts to bind a non-existant property|field|dictionary entry from the bound object will throw an exception.
 
 
@@ -186,6 +187,56 @@ var attendees = new
 	<li><bold>3</bold> - Smith, Jane</li>
 </ul>
 ```
+
+
+### With Template Blocks
+The *{#with}* template tag allows for a shift of local scope to a different position in the bound object.
+
+##### Data:
+```c#
+var account = new 
+{ 
+	Person  = new 
+	{
+		Name = new { First = "John", Last = "Dow" },
+		Address = new
+		{
+			Line1 = "112 Main St.",
+			Line2 = "Suite 210",
+			City = "Plano",
+			State = "TX",
+			Zip = "75075"
+		},
+		Employer = "Hat Trick Labs",
+	},
+};
+```
+
+##### Template
+```
+<div>Active Account:</div>
+{#with Person.Name}
+<div>{First} {Last}</div>
+{/with}
+<div>Address:</div>
+{#with Person.Address}
+<div>{Line1}{#if Line2}</br>{Line2}{/if}</div>
+<div>{City}, {State} {Zip}</div>
+{/with}
+```
+
+##### Results
+```
+<div>Active Account:</div>
+<div>John Doe</div>
+<div>Address:</div>
+<div>112 Main St.</br>Suite 210</div>
+<div>Plano, TX 75075</div>
+```
+
+##### Notes:
+- Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the with tag would have required repeating *Person.Address* 6 times.
+- Shifting of scope via *{#with}*  tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
 
 
 ### Template Comments

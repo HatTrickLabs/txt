@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HatTrick.Reflection, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\HatTrick.Reflection.1.0.3\lib\netstandard2.0\HatTrick.Reflection.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,11 +52,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Text\HatTrick.Text.csproj">
+    <ProjectReference Include="..\HatTrick.Text.Templating\HatTrick.Text.Templating.csproj">
       <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
-      <Name>HatTrick.Text</Name>
+      <Name>HatTrick.Text.Templating</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
