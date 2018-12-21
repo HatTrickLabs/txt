@@ -262,7 +262,7 @@ namespace HatTrick.Text.Templating.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (HatTrick.Reflection.NoPropertyExistsException npe)
+            catch (HatTrick.Reflection.NoItemExistsException npe)
             {
                 passed = true;
             }
