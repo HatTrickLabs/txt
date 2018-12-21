@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.Templating", "HatTrick.Text.Templating\HatTrick.Text.Templating.csproj", "{36A1A864-955A-4504-B392-B74DD8849422}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatTrick.Text.Templating", "HatTrick.Text.Templating\HatTrick.Text.Templating.csproj", "{36A1A864-955A-4504-B392-B74DD8849422}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.TestHarness", "HatTrick.Text.TestHarness\HatTrick.Text.TestHarness.csproj", "{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.Interpolation", "HatTrick.Text.Interpolation\HatTrick.Text.Interpolation.csproj", "{8989D329-9750-4AEE-8A14-D116A664A500}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Reflection", "HatTrick.Reflection\HatTrick.Reflection.csproj", "{0D7E946D-EB70-49D5-AC30-F1E4A6050896}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatTrick.Text.Interpolation", "HatTrick.Text.Interpolation\HatTrick.Text.Interpolation.csproj", "{8989D329-9750-4AEE-8A14-D116A664A500}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,22 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{36A1A864-955A-4504-B392-B74DD8849422}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{36A1A864-955A-4504-B392-B74DD8849422}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36A1A864-955A-4504-B392-B74DD8849422}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{36A1A864-955A-4504-B392-B74DD8849422}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{36A1A864-955A-4504-B392-B74DD8849422}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36A1A864-955A-4504-B392-B74DD8849422}.Release|Any CPU.Build.0 = Release|Any CPU
 		{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{714623E1-E1D4-4C8D-B7F1-BD896E3206CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8989D329-9750-4AEE-8A14-D116A664A500}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8989D329-9750-4AEE-8A14-D116A664A500}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8989D329-9750-4AEE-8A14-D116A664A500}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{8989D329-9750-4AEE-8A14-D116A664A500}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{8989D329-9750-4AEE-8A14-D116A664A500}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8989D329-9750-4AEE-8A14-D116A664A500}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D7E946D-EB70-49D5-AC30-F1E4A6050896}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D7E946D-EB70-49D5-AC30-F1E4A6050896}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D7E946D-EB70-49D5-AC30-F1E4A6050896}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D7E946D-EB70-49D5-AC30-F1E4A6050896}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
