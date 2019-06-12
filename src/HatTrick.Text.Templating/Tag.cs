@@ -44,13 +44,25 @@ namespace HatTrick.Text.Templating
             {
                 _kind = TagKind.If;
             }
+            else if (Tag.IsEndIfTag(tag))
+            {
+                _kind = TagKind.EndIf;
+            }
             else if (Tag.IsEachTag(tag))    //#each enumeration
             {
                 _kind = TagKind.Each;
             }
+            else if (Tag.IsEndEachTag(tag))
+            {
+                _kind = TagKind.EndEach;
+            }
             else if (Tag.IsWithTag(tag))    //#with tag
             {
                 _kind = TagKind.With;
+            }
+            else if (Tag.IsEndWithTag(tag))    //#with tag
+            {
+                _kind = TagKind.EndWith;
             }
             else if (Tag.IsPartialTag(tag)) //sub template tag
             {

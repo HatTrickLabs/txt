@@ -8,8 +8,11 @@ namespace HatTrick.Text.Templating
         Unknown,
         Simple,
         If,
+        EndIf,
         Each,
+        EndEach,
         With,
+        EndWith,
         Partial,
         Comment
     }
