@@ -507,7 +507,7 @@ namespace HatTrick.Text.Templating
             return this.RollTill(emitTo, (c) => c == till, greedy, isSubBlock);
         }
 
-        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy, bool isSubBlock)
+        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy, bool isSubBlock, bool breakOnEscape = false)
         {
             bool found = false;
             char eot = (char)3;
@@ -523,6 +523,9 @@ namespace HatTrick.Text.Templating
                     char next = this.PeekAt(_index + 1);
                     if (c == next)
                     {
+                        if (breakOnEscape)
+                            break;
+
                         emitTo(c);
                         if (isSubBlock)
                         {
@@ -655,13 +658,14 @@ namespace HatTrick.Text.Templating
             //if global trim trailing newline || tag has the newline trim marker..
             if (tag.Has(TrimMark.Right) || force)
             {
-                Action<char> emitTo = (c) => { }; //just throw the whitespace away...
+                Action<char> emitTo = (c) => { };//just throw away the whitespace...
 
                 Func<char, bool> isNotWhitespace = (c) =>
                 {
                     return !(c == ' ' || c == '\t');
                 };
-                bool found = this.RollTill(emitTo, isNotWhitespace, false, false);
+
+                bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
             }
         }
         #endregion
