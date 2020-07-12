@@ -172,8 +172,9 @@ namespace HatTrick.Text.Templating
         #region handle comment tag
         private void HandleCommentTag(in Tag tag)
         {
-            this.EnsureLeftTrim(_result, in tag, false);
-            this.EnsureRightTrim(in tag, false);
+            bool forceTrim = _trimWhitespace;
+            this.EnsureLeftTrim(_result, in tag, forceTrim);
+            this.EnsureRightTrim(in tag, forceTrim);
         }
         #endregion
 
@@ -248,8 +249,7 @@ namespace HatTrick.Text.Templating
             System.Collections.IEnumerable col;
 
             bool isFalse = (val == null)
-                       ||
-                          ((bit = val as bool?) != null && bit == false
+                       || ((bit = val as bool?) != null && bit == false
                        || (i = val as int?) != null && i == 0
                        || (dbl = val as double?) != null && dbl == 0
                        || (l = val as long?) != null && l == 0
@@ -431,16 +431,19 @@ namespace HatTrick.Text.Templating
         #region parse lambda arguments
         private object[] ParseLambdaArguments(object localScope, string[] args)
         {
+            char doubleQuote = '"';
+            char singleQuote = '\'';
+
             object[] arguments = new object[args.Length];
 
             //TODO: JRod, refactor this to lex proper without the SubString calls... 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i][0] == '\"' && args[i][args[i].Length - 1] == '\"')      //double quoted string literal...
+                if (args[i][0] == doubleQuote && args[i][args[i].Length - 1] == doubleQuote)      //double quoted string literal...
                 {
                     arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
-                else if (args[i][0] == '\'' && args[i][args[i].Length - 1] == '\'') //single quoted string literal...
+                else if (args[i][0] == singleQuote && args[i][args[i].Length - 1] == singleQuote) //single quoted string literal...
                 {
                     arguments[i] = args[i].Substring(1, (args[i].Length - 2));
                 }
@@ -623,7 +626,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region ensure left  trim
+        #region ensure left trim
         private void EnsureLeftTrim(StringBuilder from, in Tag tag, bool force)
         {
             if (tag.Has(TrimMark.Left) || force)
