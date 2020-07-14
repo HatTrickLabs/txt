@@ -1,6 +1,5 @@
 {Name.First} {Name.Last}'s Address History:
 
 {#each Addresses}
-{>..\AddressTemplate}
-
+{+>..\AddressTemplate}
 {/each}

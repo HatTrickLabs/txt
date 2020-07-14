@@ -29,6 +29,7 @@ namespace HatTrick.Text.Templating.TestHarness
             SimpleConditionalBlocks();
             NegatedConditionalBlocks();
             SimpleWhitespaceControl();
+            ComplexWhitespaceControlOne();
             GlobalWhitespaceControl();
             SimpleIterationBlocks();
             ThrowOnNonIEnumerableIterationTarget();
@@ -387,6 +388,41 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
+        #region complex whitespace control
+        static void ComplexWhitespaceControlOne()
+        {
+            string name = "complex-whitespace-control";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                IsEmployed = false,
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" },
+                Addresses = new Address[]
+                {
+                    new Address { Line1 = "123 Main St", Line2 = "Apt 200", City = "Dallas", State = "TX", Zip = "75001" },
+                    new Address { Line1 = "321 Main St", Line2 = "Apt 210", City = "San Antonio", State = "TX", Zip = "78006" },
+                    new Address { Line1 = "400 W. 4th", Line2 = "Apt 198", City = "Lubbock", State = "TX", Zip = "79401" },
+                    new Address { Line1 = "W 66th", Line2 = "Apt 222", City = "Austin", State = "TX", Zip = "73301" },
+                },
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
         #region global whitespace control
         static void GlobalWhitespaceControl()
         {
@@ -521,7 +557,7 @@ namespace HatTrick.Text.Templating.TestHarness
                     new Address { Line1 = "W 66th", Line2 = "Apt 222", City = "Austin", State = "TX", Zip = "73301" },
                 },
                 NewLine = Environment.NewLine,
-                AddressTemplate = @"{$.Line1}{..\$.NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}"
+                AddressTemplate = @"{$.Line1}{..\$.NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}{..\$.NewLine}"
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
@@ -779,7 +815,7 @@ namespace HatTrick.Text.Templating.TestHarness
 
             var data = new
             {
-                Contact = new                {
+                Contact = new {
                     Name = new { First = "Charlie", Last = "Brown" },
                 },
                 Structure = new
