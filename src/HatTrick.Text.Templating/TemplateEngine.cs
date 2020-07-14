@@ -35,7 +35,7 @@ namespace HatTrick.Text.Templating
         public bool TrimWhitespace
         {
             get { return _trimWhitespace; }
-            set { _trimWhitespace = true; }
+            set { _trimWhitespace = value; }
         }
 
         public LambdaRepository LambdaRepo
@@ -129,7 +129,7 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.RollTill(_tagBldr.Append, '}', true, false))
                     {
-                        Tag tag = new Tag(_tagBldr.ToString());
+                        Tag tag = new Tag(_tagBldr.ToString(), _trimWhitespace);
                         _progress?.Invoke(_lineNum, tag.ToString());
                         this.HandleTag(tag, bindTo);
                     }
@@ -172,9 +172,8 @@ namespace HatTrick.Text.Templating
         #region handle comment tag
         private void HandleCommentTag(in Tag tag)
         {
-            bool forceTrim = _trimWhitespace;
-            this.EnsureLeftTrim(_result, in tag, forceTrim);
-            this.EnsureRightTrim(in tag, forceTrim);
+            this.EnsureLeftTrim(_result, in tag);
+            this.EnsureRightTrim(in tag);
         }
         #endregion
 
@@ -191,10 +190,8 @@ namespace HatTrick.Text.Templating
         #region handle if tag
         private void HandleIfTag(in Tag tag, object bindTo)
         {
-            bool forceTrim = _trimWhitespace;
-
-            this.EnsureLeftTrim(_result, tag, forceTrim);
-            this.EnsureRightTrim(tag, forceTrim);
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
 
             StringBuilder block = new StringBuilder();
 
@@ -204,8 +201,8 @@ namespace HatTrick.Text.Templating
             Tag closeTag;
             this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndIfTag, Tag.IsIfTag, out closeTag);
 
-            this.EnsureLeftTrim(block, closeTag, forceTrim);
-            this.EnsureRightTrim(closeTag, forceTrim);
+            this.EnsureLeftTrim(block, closeTag);
+            this.EnsureRightTrim(closeTag);
 
             string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
@@ -271,9 +268,8 @@ namespace HatTrick.Text.Templating
         #region handle each tag
         private void HandleEachTag(in Tag tag, object bindTo)
         {
-            bool forceTrim = _trimWhitespace;
-            this.EnsureLeftTrim(_result, tag, forceTrim);
-            this.EnsureRightTrim(tag, forceTrim);
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
 
             StringBuilder block = new StringBuilder();
 
@@ -282,8 +278,8 @@ namespace HatTrick.Text.Templating
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             Tag closeTag;
             this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndEachTag, Tag.IsEachTag, out closeTag);
-            this.EnsureLeftTrim(block, closeTag, forceTrim);
-            this.EnsureRightTrim(closeTag, forceTrim);
+            this.EnsureLeftTrim(block, closeTag);
+            this.EnsureRightTrim(closeTag);
 
             string bindAs = tag.BindAs();
 
@@ -321,9 +317,8 @@ namespace HatTrick.Text.Templating
         #region handle with tag
         private void HandleWithTag(in Tag tag, object bindTo)
         {
-            bool forceTrim = _trimWhitespace;
-            this.EnsureLeftTrim(_result, tag, forceTrim);
-            this.EnsureRightTrim(tag, forceTrim);
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
 
             StringBuilder block = new StringBuilder();
 
@@ -332,8 +327,8 @@ namespace HatTrick.Text.Templating
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             Tag closeTag;
             this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndWithTag, Tag.IsWithTag, out closeTag);
-            this.EnsureLeftTrim(block, closeTag, forceTrim);
-            this.EnsureRightTrim(closeTag, forceTrim);
+            this.EnsureLeftTrim(block, closeTag);
+            this.EnsureRightTrim(closeTag);
 
             string bindAs = tag.BindAs();
 
@@ -358,8 +353,8 @@ namespace HatTrick.Text.Templating
         #region handle partial tag (sub templates)
         private void HandlePartialTag(in Tag tag, object bindTo)
         {
-            this.EnsureLeftTrim(_result, tag, false);
-            this.EnsureRightTrim(tag, false);
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
 
             string bindAs = tag.BindAs();
             object target = this.ResolveTarget(bindAs, bindTo);
@@ -594,7 +589,7 @@ namespace HatTrick.Text.Templating
                     }
                     else
                     {
-                        endTag = new Tag(_tagBldr.ToString());
+                        endTag = new Tag(_tagBldr.ToString(), _trimWhitespace);
                     }
                 }
                 if (tagIsContent)
@@ -627,9 +622,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region ensure left trim
-        private void EnsureLeftTrim(StringBuilder from, in Tag tag, bool force)
+        private void EnsureLeftTrim(StringBuilder from, in Tag tag)
         {
-            if (tag.Has(TrimMark.Left) || force)
+            if (tag.ShouldTrimLeft())
             {
                 int len = Environment.NewLine.Length; //new line len
                 bool found = false;//line end found
@@ -656,10 +651,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region ensure right trim
-        private void EnsureRightTrim(in Tag tag, bool force)
+        private void EnsureRightTrim(in Tag tag)
         {
             //if global trim trailing newline || tag has the newline trim marker..
-            if (tag.Has(TrimMark.Right) || force)
+            if (tag.ShouldTrimRight())
             {
                 Action<char> emitTo = (c) => { };//just throw away the whitespace...
 

@@ -12,6 +12,7 @@ namespace HatTrick.Text.Templating
         private TagKind _kind;
         private string _tag;
         private TrimMark _markers;
+        private bool _forceTrim;
         #endregion
 
         #region interface
@@ -19,11 +20,12 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region constructors
-        public Tag(string tag)
+        public Tag(string tag, bool forceTrim)
         {
             _tag = tag;
             _kind = TagKind.Unknown;
             _markers = TrimMark.None;
+            _forceTrim = forceTrim;
             this.Init();
         }
         #endregion
@@ -40,7 +42,7 @@ namespace HatTrick.Text.Templating
         private void ResolveKind()
         {
             string tag = _tag;
-            if (Tag.IsIfTag(tag))           //# if logic tag (boolean switch)
+            if (Tag.IsIfTag(tag))               //# if logic tag (boolean switch)
             {
                 _kind = TagKind.If;
             }
@@ -48,7 +50,7 @@ namespace HatTrick.Text.Templating
             {
                 _kind = TagKind.EndIf;
             }
-            else if (Tag.IsEachTag(tag))    //#each enumeration
+            else if (Tag.IsEachTag(tag))        //#each enumeration
             {
                 _kind = TagKind.Each;
             }
@@ -56,23 +58,23 @@ namespace HatTrick.Text.Templating
             {
                 _kind = TagKind.EndEach;
             }
-            else if (Tag.IsWithTag(tag))    //#with tag
+            else if (Tag.IsWithTag(tag))        //#with tag
             {
                 _kind = TagKind.With;
             }
-            else if (Tag.IsEndWithTag(tag))    //#with tag
+            else if (Tag.IsEndWithTag(tag))
             {
                 _kind = TagKind.EndWith;
             }
-            else if (Tag.IsPartialTag(tag)) //sub template tag
+            else if (Tag.IsPartialTag(tag))     //sub template tag
             {
                 _kind = TagKind.Partial;
             }
-            else if (Tag.IsCommentTag(tag)) //comment tag
+            else if (Tag.IsCommentTag(tag))     //comment tag
             {
                 _kind = TagKind.Comment;
             }
-            else                            //simple tag
+            else                                //simple tag
             {
                 _kind = TagKind.Simple;
             }
@@ -82,13 +84,22 @@ namespace HatTrick.Text.Templating
         #region resolve trim markers
         private void ResolveTrimMarkers()
         {
-            if (_tag[1] == '-')             //has left trim mark...
+            if (_tag[1] == '-')                 //has discard left trim mark...
             {
-                _markers = TrimMark.Left;
+                _markers = TrimMark.DiscardLeft;
             }
-            if (_tag[_tag.Length - 2] == '-')//has right trim mark...
+            else if (_tag[1] == '+')                 //has retain left trim mark...
             {
-                _markers |= TrimMark.Right;
+                _markers = TrimMark.RetainLeft;
+            }
+
+            if (_tag[_tag.Length - 2] == '-')   //has discard right trim mark...
+            {
+                _markers |= TrimMark.DiscardRight;
+            }
+            else if (_tag[_tag.Length - 2] == '+')   //has retain right trim mark...
+            {
+                _markers |= TrimMark.RetainRight;
             }
         }
         #endregion
@@ -98,7 +109,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 4
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '#')
                 && (tag[2] == '#' || tag[2] == 'i')
                 && (tag[3] == 'i' || tag[3] == 'f');
         }
@@ -109,7 +120,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 4
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '/')
                 && (tag[2] == '/' || tag[2] == 'i')
                 && (tag[3] == 'i' || tag[3] == 'f');
         }
@@ -120,7 +131,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '#')
                 && (tag[2] == '#' || tag[2] == 'e')
                 && (tag[3] == 'e' || tag[3] == 'a')
                 && (tag[4] == 'a' || tag[4] == 'c')
@@ -133,7 +144,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '/')
                 && (tag[2] == '/' || tag[2] == 'e')
                 && (tag[3] == 'e' || tag[3] == 'a')
                 && (tag[4] == 'a' || tag[4] == 'c')
@@ -146,7 +157,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '#')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '#')
                 && (tag[2] == '#' || tag[2] == 'w')
                 && (tag[3] == 'w' || tag[3] == 'i')
                 && (tag[4] == 'i' || tag[4] == 't')
@@ -159,7 +170,7 @@ namespace HatTrick.Text.Templating
         {
             return tag.Length > 6
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '/')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '/')
                 && (tag[2] == '/' || tag[2] == 'w')
                 && (tag[3] == 'w' || tag[3] == 'i')
                 && (tag[4] == 'i' || tag[4] == 't')
@@ -171,7 +182,7 @@ namespace HatTrick.Text.Templating
         public static bool IsCommentTag(string tag)
         {
             return tag[0] == '{'
-                && (tag[1] == '!' || (tag[1] == '-' && tag[2] == '!'));
+                && (tag[1] == '!' || (tag[1] == '-' && tag[2] == '!') || (tag[1] == '+' && tag[2] == '!'));
         }
         #endregion
 
@@ -179,7 +190,7 @@ namespace HatTrick.Text.Templating
         public static bool IsPartialTag(string tag)
         {
             return tag[0] == '{'
-                && (tag[1] == '>' || (tag[1] == '-' && tag[2] == '>'));
+                && (tag[1] == '>' || (tag[1] == '-' && tag[2] == '>') || (tag[1] == '+' && tag[2] == '>'));
         }
         #endregion
 
@@ -199,8 +210,8 @@ namespace HatTrick.Text.Templating
                 case TagKind.If:
                     {
                         string tag = _tag;
-                        bool left = this.Has(TrimMark.Left);
-                        bool right = this.Has(TrimMark.Right);
+                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 5 : 4;
 
                         int len = (left && right)
@@ -215,8 +226,8 @@ namespace HatTrick.Text.Templating
                 case TagKind.Each:
                     {
                         string tag = _tag;
-                        bool left = this.Has(TrimMark.Left);
-                        bool right = this.Has(TrimMark.Right);
+                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
 
                         int len = (left && right)
@@ -231,8 +242,8 @@ namespace HatTrick.Text.Templating
                 case TagKind.With:
                     {
                         string tag = _tag;
-                        bool left = this.Has(TrimMark.Left);
-                        bool right = this.Has(TrimMark.Right);
+                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
 
                         int len = (left && right)
@@ -247,8 +258,8 @@ namespace HatTrick.Text.Templating
                 case TagKind.Partial:
                     {
                         string tag = _tag;
-                        bool left = this.Has(TrimMark.Left);
-                        bool right = this.Has(TrimMark.Right);
+                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 3 : 2;
 
                         int len = (left && right) 
@@ -270,14 +281,30 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region has
-        public bool Has(TrimMark marker)
+        public bool HasTrimMark(TrimMark marker)
         {
             return (_markers & marker) == marker; 
         }
         #endregion
 
-        #region to string
-        public override string ToString()
+        #region should trim left
+        public bool ShouldTrimLeft()
+        {
+            bool result = HasTrimMark(TrimMark.DiscardLeft) || (_forceTrim && !HasTrimMark(TrimMark.RetainLeft));
+            return result;
+        }
+        #endregion
+
+        #region should trim right
+        public bool ShouldTrimRight()
+        {
+            bool result = HasTrimMark(TrimMark.DiscardRight) || (_forceTrim && !HasTrimMark(TrimMark.RetainRight));
+            return result;
+        }
+		#endregion
+
+		#region to string
+		public override string ToString()
         {
             return _tag;
         }

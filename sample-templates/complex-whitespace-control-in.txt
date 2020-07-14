@@ -1,0 +1,38 @@
+***************
+
+{! Retain white space prior to open and close each tags }
+We see you have previously worked at:
+{+#each PreviousEmployers} 
+* {$} 
+{+/each}
+***************
+
+{! Retain white space after open #if tags }
+We see that you are currently {#if Spouse+} married{/if}{#if !Spouse+} single{/if}.
+
+***************
+
+{! Retain white space before open if tags  }
+We see that you are currently {+#if Spouse}married{/if} {+#if !Spouse}single{/if}.
+
+***************
+
+{! Retain white space by end open if tag (IsEmployed) or start open if tag (!IsEmployed)  }
+Employment status:{#if IsEmployed+} Has Job{/if+} {+#if !IsEmployed}No Employment{/if}
+
+***************
+
+{! 
+  Retain white space by end open if tag (IsEmployed) or start open if tag (!IsEmployed) 
+  with inner text wrapped in escaped brackets
+}
+Employment status:{#if IsEmployed+} {{Has Job}}{/if+} {+#if !IsEmployed}{{No Employment}}{/if}
+
+***************
+
+{#with Name}
+First:	{First}
+Last:	{Last}
+
+{+/with}
+(should be 3 new lines before this line)

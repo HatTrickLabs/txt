@@ -6,9 +6,11 @@ namespace HatTrick.Text.Templating
     [Flags]
     public enum TrimMark
     {
-        None = 0x0,
-        Left = 0x1,
-        Right = 0x2,
+        None =          0x0,
+        DiscardLeft =   0x1,
+        DiscardRight =  0x2,
+        RetainLeft =    0x4,
+        RetainRight =   0x8
     }
     #endregion
 }
