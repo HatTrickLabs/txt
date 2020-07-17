@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.TestHarness",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatTrick.Text.Interpolation", "HatTrick.Text.Interpolation\HatTrick.Text.Interpolation.csproj", "{8989D329-9750-4AEE-8A14-D116A664A500}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HatTrick.Text.Test", "..\test\HatTrick.Text.Test\HatTrick.Text.Test.csproj", "{C1901F5D-0C9D-4B5A-A82B-5037BF70BBAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{8989D329-9750-4AEE-8A14-D116A664A500}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8989D329-9750-4AEE-8A14-D116A664A500}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8989D329-9750-4AEE-8A14-D116A664A500}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1901F5D-0C9D-4B5A-A82B-5037BF70BBAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1901F5D-0C9D-4B5A-A82B-5037BF70BBAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1901F5D-0C9D-4B5A-A82B-5037BF70BBAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1901F5D-0C9D-4B5A-A82B-5037BF70BBAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
