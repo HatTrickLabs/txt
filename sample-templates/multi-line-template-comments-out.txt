@@ -16,6 +16,7 @@ namespace Common
 		#endregion
 	}
 	#endregion
+
 	#region Address
 	public class Address
 	{
@@ -32,4 +33,5 @@ namespace Common
 		#endregion
 	}
 	#endregion
+
 }

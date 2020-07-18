@@ -29,8 +29,8 @@ namespace HatTrick.Text.Templating.TestHarness
             SimpleConditionalBlocks();
             NegatedConditionalBlocks();
             SimpleWhitespaceControl();
-            ComplexWhitespaceControlOne();
             GlobalWhitespaceControl();
+            ComplexWhitespaceControl();
             SimpleIterationBlocks();
             ThrowOnNonIEnumerableIterationTarget();
             WalkingTheScopeChain();
@@ -277,9 +277,11 @@ namespace HatTrick.Text.Templating.TestHarness
         #region truthy falsey
         private static void TruthyFalsey()
         {
-            TemplateEngine ngin = new TemplateEngine("");
-            bool[] isTrue = new bool[20];
+            string name = "truthy-falsey";
+            string template = ResolveTemplateInput(name);
+            TemplateEngine ngin = new TemplateEngine(template);
 
+            bool[] isTrue = new bool[20];
             isTrue[0] = ngin.IsTrue(null) == false;
             isTrue[1] = ngin.IsTrue(1.00F) == true;
             isTrue[2] = ngin.IsTrue(1U) == true;
@@ -301,9 +303,19 @@ namespace HatTrick.Text.Templating.TestHarness
             isTrue[18] = ngin.IsTrue("false") == true;
             isTrue[19] = ngin.IsTrue("hello") == true;
 
-            bool passed = isTrue.All(b => b);
+            int idx = 0;
+            Func<int> GetNextIndex = () => idx++;
+            ngin.LambdaRepo.Register(nameof(GetNextIndex), GetNextIndex);
 
-            RenderOutput("truthy-falsey", passed);
+            ngin.TrimWhitespace = true;
+
+            string result = ngin.Merge(isTrue);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
         }
         #endregion
 
@@ -388,41 +400,6 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region complex whitespace control
-        static void ComplexWhitespaceControlOne()
-        {
-            string name = "complex-whitespace-control";
-            string template = ResolveTemplateInput(name);
-
-            var data = new
-            {
-                Name = new { First = "Charlie", Last = "Brown" },
-                IsEmployed = false,
-                CurrentEmployer = "Hat Trick Labs",
-                Spouse = default(object),//null is falsey
-                Certifications = new string[] { },//empty array is falsey
-                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" },
-                Addresses = new Address[]
-                {
-                    new Address { Line1 = "123 Main St", Line2 = "Apt 200", City = "Dallas", State = "TX", Zip = "75001" },
-                    new Address { Line1 = "321 Main St", Line2 = "Apt 210", City = "San Antonio", State = "TX", Zip = "78006" },
-                    new Address { Line1 = "400 W. 4th", Line2 = "Apt 198", City = "Lubbock", State = "TX", Zip = "79401" },
-                    new Address { Line1 = "W 66th", Line2 = "Apt 222", City = "Austin", State = "TX", Zip = "73301" },
-                },
-            };
-
-            TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = true;
-            string result = ngin.Merge(data);
-
-            string expected = ResolveTemplateOutput(name);
-
-            bool passed = string.Compare(result, expected, false) == 0;
-
-            RenderOutput(name, passed);
-        }
-        #endregion
-
         #region global whitespace control
         static void GlobalWhitespaceControl()
         {
@@ -441,6 +418,34 @@ namespace HatTrick.Text.Templating.TestHarness
 
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.TrimWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region complex whitespace control
+        static void ComplexWhitespaceControl()
+        {
+            string name = "complex-whitespace-control";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+                IsEmployed = false,
+                CurrentEmployer = "Hat Trick Labs",
+                Spouse = default(object),//null is falsey
+                Certifications = new string[] { },//empty array is falsey
+                PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -889,7 +894,7 @@ namespace HatTrick.Text.Templating.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            //ngin.TrimWhitespace = true; //global flag for whitespace control...
+            ngin.TrimWhitespace = false; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -899,10 +904,10 @@ namespace HatTrick.Text.Templating.TestHarness
             RenderOutput(name, passed);
         }
         #endregion
-    }
+	}
 
-    #region person class
-    public class Person
+	#region person class
+	public class Person
     {
         public int Age;
 
