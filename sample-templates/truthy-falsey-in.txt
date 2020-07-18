@@ -1,0 +1,28 @@
+bool[] isTrue = new bool[20];
+
+isTrue[0] = ngin.IsTrue(null) == false;
+isTrue[1] = ngin.IsTrue(1.00F) == true;
+isTrue[2] = ngin.IsTrue(1U) == true;
+isTrue[3] = ngin.IsTrue(0.00F) == false;
+isTrue[4] = ngin.IsTrue(0) == false;
+isTrue[5] = ngin.IsTrue(string.Empty) == false;
+isTrue[6] = ngin.IsTrue(new object[0]) == false;
+isTrue[7] = ngin.IsTrue(new object[1]) == true;
+isTrue[8] = ngin.IsTrue(true) == true;
+isTrue[9] = ngin.IsTrue(false) == false;
+isTrue[10] = ngin.IsTrue('\0') == false;
+isTrue[11] = ngin.IsTrue('t') == true;
+isTrue[12] = ngin.IsTrue('f') == true;
+isTrue[13] = ngin.IsTrue((decimal)1.111) == true;
+isTrue[14] = ngin.IsTrue((decimal)0.000) == false;
+isTrue[15] = ngin.IsTrue("\0") == false;
+isTrue[16] = ngin.IsTrue("f") == true;
+isTrue[17] = ngin.IsTrue("t") == true;
+isTrue[18] = ngin.IsTrue("false") == true;
+isTrue[19] = ngin.IsTrue("hello") == true;
+
+Results
+----------------------------------------------------
+{#each $}
+isTrue[{() => GetNextIndex}] = {$}
+{/each}
