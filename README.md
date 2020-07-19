@@ -64,7 +64,7 @@ Hello John, we see you currently live in Dallas, TX.
 ```
 
 
-### Conditional Template Blocks:
+### Conditional Blocks:
 The *{#if}* tag allows for conditionally rendering template blocks based on evaluation of *truthy/falsy* conditions.
 
 ##### Data:
@@ -106,7 +106,7 @@ We see you are currently employed at Hat Trick Labs.
 - Missing values are not considered *Falsey*.  An expression that attempts to bind a non-existant property|field|dictionary entry from the bound object will throw an exception.
 
 
-### Iteration Template Blocks
+### Iteration Blocks
 The *{#each}* tag allows for conditional rendering based on collection types.  *{#each}* tags iterate over items in the provided
 collection and render the contained text block.  The contained text block operates within the scope context of the iterated item.
 
@@ -153,7 +153,7 @@ We see you currently hold  the following certs:
 
 
 
-### Partial Templates Blocks
+### Partial Template Blocks
 The partial template *{>tag}* is used to inject sub template content.  
 
 ##### Data:
@@ -189,7 +189,7 @@ var attendees = new
 ```
 
 
-### With Template Blocks
+### With Blocks
 The *{#with}* template tag allows for a shift of local scope to a different position in the bound object.
 
 ##### Data:
@@ -240,7 +240,7 @@ var account = new
 
 
 ### Template Comments
-The template engine supports {! comment } tags.  
+The template engine supports *{! comment }* tags.  
 
 ##### Data:
 ```c#
@@ -266,8 +266,8 @@ var person = new
 - *{!Comment}* tags can span multiple lines.
 
 
-### Whitespace control
-By default, all text that resides outside of a *{tag}* is emmitted to output.  Cleanly formatted templates can result in gnarled render results.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}* ), the white space trim marker(s) can be applied to the tag for whitespace control.
+### Whitespace Control
+By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
 ```c#
@@ -348,7 +348,9 @@ We see you don't have any certs.
 ##### Notes:
 - Left trim markers *{-#if}* will trim all preceding whitespace INCLUDING the FIRST newline.
 - Right trim markers *{#if-}* will trim all trailing whitespace NOT INCLUDING newline(s).
-- To force trim on all applicable tags without including the trim markers, set *TemplateEngine.SuppressWhitespace = true*.
+- To force trim on all applicable tags without including the trim markers, set *TemplateEngine.TrimWhitespace = true*.
+- If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
+- The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
 
 ### Lambda Expressions (Helper Functions)
 Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.
