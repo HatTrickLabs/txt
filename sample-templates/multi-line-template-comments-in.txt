@@ -26,3 +26,10 @@ namespace Common
 	#endregion
 {+/each}
 }}
+{! this
+   is
+   just
+   another
+   multi-line
+   comment that contains {{ abc }} escaped brackets
+}	
