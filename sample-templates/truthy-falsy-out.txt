@@ -1,0 +1,45 @@
+bool[] isTrue = new bool[20];
+
+isTrue[0] = ngin.IsTrue(null);
+isTrue[1] = ngin.IsTrue(1.00F);
+isTrue[2] = ngin.IsTrue(1U);
+isTrue[3] = ngin.IsTrue(0.00F);
+isTrue[4] = ngin.IsTrue(0) == false;
+isTrue[5] = ngin.IsTrue(string.Empty);
+isTrue[6] = ngin.IsTrue(new object[0]);
+isTrue[7] = ngin.IsTrue(new object[1]);
+isTrue[8] = ngin.IsTrue(true);
+isTrue[9] = ngin.IsTrue(false);
+isTrue[10] = ngin.IsTrue('\0');
+isTrue[11] = ngin.IsTrue('t');
+isTrue[12] = ngin.IsTrue('f');
+isTrue[13] = ngin.IsTrue((decimal)1.111);
+isTrue[14] = ngin.IsTrue((decimal)0.000);
+isTrue[15] = ngin.IsTrue("\0");
+isTrue[16] = ngin.IsTrue("f");
+isTrue[17] = ngin.IsTrue("t");
+isTrue[18] = ngin.IsTrue("false");
+isTrue[19] = ngin.IsTrue("hello");
+
+Results
+------------------------------------------
+isTrue[0]	= False
+isTrue[1]	= True
+isTrue[2]	= True
+isTrue[3]	= False
+isTrue[4]	= False
+isTrue[5]	= False
+isTrue[6]	= False
+isTrue[7]	= True
+isTrue[8]	= True
+isTrue[9]	= False
+isTrue[10]	= False
+isTrue[11]	= True
+isTrue[12]	= True
+isTrue[13]	= True
+isTrue[14]	= False
+isTrue[15]	= False
+isTrue[16]	= True
+isTrue[17]	= True
+isTrue[18]	= True
+isTrue[19]	= True
