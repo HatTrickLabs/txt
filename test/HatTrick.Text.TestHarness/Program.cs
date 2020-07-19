@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using HatTrick.Text;
+using System.Linq;
 
 namespace HatTrick.Text.Templating.TestHarness
 {
@@ -84,7 +84,7 @@ namespace HatTrick.Text.Templating.TestHarness
         static string AssemblePath(string name, string context)
         {
             char dsc = Path.DirectorySeparatorChar;
-            string path = $"..{dsc}..{dsc}..{dsc}..{dsc}sample-templates{dsc}{name}-{context}.txt";
+            string path = $"..{dsc}..{dsc}..{dsc}sample-templates{dsc}{name}-{context}.txt";
             return path;
         }
         #endregion
@@ -96,7 +96,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple tags
+        #region simple tags x
         static void SimpleTags()
         {
             string name = "simple-tags";
@@ -119,7 +119,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region bracket escaping
+        #region bracket escaping x
         static void BracketEscaping()
         {
             string name = "bracket-escaping";
@@ -141,7 +141,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region complex bind expressions
+        #region complex bind expressions x
         static void ComplexBindExpressions()
         {
             string name = "complex-bind-expressions";
@@ -171,7 +171,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region bind object support
+        #region bind object support x
         static void BindObjectSupport()
         {
             string name = "bind-object-support";
@@ -244,7 +244,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region throw on no item exists
+        #region throw on no item exists x
         static void ThrowOnNoItemExists()
         {
             string name = "throw-on-no-item-exists";
@@ -274,52 +274,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region truthy falsey
-        private static void TruthyFalsey()
-        {
-            string name = "truthy-falsey";
-            string template = ResolveTemplateInput(name);
-            TemplateEngine ngin = new TemplateEngine(template);
-
-            bool[] isTrue = new bool[20];
-            isTrue[0] = ngin.IsTrue(null) == false;
-            isTrue[1] = ngin.IsTrue(1.00F) == true;
-            isTrue[2] = ngin.IsTrue(1U) == true;
-            isTrue[3] = ngin.IsTrue(0.00F) == false;
-            isTrue[4] = ngin.IsTrue(0) == false;
-            isTrue[5] = ngin.IsTrue(string.Empty) == false;
-            isTrue[6] = ngin.IsTrue(new object[0]) == false;
-            isTrue[7] = ngin.IsTrue(new object[1]) == true;
-            isTrue[8] = ngin.IsTrue(true) == true;
-            isTrue[9] = ngin.IsTrue(false) == false;
-            isTrue[10] = ngin.IsTrue('\0') == false;
-            isTrue[11] = ngin.IsTrue('t') == true;
-            isTrue[12] = ngin.IsTrue('f') == true;
-            isTrue[13] = ngin.IsTrue((decimal)1.111) == true;
-            isTrue[14] = ngin.IsTrue((decimal)0.000) == false;
-            isTrue[15] = ngin.IsTrue("\0") == false;
-            isTrue[16] = ngin.IsTrue("f") == true;
-            isTrue[17] = ngin.IsTrue("t") == true;
-            isTrue[18] = ngin.IsTrue("false") == true;
-            isTrue[19] = ngin.IsTrue("hello") == true;
-
-            int idx = 0;
-            Func<int> GetNextIndex = () => idx++;
-            ngin.LambdaRepo.Register(nameof(GetNextIndex), GetNextIndex);
-
-            ngin.TrimWhitespace = true;
-
-            string result = ngin.Merge(isTrue);
-
-            string expected = ResolveTemplateOutput(name);
-
-            bool passed = string.Compare(result, expected, false) == 0;
-
-            RenderOutput(name, passed);
-        }
-        #endregion
-
-        #region simple conditional blocks
+        #region simple conditional blocks x
         static void SimpleConditionalBlocks()
         {
             string name = "simple-conditional-blocks";
@@ -346,7 +301,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region negated conditionals blocks
+        #region negated conditionals blocks x
         static void NegatedConditionalBlocks()
         {
             string name = "negated-conditional-blocks";
@@ -373,7 +328,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple whitespace control
+        #region simple whitespace control x
         static void SimpleWhitespaceControl()
         {
             string name = "simple-whitespace-control";
@@ -400,7 +355,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region global whitespace control
+        #region global whitespace control x
         static void GlobalWhitespaceControl()
         {
             string name = "global-whitespace-control";
@@ -428,7 +383,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region complex whitespace control
+        #region complex whitespace control x
         static void ComplexWhitespaceControl()
         {
             string name = "complex-whitespace-control";
@@ -456,7 +411,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple iteration blocks
+        #region simple iteration blocks x
         static void SimpleIterationBlocks()
         {
             string name = "simple-iteration-blocks";
@@ -486,7 +441,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region throw on non ienumerable iteration target
+        #region throw on non ienumerable iteration target x
         static void ThrowOnNonIEnumerableIterationTarget()
         {
             string name = "throw-on-non-ienumerable-iteration-target";
@@ -498,7 +453,6 @@ namespace HatTrick.Text.Templating.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = true; //global flag for whitespace control...
 
             bool passed = false;
             try
@@ -514,7 +468,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region walking the scope chain
+        #region walking the scope chain x
         static void WalkingTheScopeChain()
         {
             string name = "walking-the-scope-chain";
@@ -545,7 +499,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple partial blocks
+        #region simple partial blocks x
         static void SimplePartialBlocks()
         {
             string name = "simple-partial-blocks";
@@ -562,7 +516,7 @@ namespace HatTrick.Text.Templating.TestHarness
                     new Address { Line1 = "W 66th", Line2 = "Apt 222", City = "Austin", State = "TX", Zip = "73301" },
                 },
                 NewLine = Environment.NewLine,
-                AddressTemplate = @"{$.Line1}{..\$.NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}{..\$.NewLine}"
+                AddressTemplate = @"{$.Line1}{..\NewLine}{$.Line2}{..\$.NewLine}{$.City}, {$.State} {$.Zip}{..\$.NewLine}"
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
@@ -577,7 +531,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple template comments
+        #region simple template comments x
         static void SimpleTemplateComments()
         {
             string name = "simple-template-comments";
@@ -600,7 +554,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region multi line template comments
+        #region multi line template comments x
         static void MultiLineTemplateComments()
         {
             string name = "multi-line-template-comments";
@@ -647,7 +601,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region simple lambda expressions
+        #region simple lambda expressions x
         static void SimpleLambdaExpressions()
         {
             string name = "simple-lambda-expressions";
@@ -655,7 +609,7 @@ namespace HatTrick.Text.Templating.TestHarness
 
             var data = new
             {
-                Spanish = new[] { "Uno", "Dos", "Tres", "Cuatro", "Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diez" },
+                Spanish = new List<string> { "Uno", "Dos", "Tres", "Cuatro", "Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diez" },
                 English = new[] { "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten" }
             };
 
@@ -667,7 +621,7 @@ namespace HatTrick.Text.Templating.TestHarness
 
             Func<string, string> ResolveEnglishTranslation = (value) =>
             {
-                int idx = data.Spanish.ToList().FindIndex(s => string.Compare(s, value, true) == 0);
+                int idx = data.Spanish.FindIndex(s => string.Compare(s, value, true) == 0);
                 return (data.English.Length > idx) ? data.English[idx] : "N/A";
             };
 
@@ -686,7 +640,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region complex lambda expressions
+        #region complex lambda expressions x
         static void ComplexLambdaExpressions()
         {
             string name = "complex-lambda-expressions";
@@ -727,7 +681,54 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region lambda expression driven blocks
+        #region truthy falsey x
+        private static void TruthyFalsey()
+        {
+            string name = "truthy-falsy";
+            string template = ResolveTemplateInput(name);
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            bool[] isTrue = new bool[20];
+            isTrue[0] = ngin.IsTrue(null);           //false;
+            isTrue[1] = ngin.IsTrue(1.00F);          //true;
+            isTrue[2] = ngin.IsTrue(1U);             //true;
+            isTrue[3] = ngin.IsTrue(0.00F);          //false;
+            isTrue[4] = ngin.IsTrue(0);              //false;
+            isTrue[5] = ngin.IsTrue(string.Empty);   //false;
+            isTrue[6] = ngin.IsTrue(new object[0]);  //false;
+            isTrue[7] = ngin.IsTrue(new object[1]);  //true;
+            isTrue[8] = ngin.IsTrue(true);           //true;
+            isTrue[9] = ngin.IsTrue(false);          //false;
+            isTrue[10] = ngin.IsTrue('\0');          //false;
+            isTrue[11] = ngin.IsTrue('t');           //true;
+            isTrue[12] = ngin.IsTrue('f');           //true;
+            isTrue[13] = ngin.IsTrue((decimal)1.111);//true;
+            isTrue[14] = ngin.IsTrue((decimal)0.000);//false;
+            isTrue[15] = ngin.IsTrue("\0");          //false;
+            isTrue[16] = ngin.IsTrue("f");           //true;
+            isTrue[17] = ngin.IsTrue("t");           //true;
+            isTrue[18] = ngin.IsTrue("false");       //true;
+            isTrue[19] = ngin.IsTrue("hello");       //true;
+
+            int idx = 0;
+            Func<int> GetNextIndex = () => idx++;
+            Action ResetIndex = () => idx = 0;
+            ngin.LambdaRepo.Register(nameof(GetNextIndex), GetNextIndex);
+            ngin.LambdaRepo.Register(nameof(ResetIndex), ResetIndex);
+
+            ngin.TrimWhitespace = true;
+
+            string result = ngin.Merge(isTrue);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region lambda expression driven blocks x
         static void LambdaExpressionDrivenBlocks()
         {
             string name = "lambda-expression-driven-blocks";
@@ -804,7 +805,7 @@ namespace HatTrick.Text.Templating.TestHarness
             string expected = ResolveTemplateOutput(name)
                 .Replace("####now-1####", now.AddDays(-1).ToString("MM-dd-yyyy hh:mm"))
                 .Replace("####now-5####", now.AddDays(-5).ToString("MM-dd-yyyy hh:mm"))
-                .Replace("####now-14####", now.AddDays(-14).ToString("MM-dd-yyyy hh:mm")); ;
+                .Replace("####now-14####", now.AddDays(-14).ToString("MM-dd-yyyy hh:mm"));
 
             bool passed = string.Compare(result, expected, false) == 0;
 
@@ -812,7 +813,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region with tag scope change blocks
+        #region with tag scope change blocks x
         static void WithTagScopeChangeBlocks()
         {
             string name = "with-scope-change";
@@ -856,7 +857,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region code gen
+        #region code gen x
         static void CodeGen()
         {
             string name = "code-gen";
