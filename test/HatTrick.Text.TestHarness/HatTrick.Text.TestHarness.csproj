@@ -55,7 +55,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HatTrick.Text.Templating\HatTrick.Text.Templating.csproj">
+    <ProjectReference Include="..\..\src\HatTrick.Text.Templating\HatTrick.Text.Templating.csproj">
       <Project>{36a1a864-955a-4504-b392-b74dd8849422}</Project>
       <Name>HatTrick.Text.Templating</Name>
     </ProjectReference>
