@@ -62,8 +62,8 @@ namespace HatTrick.Text.Templating
                 _inSingleQuote = !_inSingleQuote;
             }
 
+            //only append white space if inside double or single quotes...
             bool inQuotes = (_inDoubleQuote || _inSingleQuote);
-            //only append a space if inside double or single quotes...
             if (!(c == ' ' || c == '\t') || inQuotes)
             {
                 _tag.Append(c);

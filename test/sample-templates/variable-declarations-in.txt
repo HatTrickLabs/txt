@@ -1,0 +1,26 @@
+Hello {Contact.Name.First} {Contact.Name.Last},
+
+
+{?var:firstName = $.Contact.Name.First}
+{?var:lastName = $.Contact.Name.Last}
+
+{#with Structure}
+  {?var:yrBuilt = $.YearBuilt}
+  {#with Address}
+  {?var:zip = $.Zip}
+First name is:	{:firstName}
+Last name is:	{:lastName}
+Year built is:	{:yrBuilt}
+Zip code is:	{:zip}
+  {/with}
+{/with}
+
+
+{#each Inspectors}
+{?var:inspectorName = $.Name}
+{#each Expertise}
+Structure Style:	{$}
+Inspected by:	{:inspectorName}
+Inspected for:	{:lastName}, {:firstName}
+{+/each}
+{/each}
