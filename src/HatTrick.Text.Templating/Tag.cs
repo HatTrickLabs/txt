@@ -70,6 +70,10 @@ namespace HatTrick.Text.Templating
             {
                 _kind = TagKind.Partial;
             }
+            else if (Tag.IsVariableTag(tag))
+            {
+                _kind = TagKind.Variable;
+            }
             else if (Tag.IsCommentTag(tag))     //comment tag
             {
                 _kind = TagKind.Comment;
@@ -84,6 +88,9 @@ namespace HatTrick.Text.Templating
         #region resolve trim markers
         private void ResolveTrimMarkers()
         {
+            if (_kind == TagKind.Simple)
+                return;
+
             if (_tag[1] == '-')                 //has discard left trim mark...
             {
                 _markers = TrimMark.DiscardLeft;
@@ -194,8 +201,21 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region bind as
-        public string BindAs()
+        #region is variable tag
+        public static bool IsVariableTag(string tag)
+        {
+            return tag.Length > 6
+                && tag[0] == '{'
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '?')
+                && (tag[2] == '?' || tag[2] == 'v')
+                && (tag[3] == 'v' || tag[3] == 'a')
+                && (tag[4] == 'a' || tag[4] == 'r')
+                && (tag[5] == 'r' || tag[5] == ':');
+        }
+		#endregion
+
+		#region bind as
+		public string BindAs()
         {
             string bindAs = null;
             TagKind kind = _kind;
@@ -217,7 +237,7 @@ namespace HatTrick.Text.Templating
                         int len = (left && right)
                             ? (tag.Length - 7)
                             : (left || right)
-                                ? tag.Length - 6
+                                ? (tag.Length - 6)
                                 : (tag.Length - 5);
 
                         bindAs = tag.Substring(start, len);
@@ -233,9 +253,25 @@ namespace HatTrick.Text.Templating
                         int len = (left && right)
                             ? (tag.Length - 9)
                             : (left || right)
-                                ? tag.Length - 8
+                                ? (tag.Length - 8)
                                 : (tag.Length - 7);
                         
+                        bindAs = tag.Substring(start, len);
+                    }
+                    break;
+                case TagKind.Variable:
+                    {
+                        string tag = _tag;
+                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
+                        int start = left ? 6 : 5;
+
+                        int len = (left && right)
+                            ? (tag.Length - 8)
+                            : (left || right)
+                                ? (tag.Length - 7)
+                                : (tag.Length - 6);
+
                         bindAs = tag.Substring(start, len);
                     }
                     break;
@@ -249,7 +285,7 @@ namespace HatTrick.Text.Templating
                         int len = (left && right)
                             ? (tag.Length - 9)
                             : (left || right)
-                                ? tag.Length - 8
+                                ? (tag.Length - 8)
                                 : (tag.Length - 7);
 
                         bindAs = tag.Substring(start, len);
@@ -265,7 +301,7 @@ namespace HatTrick.Text.Templating
                         int len = (left && right) 
                             ? (tag.Length - 5)
                             : (left || right)
-                                ? tag.Length - 4
+                                ? (tag.Length - 4)
                                 : (tag.Length - 3);
 
                         bindAs = tag.Substring(start, len);
@@ -280,7 +316,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region has
+        #region has trim mark
         public bool HasTrimMark(TrimMark marker)
         {
             return (_markers & marker) == marker; 
