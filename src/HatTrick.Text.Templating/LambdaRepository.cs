@@ -68,7 +68,7 @@ namespace HatTrick.Text.Templating
             name = expression.Substring(opIndex + 2);
 
             if (!_lambdas.ContainsKey(name))
-            { throw new MergeException($"Encountered function that does not exist in lambda repo: {name}"); }
+            { throw new MergeException($"encountered function that does not exist in lambda repo: {name}"); }
 
             System.Reflection.MethodInfo mi = _lambdas[name].Method;
 
@@ -202,7 +202,7 @@ namespace HatTrick.Text.Templating
 
             if (paramsCount != parms.Length)
             {
-                string msg = $"Attempted function invocation with invalid number of parameters. Lambda name: {name}  Expected count: {paramsCount} Provided count: {parms.Length}";
+                string msg = $"attempted function invocation with invalid number of parameters. lambda name: {name}  expected count: {paramsCount} provided count: {parms.Length}";
                 throw new MergeException(msg);
             }
             return _lambdas[name].DynamicInvoke(parms);

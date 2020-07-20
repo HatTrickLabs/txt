@@ -42,6 +42,7 @@ namespace HatTrick.Text.Templating.TestHarness
             LambdaExpressionDrivenBlocks();
             WithTagScopeChangeBlocks();
             CodeGen();
+            DeclaringAndUsingVariables();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -905,6 +906,56 @@ namespace HatTrick.Text.Templating.TestHarness
             RenderOutput(name, passed);
         }
         #endregion
+
+        #region declaring and using variables
+        static void DeclaringAndUsingVariables()
+        {
+            string name = "variable-declarations";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Contact = new
+                {
+                    Name = new { First = "Charlie", Last = "Brown" },
+                },
+                Structure = new
+                {
+                    Type = "School",
+                    YearBuilt = 1925,
+                    Address = new
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+                Inspectors = new[]
+                {
+                    new { Name = "John Doe", YearsOfService = 13, Expertise = new[] { "Gothic", "Neoclassical" } },
+                    new { Name = "Jane Doe", YearsOfService = 10, Expertise = new[] { "Modern", "Victorian" }  },
+                }
+            };
+
+            Func<string> GetAddressPartial = () =>
+            {
+                return ResolveTemplateInput("address-partial-scoped");
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+		#endregion
 	}
 
 	#region person class
