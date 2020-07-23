@@ -358,7 +358,7 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            string expression = tag.BindAs(); //example:  name=$.Name
+            string expression = tag.BindAs(); //example:  :name=$.Name
 
             StringBuilder sb = new StringBuilder();
             string name = null;
@@ -366,7 +366,7 @@ namespace HatTrick.Text.Templating
             bool found = false;
             for (int i = 0; i < expression.Length; i++)
             {
-                if (expression[i] == '=')
+                if (expression[i] == '=' && !(expression[i + 1] == '>'))
                 {
                     name = sb.ToString();
                     sb.Clear();

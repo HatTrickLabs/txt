@@ -737,5 +737,191 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public void Does_multi_link_scope_chain_reflect_correct_context_item()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+            var p3 = new Name { First = "Spider", Last = "Man" };
+            chain.Push(p3);
+
+            //when
+            var actual = ReflectionHelper.Expression.ReflectItem(chain.Peek(), "First");
+
+            //then
+            Assert.Equal("Spider", actual);
+        }
+
+        [Fact]
+        public void Does_multi_link_scope_chain_return_closest_scoped_variable_by_name()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+            chain.SetVariable("test", "t1");
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t2");
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+            chain.SetVariable("test", "t3");
+            var p3 = new Name { First = "Spider", Last = "Man" };
+            chain.Push(p3);
+            chain.SetVariable("test", "t4");
+
+            //when
+            var actual = chain.AccessVariable("test");
+
+            //then
+            Assert.Equal("t4", actual);
+        }
+
+        [Fact]
+        public void Does_multi_link_scope_chain_return_correct_item_on_reach_back()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+            var p3 = new Name { First = "Spider", Last = "Man" };
+            chain.Push(p3);
+            var p4 = new Name { First = "Luke", Last = "Skywalker" };
+            chain.Push(p4);
+            var p5 = new { Name = new { First = "Peter", Last = "Pan" } };
+            chain.Push(p5);
+            var p6 = new Name { First = "Duke", Last = "Caboom" };
+            chain.Push(p6);
+            var p7 = new Name { First = "Buzz", Last = "Lightyear" };
+            chain.Push(p7);
+
+            //when
+            var actual = ReflectionHelper.Expression.ReflectItem(chain.Peek(6), "City");
+
+
+            //then
+            Assert.Equal("Dallas", actual);
+        }
+
+        [Fact]
+        public void Does_variable_accessor_crawl_a_multi_link_scope_chain_correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+            chain.SetVariable("test", "t1");
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t2");
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+            var p3 = new Name { First = "Spider", Last = "Man" };
+            chain.Push(p3);
+            var p4 = new Name { First = "Luke", Last = "Skywalker" };
+            chain.Push(p4);
+            var p5 = new { Name = new { First = "Peter", Last = "Pan" } };
+            chain.Push(p5);
+            var p6 = new Name { First = "Duke", Last = "Caboom" };
+            chain.Push(p6);
+            var p7 = new Name { First = "Buzz", Last = "Lightyear" };
+            chain.Push(p7);
+
+            //when
+            var actual = chain.AccessVariable("test");
+
+            //then
+            Assert.Equal("t2", actual);
+        }
+
+        [Fact]
+        public void Does_scope_chain_pop_properly_dispose_chain_links()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            int cnt = 20;
+            for (int i = 0; i < cnt; i++)
+            {
+                chain.Push(new { Index = i });
+            }
+
+            //when
+            int[] actual = new int[cnt];
+            for (int i = (cnt - 1); i > -1; i--)
+            {
+                actual[i] = (int)ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Index");
+                chain.Pop();
+            }
+
+            //then
+            int[] expected = new int[cnt];
+            for (int i = 0; i < cnt; i++)
+            {
+                expected[i] = i;
+            }
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("variable-declarations-in.txt", "address-partial-scoped-in.txt", "variable-declarations-out.txt")]
+        public void Does_variable_declaration_and_usage_render_correctly(string template, string partial, string expected)
+        {
+            //given
+            var data = new
+            {
+                Contact = new
+                {
+                    Name = new { First = "Charlie", Last = "Brown" },
+                },
+                Structure = new
+                {
+                    Type = "School",
+                    YearBuilt = 1925,
+                    Address = new
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+                Inspectors = new[]
+                {
+                    new { Name = "John Doe", YearsOfService = 13, Expertise = new[] { "Gothic", "Neoclassical" } },
+                    new { Name = "Jane Doe", YearsOfService = 10, Expertise = new[] { "Modern", "Victorian" }  },
+                }
+            };
+
+            Func<string> GetAddressPartial = () =>
+            {
+                return partial;
+            };
+
+            Func<string> GetSomeVal = () => "some val";
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
+            ngin.LambdaRepo.Register(nameof(GetSomeVal), GetSomeVal);
+            ngin.TrimWhitespace = true;
+
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
     }
 }

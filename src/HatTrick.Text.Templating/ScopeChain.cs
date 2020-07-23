@@ -10,11 +10,17 @@ namespace HatTrick.Text.Templating
     {
         #region internals
         private ScopeLink _links;
-        #endregion
+        private int _depth;
+		#endregion
 
-        #region constructors
-        public ScopeChain()
+		#region interface
+		public int Depth => _depth;
+		#endregion
+
+		#region constructors
+		public ScopeChain()
         {
+            _depth = 0;
         }
         #endregion
 
@@ -23,6 +29,7 @@ namespace HatTrick.Text.Templating
         {
             ScopeLink link;
             link = (_links == null) ? new ScopeLink(item) : new ScopeLink(item, _links);
+            _depth += 1;
             _links = link;
         }
         #endregion
@@ -35,6 +42,7 @@ namespace HatTrick.Text.Templating
 
             object item = _links.Item;
             _links = _links.Parent;
+            _depth -= 1;
             return item;
         }
         #endregion
@@ -67,7 +75,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region get variable
+        #region access variable
         public object AccessVariable(string name)
         {
             return _links.AccessVariable(name);
@@ -116,7 +124,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region get variable
+        #region access variable
         public object AccessVariable(string name)
         {
             if (_variables.TryGet(name, out object value))
@@ -127,7 +135,7 @@ namespace HatTrick.Text.Templating
                 return _children.AccessVariable(name);
             }
 
-            throw new MergeException($"Attemted access of unknown variable: {name}");
+            throw new MergeException($"Attempted access of unknown variable: {name}");
         }
         #endregion
 

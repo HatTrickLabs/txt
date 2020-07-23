@@ -91,16 +91,16 @@ namespace HatTrick.Text.Templating
             if (_kind == TagKind.Simple)
                 return;
 
-            if (_tag[1] == '-')                 //has discard left trim mark...
+            if (_tag[1] == '-')                     //has discard left trim mark...
             {
                 _markers = TrimMark.DiscardLeft;
             }
-            else if (_tag[1] == '+')                 //has retain left trim mark...
+            else if (_tag[1] == '+')                //has retain left trim mark...
             {
                 _markers = TrimMark.RetainLeft;
             }
 
-            if (_tag[_tag.Length - 2] == '-')   //has discard right trim mark...
+            if (_tag[_tag.Length - 2] == '-')       //has discard right trim mark...
             {
                 _markers |= TrimMark.DiscardRight;
             }
