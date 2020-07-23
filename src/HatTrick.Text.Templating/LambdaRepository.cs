@@ -28,15 +28,6 @@ namespace HatTrick.Text.Templating
             }
             _lambdas.Add(name, function);
         }
-
-        //public void Register(string name, Func<string> function)
-        //{
-        //    if (_lambdas.ContainsKey(name))
-        //    {
-        //        throw new ArgumentException($"A function with the provided name: {name} has already been added");
-        //    }
-        //    _lambdas.Add(name, function);
-        //}
         #endregion
 
         #region deregister

@@ -1,0 +1,29 @@
+Hello Charlie Brown,
+
+.......
+some val
+
+First name is:	Charlie
+Last name is:	Brown
+Year built is:	1925
+Zip code is:	77777
+
+
+Style:		Gothic
+Inspected by:	John Doe
+Inspected for:	Brown, Charlie
+
+Style:		Neoclassical
+Inspected by:	John Doe
+Inspected for:	Brown, Charlie
+
+Style:		Modern
+Inspected by:	Jane Doe
+Inspected for:	Brown, Charlie
+
+Style:		Victorian
+Inspected by:	Jane Doe
+Inspected for:	Brown, Charlie
+
+*************
+some val
