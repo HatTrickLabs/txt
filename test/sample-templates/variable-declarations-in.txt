@@ -1,9 +1,11 @@
 Hello {Contact.Name.First} {Contact.Name.Last},
 
+{?var:someVal = () => GetSomeVal}
+.......
+{:someVal}
 
 {?var:firstName = $.Contact.Name.First}
 {?var:lastName = $.Contact.Name.Last}
-
 {#with Structure}
   {?var:yrBuilt = $.YearBuilt}
   {#with Address}
@@ -17,10 +19,12 @@ Zip code is:	{:zip}
 
 
 {#each Inspectors}
-{?var:inspectorName = $.Name}
+{?var:inspector = $.Name}
 {#each Expertise}
-Structure Style:	{$}
-Inspected by:	{:inspectorName}
+Style:		{$}
+Inspected by:	{:inspector}
 Inspected for:	{:lastName}, {:firstName}
 {+/each}
 {/each}
+*************
+{:someVal}
