@@ -235,8 +235,8 @@ var account = new
 ```
 
 ##### Notes:
-- Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the with tag would have required repeating *Person.Address* 6 times.
-- Shifting of scope via *{#with}*  tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
+- Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the *{#with}* tag would have required repeating *Person.Address* 6 times.
+- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
 
 
 ### Template Comments
@@ -380,9 +380,12 @@ string result = ngin.Merge(person);
 ```
 
 ##### Notes:
-- Lambda expressions can be used for *{simple}*, *{#if}*, *{#each}*, and *{>parital}* tags.
+- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with} and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
 - String literal args can be enclosed in single or double quotes.
+- If a string literal contains a double quote, enclosing the literal with single quotes to avoid the need to escape.
+- I a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
+- If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character. example: "It's easy to escape \"double\" quotes."
 - Numeric literals are typed via as suffix i.e. (223:int)
 - Allowed numeric literal types: int, long, decimal, double, byte
 
