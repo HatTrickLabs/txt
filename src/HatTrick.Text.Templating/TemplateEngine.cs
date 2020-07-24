@@ -433,7 +433,7 @@ namespace HatTrick.Text.Templating
             {
                 int lastIdxOf;
                 int cnt = this.CountPattern(bindAs, @"..\", out lastIdxOf);
-                target = this.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.Peek(++cnt));
+                target = this.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.Peek(cnt));
             }
             else if (bindAs.Contains("=>")) //lambda expression
             {

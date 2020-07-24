@@ -1,8 +1,5 @@
 Hello Charlie Brown,
 
-.......
-some val
-
 First name is:	Charlie
 Last name is:	Brown
 Year built is:	1925
@@ -27,3 +24,13 @@ Inspected for:	Brown, Charlie
 
 *************
 some val
+
+.......
+Dallas, TX
+<div class="address">
+    <span class="address-line1">123 Main St.</span>
+    <span class="address-line2">Suite 200</span>
+    <span class="address-city-state-zip">Dallas, TX 77777</span>
+<div>
+
+10

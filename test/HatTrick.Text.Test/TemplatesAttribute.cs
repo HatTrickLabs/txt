@@ -12,30 +12,30 @@ namespace HatTrick.Text.Test
         private readonly string output;
         private readonly Type exceptionType;
 
-        public TemplatesAttribute(string input, Type exceptionType) : base(typeof(TemplatesAttribute))
+        public TemplatesAttribute(string template, Type exceptionType) : base(typeof(TemplatesAttribute))
         {
-            this.templates = new List<string>() { input };
+            this.templates = new List<string>() { template };
             if (!typeof(Exception).IsAssignableFrom(exceptionType))
                 throw new ArgumentException($"{nameof(exceptionType)} must be of type Exception.");
             this.exceptionType = exceptionType;
         }
 
-        public TemplatesAttribute(string input, string output) : base(typeof(TemplatesAttribute))
+        public TemplatesAttribute(string template, string expected) : base(typeof(TemplatesAttribute))
         {
-            this.templates = new List<string>() { input };
-            this.output = output;
+            this.templates = new List<string>() { template };
+            this.output = expected;
         }
 
-        public TemplatesAttribute(string input, string partial, string output) : base(typeof(TemplatesAttribute))
+        public TemplatesAttribute(string template, string partial, string expected) : base(typeof(TemplatesAttribute))
         {
-            this.templates = new List<string>() { input, partial };
-            this.output = output;
+            this.templates = new List<string>() { template, partial };
+            this.output = expected;
         }
 
-        public TemplatesAttribute(string input, string partial1, string partial2, string output) : base(typeof(TemplatesAttribute))
+        public TemplatesAttribute(string template, string partial1, string partial2, string expected) : base(typeof(TemplatesAttribute))
         {
-            this.templates = new List<string>() { input, partial1, partial2 };
-            this.output = output;
+            this.templates = new List<string>() { template, partial1, partial2 };
+            this.output = expected;
         }
 
         public override IEnumerable<object[]> GetData(MethodInfo testMethod)

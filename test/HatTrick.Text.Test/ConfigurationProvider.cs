@@ -18,8 +18,8 @@ namespace HatTrick.Text.Test
                     .AddEnvironmentVariables()
                     .Build();
 
-            InputPath = Path.Combine(GetCurrentPath(), "..\\", Configuration.GetValue("inPath", string.Empty));
-            OutputPath = Path.Combine(GetCurrentPath(), "..\\", Configuration.GetValue("outPath", string.Empty));
+            InputPath = Path.Combine(GetCurrentPath(), "..\\", Configuration.GetValue("templatePath", string.Empty));
+            OutputPath = Path.Combine(GetCurrentPath(), "..\\", Configuration.GetValue("expectedResultsPath", string.Empty));
         }
 
         private static string GetCurrentPath()

@@ -33,6 +33,7 @@ namespace HatTrick.Text.Templating.TestHarness
             ComplexWhitespaceControl();
             SimpleIterationBlocks();
             ThrowOnNonIEnumerableIterationTarget();
+            ThrowOnOverreachIntoScopeChain();
             WalkingTheScopeChain();
             SimplePartialBlocks();
             SimpleTemplateComments();
@@ -475,8 +476,35 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region walking the scope chain x
-        static void WalkingTheScopeChain()
+        #region throw on overreach into scope chain
+        static void ThrowOnOverreachIntoScopeChain()
+        {
+            string name = "throw-on-overreach-into-scopechain";
+
+            var data1 = new { Name = new { First = "Charlie", Last = "Brown" } };
+            var data2 = new { Name = new { First = "Super", Last = "Man" } };
+
+            ScopeChain chain = new ScopeChain();
+            chain.Push(data1);
+            chain.Push(data2);
+
+
+            bool passed = false;
+            try
+            {
+                chain.Peek(2);
+            }
+            catch (ArgumentException ex)
+            {
+                passed = ex.Message == "value must be < ScopeChain.Depth\r\nParameter name: back";
+            }
+
+            RenderOutput(name, passed);
+        }
+		#endregion
+
+		#region walking the scope chain x
+		static void WalkingTheScopeChain()
         {
             string name = "walking-the-scope-chain";
             string template = ResolveTemplateInput(name);
@@ -929,7 +957,7 @@ namespace HatTrick.Text.Templating.TestHarness
                 {
                     Type = "School",
                     YearBuilt = 1925,
-                    Address = new
+                    Address = new Address
                     {
                         Line1 = "123 Main St.",
                         Line2 = "Suite 200",
@@ -954,11 +982,14 @@ namespace HatTrick.Text.Templating.TestHarness
 
             Func<Address, string> GetCityAndState = (a) => $"{a.City}, {a.State}";
 
+            Func<int, int> IncrementAndReturn = (counter) => ++counter;
+
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
             ngin.LambdaRepo.Register(nameof(GetSomeVal), GetSomeVal);
             ngin.LambdaRepo.Register(nameof(GetCityAndState), GetCityAndState);
-            ngin.TrimWhitespace = true; //global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(IncrementAndReturn), IncrementAndReturn);
+            ngin.TrimWhitespace = true;
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
