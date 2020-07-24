@@ -152,6 +152,55 @@ We see you currently hold  the following certs:
 - the ..\ operator can be used to walk the scope chain.
 
 
+### Variable Declaration and Usage
+The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.
+
+##### Data:
+```c#
+var dbModel = new 
+{ 
+	Schema = "dbo",
+	Tables = new[] 
+	{
+		new 
+		{ 
+			Name = "Person",
+			Columns = new[]
+			{
+				new { Name = "Id", DataType = "int" },
+				new { Name = "FirstName", DataType = "varchar(32)" },
+				new { Name = "LastName", DataType = "varchar(32)" },
+				new { Name = "BirthDate", DataType = "date" }
+			}
+		}
+	}
+};
+```
+
+##### Template:
+```
+{?var:schemaName = Schema}
+Fields:
+{#each Tables}
+{?var:tableName = Name}
+	{#each Columns}
+[{:schemaName}].[{:tableName}].[{Name}] ({DataType})
+	{/each}
+{/each}
+```
+
+##### Result:
+```
+Fields:
+[dbo].[Person].[Id] int
+[dbo].[Person].[FirstName] varchar(32)
+[dbo].[Person].[LastName] varchar(32)
+[dbo].[Person].[Birthdate] date
+```
+##### Notes:
+- Both declaring and referencing a variable requires the variable name be proceeded by a colon *( {?var:myVar = $ } {:myVar} )*.
+- The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
+
 
 ### Partial Template Blocks
 The partial template *{>tag}* is used to inject sub template content.  
