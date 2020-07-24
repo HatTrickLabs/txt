@@ -1,8 +1,5 @@
 Hello {Contact.Name.First} {Contact.Name.Last},
-
-{?var:someVal = () => GetSomeVal}
-.......
-{:someVal}
+{?var:someVal = () => GetSomeVal }
 
 {?var:firstName = $.Contact.Name.First}
 {?var:lastName = $.Contact.Name.Last}
@@ -28,3 +25,13 @@ Inspected for:	{:lastName}, {:firstName}
 {/each}
 *************
 {:someVal}
+
+{?var:cityAndState = (Structure.Address) => GetCityAndState }
+.......
+{:cityAndState}
+
+{#with Structure.Address}
+{>() => GetAddressPartial}
+{/with}
+
+{(9:int) => IncrementAndReturn}

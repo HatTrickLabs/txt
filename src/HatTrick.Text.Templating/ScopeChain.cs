@@ -58,13 +58,16 @@ namespace HatTrick.Text.Templating
 
         public object Peek(int back)
         {
+            if (back >= _depth)
+                throw new ArgumentException("value must be < ScopeChain.Depth", nameof(back));
+
             if (back < 0)
                 throw new ArgumentException("value must be a positive number", nameof(back));
 
             if (_links == null)
                 throw new MergeException("cannot 'Peek' scope link, the stack is empty.");
 
-            return _links.Peek(--back);
+            return _links.Peek(back);
         }
         #endregion
 
