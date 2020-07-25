@@ -266,22 +266,6 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        //#region peek
-        //public void Dereference(int count)
-        //{
-        //    if (count >= _depth)
-        //        throw new ArgumentException("value must be < VariableBag.Depth", nameof(count));
-
-        //    if (count < 0)
-        //        throw new ArgumentException("value cannot be a negative number", nameof(count));
-
-        //    if (_stack == null)
-        //        throw new MergeException("cannot 'Dereference' variable stack, the stack is empty.");
-
-        //    _stack = _stack.Peek(count);
-        //}
-        //#endregion
-
         #region clear
         public void Clear()
         {
@@ -326,25 +310,12 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region apply scope marker
+        #region remove scope marker
         public void RemoveScopeMarker()
         {
             _isMarked = false;
         }
         #endregion
-
-        //#region peek
-        //public VariableStack Peek(int back)
-        //{
-        //    if (back < 0)
-        //        throw new ArgumentException("value cannot be a negative number", nameof(back));
-
-        //    if (back == 0)
-        //        return this;
-
-        //    return _subStack.Peek(--back);
-        //}
-        //#endregion
 
         #region try get
         public bool TryGet(string name, out object value)

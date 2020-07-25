@@ -256,7 +256,7 @@ namespace HatTrick.Text.Templating
             System.Collections.IEnumerable col;
 
             bool isFalse = (val == null)
-                       || ((bit = val as bool?) != null && bit == false
+                       || (bit = val as bool?) != null && bit == false
                        || (i = val as int?) != null && i == 0
                        || (dbl = val as double?) != null && dbl == 0
                        || (l = val as long?) != null && l == 0
@@ -269,7 +269,7 @@ namespace HatTrick.Text.Templating
                        || (sht = val as short?) != null && sht == 0
                        || (usht = val as ushort?) != null && usht == 0
                        || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: JRod, this will catch string.Empty
-                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0'));
+                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0');
 
             return !isFalse;
         }
