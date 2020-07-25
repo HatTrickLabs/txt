@@ -222,6 +222,8 @@ namespace HatTrick.Text.Templating
 
             if (render)
             {
+                _scopeChain.ApplyVariableScopeMarker();
+
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
@@ -230,6 +232,8 @@ namespace HatTrick.Text.Templating
                     .WithLambdaRepository(_lambdaRepo);
 
                 _result.Append(subEngine.Merge());
+
+                _scopeChain.DereferenceVariableScope();
             }
         }
         #endregion
@@ -340,6 +344,9 @@ namespace HatTrick.Text.Templating
 
             string itemContent;
             TemplateEngine subEngine;
+
+            _scopeChain.ApplyVariableScopeMarker();
+
             subEngine = new TemplateEngine(block.ToString())
                 .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(_trimWhitespace)
@@ -349,6 +356,8 @@ namespace HatTrick.Text.Templating
 
             itemContent = subEngine.Merge(target);
             _result.Append(itemContent);
+
+            _scopeChain.DereferenceVariableScope();
         }
         #endregion
 
@@ -399,6 +408,8 @@ namespace HatTrick.Text.Templating
             if (tgt == null)
             { throw new MergeException($"#sub template tag: {tag} reflected value is not typeof string: {target}"); }
 
+            _scopeChain.ApplyVariableScopeMarker();
+
             TemplateEngine subEngine = new TemplateEngine(tgt)
                 .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(_trimWhitespace)
@@ -409,6 +420,8 @@ namespace HatTrick.Text.Templating
             string result = subEngine.Merge();
 
             _result.Append(result);
+
+            _scopeChain.DereferenceVariableScope();
         }
         #endregion
 
