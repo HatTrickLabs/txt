@@ -49,7 +49,9 @@ namespace HatTrick.Text.Templating.TestHarness
             ThreeLinkScopeChainReference();
             EightLinkScopeChainReference();
             PushEightPopFourLinksScopeChainReference();
-            EnsureScopeChainVariableReference();
+            ScopeChainVariableReference();
+            VariableScopeMarkerOnNullStack();
+            VariableScopeMarkerOnNonNullStack();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -271,7 +273,7 @@ namespace HatTrick.Text.Templating.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (Exception npe)
+            catch// (Exception npe)
             {
                 passed = true;
             }
@@ -467,7 +469,7 @@ namespace HatTrick.Text.Templating.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (MergeException mex)
+            catch// (MergeException mex)
             {
                 passed = true;
             }
@@ -1142,7 +1144,7 @@ namespace HatTrick.Text.Templating.TestHarness
         #endregion
 
         #region ensure scope chain variable reference
-        static void EnsureScopeChainVariableReference()
+        static void ScopeChainVariableReference()
         {
             ScopeChain chain = new ScopeChain();
 
@@ -1223,13 +1225,98 @@ namespace HatTrick.Text.Templating.TestHarness
             expected = "Attempted access of unknown variable: var9";
             passed = passed && (string.Compare(result, expected, false) == 0);
 
-            RenderOutput(nameof(EnsureScopeChainVariableReference), passed);
+            RenderOutput(nameof(ScopeChainVariableReference), passed);
         }
-		#endregion
-	}
+        #endregion
 
-	#region person class
-	public class Person
+        #region variable scope marker on null stack
+        static void VariableScopeMarkerOnNullStack()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person { Name = new Name { First = "James", Last = "Doe" } };
+            chain.Push(p);
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("city", "Dallas");
+            chain.SetVariable("zip", "75075");
+
+            var p2 = new Person { Name = new Name { First = "Charlie", Last = "Brown" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t1");
+            chain.SetVariable("test2", "t2");
+
+            string test = (string)chain.AccessVariable("test");
+
+            chain.Pop(); //should pop the entire link including all variables set on it (test, test2)
+
+            string city = (string)chain.AccessVariable("city");
+            string zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            bool passed = false;
+            try
+            {
+                test = (string)chain.AccessVariable("zip");
+            }
+            catch
+            {
+                passed = true;
+            }
+
+            RenderOutput(nameof(VariableScopeMarkerOnNullStack), passed);
+        }
+        #endregion
+
+        #region variable scope marker on non null stack
+        static void VariableScopeMarkerOnNonNullStack()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person { Name = new Name { First = "James", Last = "Doe" } };
+            chain.Push(p);
+            chain.SetVariable("city", "Dallas");
+            chain.SetVariable("zip", "75075");
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("isEmployed", true);
+            chain.SetVariable("employer", "Hat Trick Labs");
+
+            var p2 = new Person { Name = new Name { First = "Charlie", Last = "Brown" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t1");
+            chain.SetVariable("test2", "t2");
+
+            string test = (string)chain.AccessVariable("test");
+
+            chain.Pop(); //should pop the entire link including all variables set on it (test, test2)
+
+            string city = (string)chain.AccessVariable("city");
+            string zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            city = (string)chain.AccessVariable("city");
+            zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            bool passed = false;
+            try
+            {
+                test = (string)chain.AccessVariable("zip");
+            }
+            catch
+            {
+                passed = true;
+            }
+
+            RenderOutput(nameof(VariableScopeMarkerOnNullStack), passed);
+        }
+        #endregion
+    }
+
+    #region person class
+    public class Person
     {
         public int Age;
 
