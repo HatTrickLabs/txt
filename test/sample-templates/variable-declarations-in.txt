@@ -35,3 +35,9 @@ Inspected for:	{:lastName}, {:firstName}
 {/with}
 
 {(9:int) => IncrementAndReturn}
+{#if Inspectors}
+{?var:abc = :someVal}
+{#with Contact.Name}
+{:abc} + {:firstName} + {Last}
+{/with}
+{/if}
