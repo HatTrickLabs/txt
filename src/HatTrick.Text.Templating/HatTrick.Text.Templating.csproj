@@ -15,6 +15,8 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Version>1.1.0</Version>
     <PackageReleaseNotes>1.  Enhanced whitespace: allow whitespace retention via the + tag marker.
+2.  Variable declaration and usage within templates.
+3.  Implemented formal unit test framework.</PackageReleaseNotes>
 2.  Variable declaration and usage within templates.</PackageReleaseNotes>
   </PropertyGroup>
 
