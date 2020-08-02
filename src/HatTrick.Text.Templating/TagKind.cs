@@ -14,7 +14,8 @@ namespace HatTrick.Text.Templating
         With,
         EndWith,
         Partial,
-        Comment
+        Comment,
+        Variable
     }
     #endregion
 }

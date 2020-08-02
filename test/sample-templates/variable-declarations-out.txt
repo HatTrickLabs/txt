@@ -1,0 +1,37 @@
+Hello Charlie Brown,
+
+First name is:	Charlie
+Last name is:	Brown
+Year built is:	1925
+Zip code is:	77777
+
+
+Style:		Gothic
+Inspected by:	John Doe
+Inspected for:	Brown, Charlie
+
+Style:		Neoclassical
+Inspected by:	John Doe
+Inspected for:	Brown, Charlie
+
+Style:		Modern
+Inspected by:	Jane Doe
+Inspected for:	Brown, Charlie
+
+Style:		Victorian
+Inspected by:	Jane Doe
+Inspected for:	Brown, Charlie
+
+*************
+some val
+
+.......
+Dallas, TX
+<div class="address">
+    <span class="address-line1">123 Main St.</span>
+    <span class="address-line2">Suite 200</span>
+    <span class="address-city-state-zip">Dallas, TX 77777</span>
+<div>
+
+10
+some val + Charlie + Brown

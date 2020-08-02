@@ -21,7 +21,7 @@ namespace HatTrick.Text.Templating
         private StringBuilder _result;
         private Action<char> _appendToResult;
 
-        private TagBuilder _tagBldr;
+        private TagBuilder _nextTag;
 
         private int _maxStack = 25;
         private bool _trimWhitespace;
@@ -52,15 +52,10 @@ namespace HatTrick.Text.Templating
         public TemplateEngine(string template)
         {
             _index = 0;
-
             _template = template;
-
-            _tagBldr = new TagBuilder();
-
+            _nextTag = new TagBuilder();
             _result = new StringBuilder((int)(template.Length * 1.3));
-
             _appendToResult = (c) => { _result.Append(c); };
-
             _scopeChain = new ScopeChain();
             _lambdaRepo = new LambdaRepository();
         }
@@ -115,52 +110,63 @@ namespace HatTrick.Text.Templating
         #region merge
         public string Merge(object bindTo)
         {
+            _scopeChain.Push(bindTo);
+            string result = this.Merge();
+            _scopeChain.Pop();
+            return result;
+        }
+
+        private string Merge()
+        {
             _result.Clear();
+            _nextTag.Reset();
             _index = 0;
             _lineNum = string.IsNullOrEmpty(_template) ? 0 : 1;
 
             char eot = (char)3; //end of text....
 
-            _tagBldr.Reset();
-
             while (this.Peek() != eot)
             {
                 if (this.RollTill(_appendToResult, '{', false, false))
                 {
-                    if (this.RollTill(_tagBldr.Append, '}', true, false))
+                    if (this.RollTill(_nextTag.Append, '}', true, false))
                     {
-                        Tag tag = new Tag(_tagBldr.ToString(), _trimWhitespace);
+                        Tag tag = new Tag(_nextTag.ToString(), _trimWhitespace);
                         _progress?.Invoke(_lineNum, tag.ToString());
-                        this.HandleTag(tag, bindTo);
+                        this.HandleTag(tag);
                     }
                     else
                     { throw new MergeException("enountered un-closed tag; '}' never found"); }
                 }
-                _tagBldr.Reset();
+                _nextTag.Reset();
             }
+
             return _result.ToString();
         }
         #endregion
 
         #region handle tag
-        private void HandleTag(Tag tag, object bindTo)
+        private void HandleTag(Tag tag)
         {
             switch (tag.Kind)
             {
                 case TagKind.Simple:        //simple tag
-                    this.HandleSimpleTag(in tag, bindTo);
+                    this.HandleSimpleTag(in tag);
                     break;
                 case TagKind.If:            //# if logic tag (boolean switch)
-                    this.HandleIfTag(in tag, bindTo);
+                    this.HandleIfTag(in tag);
                     break;
                 case TagKind.Each:          //#each enumeration
-                    this.HandleEachTag(in tag, bindTo);
+                    this.HandleEachTag(in tag);
                     break;
                 case TagKind.With:
-                    this.HandleWithTag(in tag, bindTo);
+                    this.HandleWithTag(in tag);
+                    break;
+                case TagKind.Variable:
+                    this.HandleVariableTag(in tag);
                     break;
                 case TagKind.Partial:       //sub template tag
-                    this.HandlePartialTag(in tag, bindTo);
+                    this.HandlePartialTag(in tag);
                     break;
                 case TagKind.Comment:       //comment tag
                     this.HandleCommentTag(in tag);
@@ -178,17 +184,17 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle simple tag
-        private void HandleSimpleTag(in Tag tag, object bindTo)
+        private void HandleSimpleTag(in Tag tag)
         {
             string bindAs = tag.BindAs();
-            object target = this.ResolveTarget(bindAs, bindTo);
+            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
 
             _result.Append(target ?? string.Empty);
         }
         #endregion
 
         #region handle if tag
-        private void HandleIfTag(in Tag tag, object bindTo)
+        private void HandleIfTag(in Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -207,7 +213,7 @@ namespace HatTrick.Text.Templating
             string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
 
-            object target = this.ResolveTarget(negate ? bindAs.Substring(1) : bindAs, bindTo);
+            object target = this.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _scopeChain.Peek());
 
             bool render = this.IsTrue(target);
 
@@ -216,6 +222,8 @@ namespace HatTrick.Text.Templating
 
             if (render)
             {
+                _scopeChain.ApplyVariableScopeMarker();
+
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
@@ -223,7 +231,9 @@ namespace HatTrick.Text.Templating
                     .WithMaxStack(_maxStack)
                     .WithLambdaRepository(_lambdaRepo);
 
-                _result.Append(subEngine.Merge(bindTo));
+                _result.Append(subEngine.Merge());
+
+                _scopeChain.DereferenceVariableScope();
             }
         }
         #endregion
@@ -246,7 +256,7 @@ namespace HatTrick.Text.Templating
             System.Collections.IEnumerable col;
 
             bool isFalse = (val == null)
-                       || ((bit = val as bool?) != null && bit == false
+                       || (bit = val as bool?) != null && bit == false
                        || (i = val as int?) != null && i == 0
                        || (dbl = val as double?) != null && dbl == 0
                        || (l = val as long?) != null && l == 0
@@ -259,14 +269,14 @@ namespace HatTrick.Text.Templating
                        || (sht = val as short?) != null && sht == 0
                        || (usht = val as ushort?) != null && usht == 0
                        || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: JRod, this will catch string.Empty
-                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0'));
+                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0');
 
             return !isFalse;
         }
         #endregion
 
         #region handle each tag
-        private void HandleEachTag(in Tag tag, object bindTo)
+        private void HandleEachTag(in Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -283,7 +293,7 @@ namespace HatTrick.Text.Templating
 
             string bindAs = tag.BindAs();
 
-            object target = this.ResolveTarget(bindAs, bindTo);
+            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
 
             if (!(target == null)) //if null just ignore
             {
@@ -296,7 +306,6 @@ namespace HatTrick.Text.Templating
                 string itemContent;
 
                 TemplateEngine subEngine;
-                _scopeChain.Push(bindTo);
                 subEngine = new TemplateEngine(block.ToString())
                     .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
@@ -309,13 +318,12 @@ namespace HatTrick.Text.Templating
                     itemContent = subEngine.Merge(item);
                     _result.Append(itemContent);
                 }
-                _scopeChain.Pop();
             }
         }
         #endregion
 
         #region handle with tag
-        private void HandleWithTag(in Tag tag, object bindTo)
+        private void HandleWithTag(in Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -332,11 +340,13 @@ namespace HatTrick.Text.Templating
 
             string bindAs = tag.BindAs();
 
-            object target = this.ResolveTarget(bindAs, bindTo);
+            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
 
             string itemContent;
             TemplateEngine subEngine;
-            _scopeChain.Push(bindTo);
+
+            _scopeChain.ApplyVariableScopeMarker();
+
             subEngine = new TemplateEngine(block.ToString())
                 .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(_trimWhitespace)
@@ -346,22 +356,59 @@ namespace HatTrick.Text.Templating
 
             itemContent = subEngine.Merge(target);
             _result.Append(itemContent);
-            _scopeChain.Pop();
+
+            _scopeChain.DereferenceVariableScope();
+        }
+        #endregion
+
+        #region handle variable tag
+        private void HandleVariableTag(in Tag tag)
+        {
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
+
+            string expression = tag.BindAs(); //example:  :name=$.Name
+
+            StringBuilder sb = new StringBuilder();
+            string name = null;
+            string bindAs;
+            bool found = false;
+            for (int i = 0; i < expression.Length; i++)
+            {
+                if (expression[i] == '=' && !(expression[i + 1] == '>'))
+                {
+                    name = sb.ToString();
+                    sb.Clear();
+                    found = true;
+                    continue;
+                }
+                sb.Append(expression[i]);
+            }
+            if (!found)
+                throw new MergeException($"encountered invalid variable, no assignment operator '=' found,  tag: {tag}");
+
+            bindAs = sb.ToString();
+
+            object value = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+
+            _scopeChain.SetVariable(name, value);
         }
         #endregion
 
         #region handle partial tag (sub templates)
-        private void HandlePartialTag(in Tag tag, object bindTo)
+        private void HandlePartialTag(in Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
             string bindAs = tag.BindAs();
-            object target = this.ResolveTarget(bindAs, bindTo);
+            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
 
             string tgt = (target as string);
             if (tgt == null)
             { throw new MergeException($"#sub template tag: {tag} reflected value is not typeof string: {target}"); }
+
+            _scopeChain.ApplyVariableScopeMarker();
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
                 .WithProgressListener(_progress)
@@ -370,14 +417,16 @@ namespace HatTrick.Text.Templating
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
                 .WithLambdaRepository(_lambdaRepo);
 
-            string result = subEngine.Merge(bindTo);
+            string result = subEngine.Merge();
 
             _result.Append(result);
+
+            _scopeChain.DereferenceVariableScope();
         }
         #endregion
 
         #region resolve target
-        private object ResolveTarget(string bindAs, object localScope)
+        private object ResolveBindTarget(string bindAs, object localScope)
         {
             object target = null;
             if (bindAs.Length == 1 && bindAs[0] == '$') //append bindto obj
@@ -389,11 +438,15 @@ namespace HatTrick.Text.Templating
                 string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
                 target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             }
+            else if (bindAs[0] == ':') //variable reference
+            {
+                target = _scopeChain.AccessVariable(bindAs); 
+            }
             else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
             {
                 int lastIdxOf;
                 int cnt = this.CountPattern(bindAs, @"..\", out lastIdxOf);
-                target = this.ResolveTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.ReachBack(cnt));
+                target = this.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.Peek(cnt));
             }
             else if (bindAs.Contains("=>")) //lambda expression
             {
@@ -455,7 +508,7 @@ namespace HatTrick.Text.Templating
                 }
                 else
                 {
-                    arguments[i] = this.ResolveTarget(args[i], localScope);         //recursive
+                    arguments[i] = this.ResolveBindTarget(args[i], localScope);         //recursive
                 }
             }
             return arguments;
@@ -564,18 +617,18 @@ namespace HatTrick.Text.Templating
                 //look for the next tag...
                 this.RollTill(emitTo, '{', false, true);
 
-                _tagBldr.Reset();
+                _nextTag.Reset();
                 tagIsContent = false;
 
-                this.RollTill(_tagBldr.Append, '}', true, true);
+                this.RollTill(_nextTag.Append, '}', true, true);
 
-                if (_tagBldr.Length == 0)
+                if (_nextTag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
-                if (!till(_tagBldr.ToString()))
+                if (!till(_nextTag.ToString()))
                 {
                     tagIsContent = true;
-                    if (ensuring(_tagBldr.ToString()))
+                    if (ensuring(_nextTag.ToString()))
                     {
                         offset += 1;
                     }
@@ -589,14 +642,14 @@ namespace HatTrick.Text.Templating
                     }
                     else
                     {
-                        endTag = new Tag(_tagBldr.ToString(), _trimWhitespace);
+                        endTag = new Tag(_nextTag.ToString(), _trimWhitespace);
                     }
                 }
                 if (tagIsContent)
                 {
-                    for (int i = 0; i < _tagBldr.Length; i++)
+                    for (int i = 0; i < _nextTag.Length; i++)
                     {
-                        emitTo(_tagBldr[i]);
+                        emitTo(_nextTag[i]);
                     }
                 }
 

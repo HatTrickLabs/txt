@@ -400,7 +400,7 @@ namespace HatTrick.Text.Test
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = true; 
+            ngin.TrimWhitespace = true;
 
             //when
             string actual = ngin.Merge(data);
@@ -730,6 +730,62 @@ namespace HatTrick.Text.Test
 
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.TrimWhitespace = false; //global flag for whitespace control...
+
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("variable-declarations-in.txt", "address-partial-scoped-in.txt", "variable-declarations-out.txt")]
+        public void Does_variable_declaration_and_usage_render_correctly(string template, string partial, string expected)
+        {
+            //given
+            var data = new
+            {
+                Contact = new
+                {
+                    Name = new { First = "Charlie", Last = "Brown" },
+                },
+                Structure = new
+                {
+                    Type = "School",
+                    YearBuilt = 1925,
+                    Address = new Address
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+                Inspectors = new[]
+                {
+                    new { Name = "John Doe", YearsOfService = 13, Expertise = new[] { "Gothic", "Neoclassical" } },
+                    new { Name = "Jane Doe", YearsOfService = 10, Expertise = new[] { "Modern", "Victorian" }  },
+                }
+            };
+
+            Func<string> GetAddressPartial = () =>
+            {
+                return partial;
+            };
+
+            Func<string> GetSomeVal = () => "some val";
+
+            Func<Address, string> GetCityAndState = (a) => $"{a.City}, {a.State}";
+
+            Func<int, int> IncrementAndReturn = (counter) => ++counter;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
+            ngin.LambdaRepo.Register(nameof(GetSomeVal), GetSomeVal);
+            ngin.LambdaRepo.Register(nameof(GetCityAndState), GetCityAndState);
+            ngin.LambdaRepo.Register(nameof(IncrementAndReturn), IncrementAndReturn);
+            ngin.TrimWhitespace = true;
 
             //when
             string actual = ngin.Merge(data);

@@ -33,6 +33,7 @@ namespace HatTrick.Text.Templating.TestHarness
             ComplexWhitespaceControl();
             SimpleIterationBlocks();
             ThrowOnNonIEnumerableIterationTarget();
+            ThrowOnOverreachIntoScopeChain();
             WalkingTheScopeChain();
             SimplePartialBlocks();
             SimpleTemplateComments();
@@ -42,6 +43,15 @@ namespace HatTrick.Text.Templating.TestHarness
             LambdaExpressionDrivenBlocks();
             WithTagScopeChangeBlocks();
             CodeGen();
+            DeclaringAndUsingVariables();
+            SingleLinkScopeChainReference();
+            TwoLinkScopeChainReference();
+            ThreeLinkScopeChainReference();
+            EightLinkScopeChainReference();
+            PushEightPopFourLinksScopeChainReference();
+            ScopeChainVariableReference();
+            VariableScopeMarkerOnNullStack();
+            VariableScopeMarkerOnNonNullStack();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -263,7 +273,7 @@ namespace HatTrick.Text.Templating.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (Exception npe)
+            catch// (Exception npe)
             {
                 passed = true;
             }
@@ -459,7 +469,7 @@ namespace HatTrick.Text.Templating.TestHarness
             {
                 string result = ngin.Merge(data);
             }
-            catch (MergeException mex)
+            catch// (MergeException mex)
             {
                 passed = true;
             }
@@ -468,8 +478,35 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region walking the scope chain x
-        static void WalkingTheScopeChain()
+        #region throw on overreach into scope chain
+        static void ThrowOnOverreachIntoScopeChain()
+        {
+            string name = "throw-on-overreach-into-scopechain";
+
+            var data1 = new { Name = new { First = "Charlie", Last = "Brown" } };
+            var data2 = new { Name = new { First = "Super", Last = "Man" } };
+
+            ScopeChain chain = new ScopeChain();
+            chain.Push(data1);
+            chain.Push(data2);
+
+
+            bool passed = false;
+            try
+            {
+                chain.Peek(2);
+            }
+            catch (ArgumentException ex)
+            {
+                passed = ex.Message == "value must be < ScopeChain.Depth\r\nParameter name: back";
+            }
+
+            RenderOutput(name, passed);
+        }
+		#endregion
+
+		#region walking the scope chain x
+		static void WalkingTheScopeChain()
         {
             string name = "walking-the-scope-chain";
             string template = ResolveTemplateInput(name);
@@ -905,10 +942,381 @@ namespace HatTrick.Text.Templating.TestHarness
             RenderOutput(name, passed);
         }
         #endregion
-	}
 
-	#region person class
-	public class Person
+        #region declaring and using variables x
+        static void DeclaringAndUsingVariables()
+        {
+            string name = "variable-declarations";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Contact = new
+                {
+                    Name = new { First = "Charlie", Last = "Brown" },
+                },
+                Structure = new
+                {
+                    Type = "School",
+                    YearBuilt = 1925,
+                    Address = new Address
+                    {
+                        Line1 = "123 Main St.",
+                        Line2 = "Suite 200",
+                        City = "Dallas",
+                        State = "TX",
+                        Zip = "77777"
+                    }
+                },
+                Inspectors = new[]
+                {
+                    new { Name = "John Doe", YearsOfService = 13, Expertise = new[] { "Gothic", "Neoclassical" } },
+                    new { Name = "Jane Doe", YearsOfService = 10, Expertise = new[] { "Modern", "Victorian" }  },
+                }
+            };
+
+            Func<string> GetAddressPartial = () =>
+            {
+                return ResolveTemplateInput("address-partial-scoped");
+            };
+
+            Func<string> GetSomeVal = () => "some val";
+
+            Func<Address, string> GetCityAndState = (a) => $"{a.City}, {a.State}";
+
+            Func<int, int> IncrementAndReturn = (counter) => ++counter;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(GetAddressPartial), GetAddressPartial);
+            ngin.LambdaRepo.Register(nameof(GetSomeVal), GetSomeVal);
+            ngin.LambdaRepo.Register(nameof(GetCityAndState), GetCityAndState);
+            ngin.LambdaRepo.Register(nameof(IncrementAndReturn), IncrementAndReturn);
+            ngin.TrimWhitespace = true;
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region single link scope chain reference
+        static void SingleLinkScopeChainReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Name.First");
+            string expected = "Charlie";
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(nameof(SingleLinkScopeChainReference), passed);
+        }
+        #endregion
+
+        #region two link scope chain reference
+        static void TwoLinkScopeChainReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Name.First");
+            string expected = "Susie";
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(nameof(TwoLinkScopeChainReference), passed);
+        }
+        #endregion
+
+        #region three link scope chain reference
+        static void ThreeLinkScopeChainReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Zip");
+            string expected = "75075";
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(nameof(ThreeLinkScopeChainReference), passed);
+        }
+        #endregion
+
+        #region eight link scope chain reference
+        static void EightLinkScopeChainReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+
+            var p3 = new { Name = new { First = "Spider", Last = "Man" } };
+            chain.Push(p3);
+
+            var p4 = new { Name = new { First = "Luke", Last = "Skywalker" } };
+            chain.Push(p4);
+
+            var p5 = new { Name = new { First = "Peter", Last = "Pan" } };
+            chain.Push(p5);
+
+            var p6 = new { Name = new { First = "Duke", Last = "Caboom" } };
+            chain.Push(p6);
+
+            var p7 = new { Name = new { First = "Buzz", Last = "Lightyear" } };
+            chain.Push(p7);
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Name.Last");
+            string expected = "Lightyear";
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(nameof(EightLinkScopeChainReference), passed);
+        }
+        #endregion
+
+        #region push eight pop four links scope chain reference
+        static void PushEightPopFourLinksScopeChainReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+
+            var p3 = new { Name = new { First = "Spider", Last = "Man" } };
+            chain.Push(p3);
+
+            var p4 = new { Name = new { First = "Luke", Last = "Skywalker" } };
+            chain.Push(p4);
+
+            var p5 = new { Name = new { First = "Peter", Last = "Pan" } };
+            chain.Push(p5);
+
+            var p6 = new { Name = new { First = "Duke", Last = "Caboom" } };
+            chain.Push(p6);
+
+            var p7 = new { Name = new { First = "Buzz", Last = "Lightyear" } };
+            chain.Push(p7);
+
+            chain.Pop();
+            chain.Pop();
+            chain.Pop();
+            chain.Pop();
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Name.First");
+            string expected = "Spider";
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(nameof(PushEightPopFourLinksScopeChainReference), passed);
+        }
+        #endregion
+
+        #region ensure scope chain variable reference
+        static void ScopeChainVariableReference()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person() { Name = new Name() { First = "Charlie", Last = "Brown" } };
+            chain.Push(p);
+            chain.SetVariable("var1", "uno");
+            chain.SetVariable("var2", "dos");
+
+            var p2 = new { Name = new { First = "Susie", Last = "Derkins" } };
+            chain.Push(p2);
+            chain.SetVariable("var3", "tres");
+
+            var a = new Address() { Line1 = "111 Main St.", Line2 = "", City = "Dallas", State = "TX", Zip = "75075" };
+            chain.Push(a);
+            chain.SetVariable("firstPerson", p);
+            chain.SetVariable("var4", "cuatro");
+            chain.SetVariable("var5", "cinco");
+            chain.SetVariable("secondPerson", p2);
+
+            var p3 = new { Name = new { First = "Spider", Last = "Man" } };
+            chain.Push(p3);
+            chain.SetVariable("var6", "seis");
+            chain.SetVariable("address", a);
+
+            var p4 = new { Name = new { First = "Luke", Last = "Skywalker" } };
+            chain.Push(p4);
+            chain.SetVariable("var7", "siete");
+            chain.SetVariable("var6", "xxx"); //override var6 in newer chain link...
+
+            var p5 = new { Name = new { First = "Peter", Last = "Pan" } };
+            chain.Push(p5);
+            chain.SetVariable("var8", "ocho");
+
+            var p6 = new { Name = new { First = "Duke", Last = "Caboom" } };
+            chain.Push(p6);
+            chain.SetVariable("var9", "nueve");
+
+            var p7 = new { Name = new { First = "Buzz", Last = "Lightyear" } };
+            chain.Push(p7);
+            chain.SetVariable("var10", "dias");
+
+
+            string result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.Peek(), "Name.First");
+            string expected = "Buzz";
+            bool passed = true;
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = (chain.AccessVariable("firstPerson") as Person).Name.First;
+            expected = "Charlie";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = (chain.AccessVariable("address") as Address).City;
+            expected = "Dallas";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = (string)chain.AccessVariable("var10");
+            expected = "dias";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = (string)chain.AccessVariable("var6");
+            expected = "xxx";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            chain.Pop();
+            chain.Pop();
+
+            result = (chain.AccessVariable("address") as Address).State;
+            expected = "TX";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = (string)Reflection.ReflectionHelper.Expression.ReflectItem(chain.AccessVariable("secondPerson"), "Name.Last");
+            expected = "Derkins";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            result = string.Empty;
+            try { var o = chain.AccessVariable("var9"); }
+            catch (MergeException mex) { result = mex.Message; }
+            expected = "Attempted access of unknown variable: var9";
+            passed = passed && (string.Compare(result, expected, false) == 0);
+
+            RenderOutput(nameof(ScopeChainVariableReference), passed);
+        }
+        #endregion
+
+        #region variable scope marker on null stack
+        static void VariableScopeMarkerOnNullStack()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person { Name = new Name { First = "James", Last = "Doe" } };
+            chain.Push(p);
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("city", "Dallas");
+            chain.SetVariable("zip", "75075");
+
+            var p2 = new Person { Name = new Name { First = "Charlie", Last = "Brown" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t1");
+            chain.SetVariable("test2", "t2");
+
+            string test = (string)chain.AccessVariable("test");
+
+            chain.Pop(); //should pop the entire link including all variables set on it (test, test2)
+
+            string city = (string)chain.AccessVariable("city");
+            string zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            bool passed = false;
+            try
+            {
+                test = (string)chain.AccessVariable("zip");
+            }
+            catch
+            {
+                passed = true;
+            }
+
+            RenderOutput(nameof(VariableScopeMarkerOnNullStack), passed);
+        }
+        #endregion
+
+        #region variable scope marker on non null stack
+        static void VariableScopeMarkerOnNonNullStack()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            var p = new Person { Name = new Name { First = "James", Last = "Doe" } };
+            chain.Push(p);
+            chain.SetVariable("city", "Dallas");
+            chain.SetVariable("zip", "75075");
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("isEmployed", true);
+            chain.SetVariable("employer", "Hat Trick Labs");
+
+            var p2 = new Person { Name = new Name { First = "Charlie", Last = "Brown" } };
+            chain.Push(p2);
+            chain.SetVariable("test", "t1");
+            chain.SetVariable("test2", "t2");
+
+            string test = (string)chain.AccessVariable("test");
+
+            chain.Pop(); //should pop the entire link including all variables set on it (test, test2)
+
+            string city = (string)chain.AccessVariable("city");
+            string zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            city = (string)chain.AccessVariable("city");
+            zip = (string)chain.AccessVariable("zip");
+
+            chain.DereferenceVariableScope();
+
+            bool passed = false;
+            try
+            {
+                test = (string)chain.AccessVariable("zip");
+            }
+            catch
+            {
+                passed = true;
+            }
+
+            RenderOutput(nameof(VariableScopeMarkerOnNullStack), passed);
+        }
+        #endregion
+    }
+
+    #region person class
+    public class Person
     {
         public int Age;
 

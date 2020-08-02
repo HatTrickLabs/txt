@@ -11,8 +11,11 @@
     <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>text template templating engine mustache handlebars</PackageTags>
+    <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>1.1.0</Version>
+    <PackageReleaseNotes>1.  Enhanced whitespace: allow whitespace retention via the + tag marker.
+2.  Variable declaration and usage within templates.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
