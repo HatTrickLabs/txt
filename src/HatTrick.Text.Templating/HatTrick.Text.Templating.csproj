@@ -4,19 +4,18 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
     <Authors>Jerrod Eiman</Authors>
-    <Company>Hat Trick Labs</Company>
+    <Company>HatTrick Labs LLC</Company>
     <Description>Text templating utilities.</Description>
     <Copyright>Hat Trick Labs</Copyright>
-    <PackageLicenseUrl>https://github.com/HatTrickLabs/txt/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>1.1.0</Version>
-    <PackageReleaseNotes>1.  Enhanced whitespace: allow whitespace retention via the + tag marker.
-2.  Variable declaration and usage within templates.
-3.  Implemented formal unit test framework.</PackageReleaseNotes>
+    <Version>1.1.1</Version>
+    <PackageReleaseNotes>1.  Package reference version updates</PackageReleaseNotes>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
