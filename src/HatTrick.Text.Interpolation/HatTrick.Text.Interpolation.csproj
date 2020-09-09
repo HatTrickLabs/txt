@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HatTrick.Reflection" Version="1.0.3" />
+    <PackageReference Include="HatTrick.Reflection" Version="1.0.5" />
   </ItemGroup>
 
 </Project>
