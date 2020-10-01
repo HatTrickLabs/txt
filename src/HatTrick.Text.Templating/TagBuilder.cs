@@ -46,28 +46,24 @@ namespace HatTrick.Text.Templating
         #region append
         public void Append(char c)
         {
-            char escape = '\\';
-            char singleQuote = '\'';
-            char doubleQuote = '"';
+            char escape         = '\\';
+            char singleQuote    = '\'';
+            char doubleQuote    = '"';
+            char tab            = '\t';
+            char space          = ' ';
 
             //if double quote & not escaped & not already inside single quotes...
             if (c == doubleQuote && _previous != escape && !_inSingleQuote)
-            {
                 _inDoubleQuote = !_inDoubleQuote;
-            }
 
             //if single quote & not escaped & not already inside double quotes...
             if (c == singleQuote && _previous != escape && !_inDoubleQuote)
-            {
                 _inSingleQuote = !_inSingleQuote;
-            }
 
             //only append white space if inside double or single quotes...
             bool inQuotes = (_inDoubleQuote || _inSingleQuote);
-            if (!(c == ' ' || c == '\t') || inQuotes)
-            {
+            if (!(c == space || c == tab) || inQuotes)
                 _tag.Append(c);
-            }
 
             _previous = c;
         }

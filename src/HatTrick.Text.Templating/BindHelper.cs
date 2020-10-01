@@ -79,7 +79,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region is single quoted
+        #region is double quoted
         public static bool IsDoubleQuoted(string value)
         {
             char doubleQuote = '"';

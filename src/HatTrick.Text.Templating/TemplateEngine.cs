@@ -395,6 +395,10 @@ namespace HatTrick.Text.Templating
                 value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
             else if (BindHelper.IsNumericLiteral(bindAs))
                 value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
+            else if (string.Compare(bindAs, "true", true) == 0)
+                value = true;
+            else if (string.Compare(bindAs, "false", true) == 0)
+                value = false;
             else
                 value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 

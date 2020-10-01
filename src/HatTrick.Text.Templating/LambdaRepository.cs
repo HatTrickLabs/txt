@@ -103,39 +103,36 @@ namespace HatTrick.Text.Templating
 
             char c;
             int at = -1;
+            char singleQuote    = '\'';
+            char doubleQuote    = '"';
+            char escape         = '\\';
+            char comma          = ',';
+            char openParen      = '(';
+            char closeParen     = ')';
+
             StringBuilder sb = new StringBuilder();
             bool singleQuoted = false;
             bool doubleQuoted = false;
             for (int i = 0; i < argsExpr.Length; i++)
             {
                 c = argsExpr[i];
-                if (c == '(' || c == ')')
-                {
+                if (c == openParen || c == closeParen)
                     continue;
-                }
-                else if (c == '"')
+                else if (c == doubleQuote)
                 {
-                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == '\\')
-                    {
+                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-                    }
                     else if (!singleQuoted)
-                    {
                         doubleQuoted = !doubleQuoted;
-                    }
                 }
-                else if (c == '\'')
+                else if (c == singleQuote)
                 {
-                    if (singleQuoted && i > 0 && argsExpr[i - 1] == '\\')
-                    {
+                    if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-                    }
                     else if (!doubleQuoted)
-                    {
                         singleQuoted = !singleQuoted;
-                    }
                 }
-                else if (c == ',')
+                else if (c == comma)
                 {
                     if (!(singleQuoted || doubleQuoted))
                     {

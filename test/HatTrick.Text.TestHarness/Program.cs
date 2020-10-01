@@ -685,8 +685,11 @@ namespace HatTrick.Text.Templating.TestHarness
             string template = ResolveTemplateInput(name);
 
             Func<int, int, int> SumTwoIntegers = (int x, int y) => x + y;
+
             Func<double, double, double> SumTwoDoubles = (double x, double y) => x + y;
+
             Func<decimal, decimal, decimal> SumTwoDecimals = (decimal x, decimal y) => x + y;
+
             Func<int, double, decimal, decimal> SumIntDoubleDecimal = (int x, double y, decimal z) => (decimal)x + (decimal)y + (decimal)z;
 
             TemplateEngine ngin = new TemplateEngine(template);
