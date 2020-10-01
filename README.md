@@ -198,8 +198,23 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Both declaring and referencing a variable requires the variable name be proceeded by a colon *( {?var:myVar = $ } {:myVar} )*.
+- Both declaring and referencing a variable requires the variable name be proceeded by a colon:
+	* Declaration: *{?var:myVar = $ }*
+	* Usage: *{:myVar} )*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
+- Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
+	* String Literal: *{?var:someText = "Hello"}*
+	* Numeric Literal: *{?var:someNum = 3.0d}*
+	* Bound Expression: *{?var:someVal = $.SomeProperty}*
+	* Lambda: *{?var:someVal = () => GetSomeValue}*
+	* Boolean: *{var:isValid = true}*
+- String literal values can be wrapped in double quotes or single quotes.
+- Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
+	* d - double
+	* i - int
+	* f - float/single
+	* m - decimal
+	* l - long
 
 
 ### Partial Template Blocks
@@ -429,12 +444,11 @@ string result = ngin.Merge(person);
 ```
 
 ##### Notes:
-- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with} and *{>parital}* tags.
+- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}* and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
+- Numeric literal argument types are inferred.
 - String literal args can be enclosed in single or double quotes.
 - If a string literal contains a double quote, enclosing the literal with single quotes to avoid the need to escape.
 - I a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
-- If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character. example: "It's easy to escape \"double\" quotes."
-- Numeric literals are typed via as suffix i.e. (223:int)
-- Allowed numeric literal types: int, long, decimal, double, byte
-
+- If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character.  
+  example: "It's easy to escape \\"double\\" quotes."
