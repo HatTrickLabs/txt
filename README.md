@@ -198,22 +198,23 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Both declaring and referencing a variable requires the variable name be proceeded by a colon.  
-  Declaration: *{?var:myVar = $ }*  
-  Usage: *{:myVar} )*
+- Both declaring and referencing a variable requires the variable name be proceeded by a colon:
+	* Declaration: *{?var:myVar = $ }*
+	* Usage: *{:myVar} )*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
-- Variables can be set via string literals, numeric literals, bound expressions or lamba expressions.  
-  String Literal: *{?var:someText = "Hello"}*  
-  Numeric Literal: *{?var:someNum = 3.0d}*  
-  Bound Expression: *{?var:someVal = $.SomeProperty}*  
-  Lambda: *{?var:someVal = () => GetSomeValue}*  
+- Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
+	* String Literal: *{?var:someText = "Hello"}*
+	* Numeric Literal: *{?var:someNum = 3.0d}*
+	* Bound Expression: *{?var:someVal = $.SomeProperty}*
+	* Lambda: *{?var:someVal = () => GetSomeValue}*
+	* Boolean: *{var:isValid = true}*
 - String literal values can be wrapped in double quotes or single quotes.
-- Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):  
-  d - double  
-  i - int  
-  f - float/single  
-  m - decimal  
-  l - long  
+- Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
+	* d - double
+	* i - int
+	* f - float/single
+	* m - decimal
+	* l - long
 
 
 ### Partial Template Blocks
