@@ -199,7 +199,7 @@ Fields:
 ```
 ##### Notes:
 - Both declaring and referencing a variable requires the variable name be proceeded by a colon.  
-  Declaration: *{?var:myVar = $ }*
+  Declaration: *{?var:myVar = $ }*  
   Usage: *{:myVar} )*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
 - Variables can be set via string literals, numeric literals, bound expressions or lamba expressions.  
