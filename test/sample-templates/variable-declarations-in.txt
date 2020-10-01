@@ -34,7 +34,7 @@ Inspected for:	{:lastName}, {:firstName}
 {>() => GetAddressPartial}
 {/with}
 
-{(9:int) => IncrementAndReturn}
+{(9) => IncrementAndReturn}
 {#if Inspectors}
 {?var:abc = :someVal}
 {#with Contact.Name}

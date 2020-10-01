@@ -1,0 +1,11 @@
+*****Begin Test Numeric Literals*****
+
+2
+
+2
+
+2
+
+3.0
+
+*****End Test Numeric Literals*****
