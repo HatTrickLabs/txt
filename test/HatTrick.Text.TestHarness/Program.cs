@@ -45,6 +45,7 @@ namespace HatTrick.Text.Templating.TestHarness
             WithTagScopeChangeBlocks();
             CodeGen();
             DeclaringAndUsingVariables();
+            LiteralsEverywhere();
             SingleLinkScopeChainReference();
             TwoLinkScopeChainReference();
             ThreeLinkScopeChainReference();
@@ -678,7 +679,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region lambda numeric literals
+        #region lambda numeric literals x
         static void LambdaNumericLiterals()
         {
             string name = "lambda-numeric-literals";
@@ -1034,8 +1035,34 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region single link scope chain reference
-        static void SingleLinkScopeChainReference()
+        #region literals
+        static void LiteralsEverywhere()
+        {
+            string name = "literals-everywhere";
+            string template = ResolveTemplateInput(name);
+
+
+            Func<int, double, decimal, decimal> sumIntDoubleDecimal = (v1, v2, v3) => v1 + (decimal)v2 + v3;
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(sumIntDoubleDecimal), sumIntDoubleDecimal);
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+		#endregion
+
+		#region single link scope chain reference
+		static void SingleLinkScopeChainReference()
         {
             ScopeChain chain = new ScopeChain();
 

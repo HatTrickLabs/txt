@@ -526,6 +526,33 @@ namespace HatTrick.Text.Test
         }
 
         [Theory]
+        [Templates("lambda-numeric-literals-in.txt", "lambda-numeric-literals-out.txt")]
+        public void Do_lambda_numeric_literals_render_correctly(string template, string expected)
+        {
+            //given
+            Func<int, int, int> SumTwoIntegers = (int x, int y) => x + y;
+
+            Func<double, double, double> SumTwoDoubles = (double x, double y) => x + y;
+
+            Func<decimal, decimal, decimal> SumTwoDecimals = (decimal x, decimal y) => x + y;
+
+            Func<int, double, decimal, decimal> SumIntDoubleDecimal = (int x, double y, decimal z) => (decimal)x + (decimal)y + (decimal)z;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(SumTwoIntegers), SumTwoIntegers);
+            ngin.LambdaRepo.Register(nameof(SumTwoDoubles), SumTwoDoubles);
+            ngin.LambdaRepo.Register(nameof(SumTwoDecimals), SumTwoDecimals);
+            ngin.LambdaRepo.Register(nameof(SumIntDoubleDecimal), SumIntDoubleDecimal);
+
+            //when
+            string actual = ngin.Merge(null);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
         [Templates("truthy-falsy-in.txt", "truthy-falsy-out.txt")]
         public void Does_truthy_falsy_conditional_logic_evaluate_correctly(string template, string expected)
         {
