@@ -331,7 +331,7 @@ var person = new
 
 
 ### Whitespace Control
-By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
+By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
 ```c#
@@ -446,7 +446,7 @@ string result = ngin.Merge(person);
 ##### Notes:
 - Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}* and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
-- Numeric literal argument types are inferred.
+- Numeric literal argument types are inferred (no need for a type suffix).
 - String literal args can be enclosed in single or double quotes.
 - If a string literal contains a double quote, enclosing the literal with single quotes to avoid the need to escape.
 - I a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
