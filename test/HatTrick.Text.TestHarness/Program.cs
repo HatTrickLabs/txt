@@ -45,7 +45,7 @@ namespace HatTrick.Text.Templating.TestHarness
             WithTagScopeChangeBlocks();
             CodeGen();
             DeclaringAndUsingVariables();
-            LiteralsEverywhere();
+            LiteralVariableDeclarationAndUsage();
             SingleLinkScopeChainReference();
             TwoLinkScopeChainReference();
             ThreeLinkScopeChainReference();
@@ -1036,9 +1036,9 @@ namespace HatTrick.Text.Templating.TestHarness
         #endregion
 
         #region literals
-        static void LiteralsEverywhere()
+        static void LiteralVariableDeclarationAndUsage()
         {
-            string name = "literals-everywhere";
+            string name = "literal-variable-declarations";
             string template = ResolveTemplateInput(name);
 
 

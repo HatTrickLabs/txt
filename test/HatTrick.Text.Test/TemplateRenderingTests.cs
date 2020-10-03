@@ -820,5 +820,26 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(expected, actual);
         }
+
+        [Theory]
+        [Templates("literal-variable-declarations-in.txt", "literal-variable-declarations-out.txt")]
+        public void Does_literal_variable_declaration_and_usage_render_correctly(string template, string expected)
+        {
+            //given
+            Func<int, double, decimal, decimal> sumIntDoubleDecimal = (v1, v2, v3) => v1 + (decimal)v2 + v3;
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(sumIntDoubleDecimal), sumIntDoubleDecimal);
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            //when
+            string actual = ngin.Merge(null);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
     }
 }
