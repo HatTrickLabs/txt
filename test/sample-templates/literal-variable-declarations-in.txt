@@ -1,0 +1,31 @@
+******** Declaration and Usage of String Literals ********
+{?var:hello = "Hello" }{?var:world = "World" }{?var:exclaim = '!' }
+{?var:salutation = (:hello, ' ') => concat}
+{?var:salutation = (:salutation, :world) => concat}
+{?var:salutation = (:salutation, :exclaim) => concat}
+
+salutation: {:salutation}
+
+
+
+******** Declaration and Usage of Numeric Literals ********
+{?var:uno = 1i }		{! int32 }
+{?var:dos = 2.0d }		{! double }
+{?var:tres = 3.000m }	{! decimal }
+
+uno + dos + tres = {(:uno, :dos, :tres) => sumIntDoubleDecimal}	{! pass literal declared variables to func }
+uno + dos + tres = {(1, 2.00, 3.00) => sumIntDoubleDecimal}		{! pass literals directly to func }
+
+
+
+******** Declaration and Usage of String Literals Containing Quotes ********
+{?var:escaped = "This value does not need "escaping"" }		{! no need to escape double quotes }
+{?var:escaped2 = "This value does not need 'escaping'" }	{! no need to escape single quotes }
+
+1: {:escaped}
+2: {:escaped2}
+
+{("This 'test' should", " work") => concat}
+{('This "test" should also', " work") => concat}
+{("This \"test\" should also", " work") => concat}
+{('This \'test\' should also', " work") => concat}
