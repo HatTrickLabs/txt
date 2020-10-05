@@ -410,8 +410,8 @@ We see you don't have any certs.
 ```
 
 ##### Notes:
-- Left trim markers *{-#if}* will trim all preceding whitespace INCLUDING the FIRST newline.
-- Right trim markers *{#if-}* will trim all trailing whitespace NOT INCLUDING newline(s).
+- Left trim markers *{-#if}* will trim all preceding whitespace NOT INCLUDING newline(s).
+- Right trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
 - To force trim on all applicable tags without including the trim markers, set *TemplateEngine.TrimWhitespace = true*.
 - If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
 - The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
@@ -444,7 +444,7 @@ string result = ngin.Merge(person);
 ```
 
 ##### Notes:
-- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}* and *{>parital}* tags.
+- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}*, *{?var:}* and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
 - Numeric literal argument types are inferred (no need for a type suffix).
 - String literal args can be enclosed in single or double quotes.
