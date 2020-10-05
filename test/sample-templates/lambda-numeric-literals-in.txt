@@ -1,0 +1,16 @@
+*****Begin Test Numeric Literals*****
+{?var:someDouble = 1.0d }
+{?var:someDecimal = 1.0m }
+{?var:someInt = 1i }
+
+{(1, 1) => SumTwoIntegers}
+
+{(1, 1) => SumTwoDoubles}
+
+{(1, 1) => SumTwoDecimals}
+
+{(:someInt, :someDouble, :someDecimal) => SumIntDoubleDecimal}
+
+{(1, 1.0, 1.0) => SumIntDoubleDecimal}
+
+*****End Test Numeric Literals*****

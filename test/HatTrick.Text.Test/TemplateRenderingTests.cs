@@ -526,6 +526,33 @@ namespace HatTrick.Text.Test
         }
 
         [Theory]
+        [Templates("lambda-numeric-literals-in.txt", "lambda-numeric-literals-out.txt")]
+        public void Do_lambda_numeric_literals_render_correctly(string template, string expected)
+        {
+            //given
+            Func<int, int, int> SumTwoIntegers = (int x, int y) => x + y;
+
+            Func<double, double, double> SumTwoDoubles = (double x, double y) => x + y;
+
+            Func<decimal, decimal, decimal> SumTwoDecimals = (decimal x, decimal y) => x + y;
+
+            Func<int, double, decimal, decimal> SumIntDoubleDecimal = (int x, double y, decimal z) => (decimal)x + (decimal)y + (decimal)z;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(SumTwoIntegers), SumTwoIntegers);
+            ngin.LambdaRepo.Register(nameof(SumTwoDoubles), SumTwoDoubles);
+            ngin.LambdaRepo.Register(nameof(SumTwoDecimals), SumTwoDecimals);
+            ngin.LambdaRepo.Register(nameof(SumIntDoubleDecimal), SumIntDoubleDecimal);
+
+            //when
+            string actual = ngin.Merge(null);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
         [Templates("truthy-falsy-in.txt", "truthy-falsy-out.txt")]
         public void Does_truthy_falsy_conditional_logic_evaluate_correctly(string template, string expected)
         {
@@ -729,7 +756,7 @@ namespace HatTrick.Text.Test
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = false; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
 
             //when
             string actual = ngin.Merge(data);
@@ -789,6 +816,27 @@ namespace HatTrick.Text.Test
 
             //when
             string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("literal-variable-declarations-in.txt", "literal-variable-declarations-out.txt")]
+        public void Does_literal_variable_declaration_and_usage_render_correctly(string template, string expected)
+        {
+            //given
+            Func<int, double, decimal, decimal> sumIntDoubleDecimal = (v1, v2, v3) => v1 + (decimal)v2 + v3;
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(sumIntDoubleDecimal), sumIntDoubleDecimal);
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            //when
+            string actual = ngin.Merge(null);
 
             //then
             Assert.Equal(expected, actual);

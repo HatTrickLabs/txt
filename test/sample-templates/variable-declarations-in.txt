@@ -21,7 +21,8 @@ Zip code is:	{:zip}
 Style:		{$}
 Inspected by:	{:inspector}
 Inspected for:	{:lastName}, {:firstName}
-{+/each}
+
+{/each}
 {/each}
 *************
 {:someVal}
@@ -29,12 +30,11 @@ Inspected for:	{:lastName}, {:firstName}
 {?var:cityAndState = (Structure.Address) => GetCityAndState }
 .......
 {:cityAndState}
-
 {#with Structure.Address}
 {>() => GetAddressPartial}
-{/with}
+{/with+}
 
-{(9:int) => IncrementAndReturn}
+{(9) => IncrementAndReturn}
 {#if Inspectors}
 {?var:abc = :someVal}
 {#with Contact.Name}

@@ -39,11 +39,13 @@ namespace HatTrick.Text.Templating.TestHarness
             SimpleTemplateComments();
             MultiLineTemplateComments();
             SimpleLambdaExpressions();
+            LambdaNumericLiterals();
             ComplexLambdaExpressions();
             LambdaExpressionDrivenBlocks();
             WithTagScopeChangeBlocks();
             CodeGen();
             DeclaringAndUsingVariables();
+            LiteralVariableDeclarations();
             SingleLinkScopeChainReference();
             TwoLinkScopeChainReference();
             ThreeLinkScopeChainReference();
@@ -677,8 +679,39 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region complex lambda expressions x
-        static void ComplexLambdaExpressions()
+        #region lambda numeric literals x
+        static void LambdaNumericLiterals()
+        {
+            string name = "lambda-numeric-literals";
+            string template = ResolveTemplateInput(name);
+
+            Func<int, int, int> SumTwoIntegers = (int x, int y) => x + y;
+
+            Func<double, double, double> SumTwoDoubles = (double x, double y) => x + y;
+
+            Func<decimal, decimal, decimal> SumTwoDecimals = (decimal x, decimal y) => x + y;
+
+            Func<int, double, decimal, decimal> SumIntDoubleDecimal = (int x, double y, decimal z) => (decimal)x + (decimal)y + (decimal)z;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(SumTwoIntegers), SumTwoIntegers);
+            ngin.LambdaRepo.Register(nameof(SumTwoDoubles), SumTwoDoubles);
+            ngin.LambdaRepo.Register(nameof(SumTwoDecimals), SumTwoDecimals);
+            ngin.LambdaRepo.Register(nameof(SumIntDoubleDecimal), SumIntDoubleDecimal);
+
+            string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+		#endregion
+
+		#region complex lambda expressions x
+		static void ComplexLambdaExpressions()
         {
             string name = "complex-lambda-expressions";
             string template = ResolveTemplateInput(name);
@@ -932,7 +965,7 @@ namespace HatTrick.Text.Templating.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = false; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -1002,8 +1035,34 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region single link scope chain reference
-        static void SingleLinkScopeChainReference()
+        #region literal variable declarations
+        static void LiteralVariableDeclarations()
+        {
+            string name = "literal-variable-declarations";
+            string template = ResolveTemplateInput(name);
+
+
+            Func<int, double, decimal, decimal> sumIntDoubleDecimal = (v1, v2, v3) => v1 + (decimal)v2 + v3;
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(sumIntDoubleDecimal), sumIntDoubleDecimal);
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+		#endregion
+
+		#region single link scope chain reference
+		static void SingleLinkScopeChainReference()
         {
             ScopeChain chain = new ScopeChain();
 

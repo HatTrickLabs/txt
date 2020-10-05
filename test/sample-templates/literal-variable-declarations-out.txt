@@ -1,0 +1,24 @@
+******** Declaration and Usage of String Literals ********
+
+
+
+salutation: Hello World!
+
+
+
+******** Declaration and Usage of Numeric Literals ********
+
+uno + dos + tres = 6.000
+uno + dos + tres = 6.00
+
+
+
+******** Declaration and Usage of String Literals Containing Quotes ********
+
+1: This value does not need "escaping"
+2: This value does not need 'escaping'
+
+This 'test' should work
+This "test" should also work
+This "test" should also work
+This 'test' should also work

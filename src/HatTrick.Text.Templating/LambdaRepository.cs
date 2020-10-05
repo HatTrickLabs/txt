@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,77 +42,97 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region parse
-        public void Parse(string expression, out string name, out string[] arguments)
+		#region resolve
+		public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
+        {
+            this.Split(lambdaExpression, out string name, out string paramList);
+
+            if (!_lambdas.ContainsKey(name))
+            { throw new MergeException($"encountered function that does not exist in lambda repo: {name}"); }
+
+            Delegate expr = _lambdas[name];
+            MethodInfo mi = expr.Method;
+            ParameterInfo[] pInfos = mi.GetParameters();
+
+            string[] argLiterals = new string[pInfos.Length];
+            this.ParseLambdaArgs(paramList, ref argLiterals);
+
+            if (pInfos.Length != argLiterals.Length)
+            {
+                string msg = "attempted function invocation with invalid number of parameters. "
+                           + $"lambda name: {name}  expected count: {pInfos.Length} provided count: {argLiterals.Length}";
+                throw new MergeException(msg);
+            }
+
+            object[] args = new object[pInfos.Length];
+            for (int i = 0; i < pInfos.Length; i++)
+            {
+                args[i] = this.CaptureLambdaArgument(argLiterals[i], scopeChain, pInfos[i], name, i);
+            }
+
+            return () => expr.DynamicInvoke(args);
+        }
+        #endregion
+
+        #region split
+        private void Split(string expression, out string name, out string paramList)
         {
             //i.e. (arg1, arg2) => LambdaName
             name = null;
-            arguments = null;
+            paramList = null;
 
             string op = "=>";
             int opIndex = expression.IndexOf(op);
 
             if (opIndex < 0)
-            {
-                throw new ArgumentException("provided value is not a valid lambda", nameof(expression));
-            }
+            { throw new ArgumentException("provided value is not a valid lambda", nameof(expression)); }
 
+            //right side of expression
             name = expression.Substring(opIndex + 2);
 
-            if (!_lambdas.ContainsKey(name))
-            { throw new MergeException($"encountered function that does not exist in lambda repo: {name}"); }
-
-            System.Reflection.MethodInfo mi = _lambdas[name].Method;
-
-            int paramsCount = mi.GetParameters().Length;
-
-            arguments = new string[paramsCount];
-
             //left side of expression 
-            string argsExpr = expression.Substring(0, opIndex);
-
-            this.CaptureLambdaArgs(argsExpr, ref arguments);
+            paramList = expression.Substring(0, opIndex);
         }
         #endregion
 
-        #region extract lambda args
-        private void CaptureLambdaArgs(string argsExpr, ref string[] args)
+        #region parse lambda args
+        private void ParseLambdaArgs(string argsExpr, ref string[] args)
         {
+            if (args.Length == 0)
+                return;
+
             char c;
             int at = -1;
+            char singleQuote    = '\'';
+            char doubleQuote    = '"';
+            char escape         = '\\';
+            char comma          = ',';
+            char openParen      = '(';
+            char closeParen     = ')';
+
             StringBuilder sb = new StringBuilder();
             bool singleQuoted = false;
             bool doubleQuoted = false;
             for (int i = 0; i < argsExpr.Length; i++)
             {
                 c = argsExpr[i];
-                if (c == '(' || c == ')')
-                {
+                if (c == openParen || c == closeParen)
                     continue;
-                }
-                else if (c == '"')
+                else if (c == doubleQuote)
                 {
-                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == '\\')
-                    {
+                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-                    }
                     else if (!singleQuoted)
-                    {
                         doubleQuoted = !doubleQuoted;
-                    }
                 }
-                else if (c == '\'')
+                else if (c == singleQuote)
                 {
-                    if (singleQuoted && i > 0 && argsExpr[i - 1] == '\\')
-                    {
+                    if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-                    }
                     else if (!doubleQuoted)
-                    {
                         singleQuoted = !singleQuoted;
-                    }
                 }
-                else if (c == ',')
+                else if (c == comma)
                 {
                     if (!(singleQuoted || doubleQuoted))
                     {
@@ -123,80 +144,378 @@ namespace HatTrick.Text.Templating
                 sb.Append(c);
             }
 
-            if (args.Length > 0)
-            {
-                args[++at] = sb.ToString(); //final...
-            }
+            args[++at] = sb.ToString(); //final...
         }
         #endregion
 
-        #region parse numeric literal
-        public object ParseNumericLiteral(string value, string suffix)
+        #region capture lambda arguments
+        private object CaptureLambdaArgument(string arg, ScopeChain scopeChain, ParameterInfo paramInfo, string lambda, int index)
         {
-            bool parsed = false;
-            object output = null;
-            switch (suffix)
+            object obj = null;
+            TypeCode tCode = Type.GetTypeCode(paramInfo.ParameterType);
+            switch (tCode)
             {
-                case "int":
-                    {
-                        parsed = int.TryParse(value, out int val);
-                        output = val;
-                    }
+                case TypeCode.Object:
+                    obj = BindHelper.ResolveBindTarget(arg, this, scopeChain);
                     break;
-                case "long":
-                    {
-                        parsed = long.TryParse(value, out long val);
-                        output = val;
-                    }
+                case TypeCode.Boolean:
+                    obj = this.EnsureBooleanArgument(arg, scopeChain, lambda, index);
                     break;
-                case "decimal":
-                case "dec":
-                    {
-                        parsed = decimal.TryParse(value, out decimal val);
-                        output = val;
-                    }
+                case TypeCode.Byte:
+                    obj = this.EnsureByteArgument(arg, scopeChain, lambda, index);
                     break;
-                case "double":
-                case "dbl":
-                    {
-                        parsed = double.TryParse(value, out double val);
-                        output = val;
-                    }
+                case TypeCode.Char:
+                    obj = this.EnsureCharArgument(arg, scopeChain, lambda, index);
                     break;
-                case "byte":
-                    {
-                        parsed = byte.TryParse(value, out byte val);
-                        output = val;
-                    }
+                case TypeCode.String:
+                    obj = this.EnsureStringArgument(arg, scopeChain, lambda, index);
                     break;
+                case TypeCode.DateTime:
+                    obj = this.EnsureDateTimeArgument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Decimal:
+                    obj = this.EnsureDecimalArgument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Double:
+                    obj = this.EnsureDoubleArgument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Int16:
+                    obj = this.EnsureInt16Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Int32:
+                    obj = this.EnsureInt32Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Int64:
+                    obj = this.EnsureInt64Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.UInt16:
+                    obj = this.EnsureUInt16Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.UInt32:
+                    obj = this.EnsureUInt32Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.UInt64:
+                    obj = this.EnsureUInt64Argument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.SByte:
+                    obj = this.EnsureSByteArgument(arg, scopeChain, lambda, index);
+                    break;
+                case TypeCode.Single:
+                    obj = this.EnsureSingleArgument(arg, scopeChain, lambda, index); ;
+                    break;
+                //case TypeCode.Empty:
+                //    break;
+                //case TypeCode.DBNull:
+                //    break;
                 default:
-                    throw new MergeException($"encountered unknown numeric literal suffix: {suffix}");
+                    throw new MergeException($"encountered un-expected Type.TypeCode: {tCode}");
             }
 
-            if (!parsed)
-            {
-                throw new MergeException($"unable to parse provided numerical literal: {value}:{suffix}");
-            }
-            return output;
+            return obj;
         }
         #endregion
 
-        #region invoke
-        public object Invoke(string name, params object[] parms)
+        #region ensure argument
+        private object EnsureStringArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
-            if (!_lambdas.ContainsKey(name))
-            { throw new MergeException($"Encountered function that does not exist in lambda repo: {name}"); }
-
-            System.Reflection.MethodInfo mi = _lambdas[name].Method;
-
-            int paramsCount = mi.GetParameters().Length;
-
-            if (paramsCount != parms.Length)
+            object target = null;
+            if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                string msg = $"attempted function invocation with invalid number of parameters. lambda name: {name}  expected count: {paramsCount} provided count: {parms.Length}";
+                target = arg.Substring(1, (arg.Length - 2));
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.String, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureDateTimeArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
+            {
+                arg = arg.Substring(1, (arg.Length - 2));
+                if (!DateTime.TryParse(arg, out DateTime dt))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
+                }
+                return dt;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.DateTime, lambdaName, index);
+            }
+            return target;
+        }
+
+        public object EnsureBooleanArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (string.Compare(arg, "true", true) == 0)
+            {
+                target = true;
+            }
+            else if (string.Compare(arg, "false", true) == 0)
+            {
+                target = false;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Boolean, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureCharArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
+            {
+                target = arg.Substring(1, (arg.Length - 2));
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Char, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureByteArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!byte.TryParse(arg, out byte b))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Byte));
+                }
+                target = b;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Byte, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureDecimalArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0]) || arg[0] == '.') //must be numeric literal
+            {
+                if (!decimal.TryParse(arg, out decimal d))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Decimal));
+                }
+                target = d;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Decimal, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureDoubleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0]) || arg[0] == '.') //must be numeric literal
+            {
+                if (!double.TryParse(arg, out double d))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Double));
+                }
+                target = d;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Double, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureInt16Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!Int16.TryParse(arg, out Int16 i))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int16));
+                }
+                target = i;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Int16, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureInt32Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!int.TryParse(arg, out int i))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int32));
+                }
+                target = i;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Int32, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureInt64Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!long.TryParse(arg, out long l))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int64));
+                }
+                target = l;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Int64, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureSByteArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!sbyte.TryParse(arg, out sbyte s))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.SByte));
+                }
+                target = s;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.SByte, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureSingleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!Single.TryParse(arg, out Single s))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Single));
+                }
+                target = s;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.Single, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureUInt16Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!UInt16.TryParse(arg, out UInt16 u))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt16));
+                }
+                target = u;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.UInt16, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureUInt32Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!UInt32.TryParse(arg, out UInt32 u))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt32));
+                }
+                target = u;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.UInt32, lambdaName, index);
+            }
+            return target;
+        }
+
+        private object EnsureUInt64Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        {
+            object target = null;
+            if (char.IsDigit(arg[0])) //must be numeric literal
+            {
+                if (!UInt64.TryParse(arg, out UInt64 u))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt64));
+                }
+                target = u;
+            }
+            else
+            {
+                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+                this.EnsureArgumentType(arg, target, TypeCode.UInt64, lambdaName, index);
+            }
+            return target;
+        }
+        #endregion
+
+        #region ensure argument type
+        private void EnsureArgumentType(string arg, object value, TypeCode typeCode, string lambdaName, int index)
+        {
+            if (Type.GetTypeCode(value.GetType()) != typeCode)
+            {
+                string msg = "attempted function invocation with invalid parameter. "
+                           + $"lambda name: {lambdaName}  expected: argument of type '{typeCode}'. "
+                           + $"value provided: {arg} at parameter position: {index}";
+
                 throw new MergeException(msg);
             }
-            return _lambdas[name].DynamicInvoke(parms);
+        }
+        #endregion
+
+        #region format exception message builder
+        private string FormatExceptionMessageBuilder(string lambdaName, string arg, int index, TypeCode expectedType)
+        {
+            string msg = "attempted function invocation with invalid parameter. "
+                           + $"lambda name: {lambdaName}  expected: a properly formated {expectedType} literal. "
+                           + $"value provided: {arg} at parameter position: {index}";
+            return msg;
         }
         #endregion
     }

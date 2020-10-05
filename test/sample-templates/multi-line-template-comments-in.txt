@@ -24,7 +24,8 @@ namespace Common
 	}
 	}}
 	#endregion
-{+/each}
+
+{/each}
 }}
 {! this
    is

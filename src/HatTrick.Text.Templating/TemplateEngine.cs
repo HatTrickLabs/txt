@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using HatTrick.Reflection;
 
 namespace HatTrick.Text.Templating
 {
@@ -28,10 +27,6 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region interface
-        [Obsolete("This property is now obsolete and will be removed in the future, use 'TrimWhitespace' instead.")]
-        public bool SuppressWhitespace
-        { set { _trimWhitespace = value; } }
-
         public bool TrimWhitespace
         {
             get { return _trimWhitespace; }
@@ -39,7 +34,10 @@ namespace HatTrick.Text.Templating
         }
 
         public LambdaRepository LambdaRepo
-        { get { return _lambdaRepo;  } }
+        { 
+            get { return (_lambdaRepo == null) ? _lambdaRepo = new LambdaRepository() : _lambdaRepo;  }
+            set { _lambdaRepo = value; }
+        }
 
         public Action<int, string> ProgressListener
         {
@@ -57,7 +55,6 @@ namespace HatTrick.Text.Templating
             _result = new StringBuilder((int)(template.Length * 1.3));
             _appendToResult = (c) => { _result.Append(c); };
             _scopeChain = new ScopeChain();
-            _lambdaRepo = new LambdaRepository();
         }
         #endregion
 
@@ -187,7 +184,7 @@ namespace HatTrick.Text.Templating
         private void HandleSimpleTag(in Tag tag)
         {
             string bindAs = tag.BindAs();
-            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+            object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             _result.Append(target ?? string.Empty);
         }
@@ -213,7 +210,7 @@ namespace HatTrick.Text.Templating
             string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
 
-            object target = this.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _scopeChain.Peek());
+            object target = BindHelper.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _lambdaRepo, _scopeChain);
 
             bool render = this.IsTrue(target);
 
@@ -293,7 +290,7 @@ namespace HatTrick.Text.Templating
 
             string bindAs = tag.BindAs();
 
-            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+            object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             if (!(target == null)) //if null just ignore
             {
@@ -340,7 +337,7 @@ namespace HatTrick.Text.Templating
 
             string bindAs = tag.BindAs();
 
-            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+            object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             string itemContent;
             TemplateEngine subEngine;
@@ -389,7 +386,17 @@ namespace HatTrick.Text.Templating
 
             bindAs = sb.ToString();
 
-            object value = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+            object value = null;
+            if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
+                value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
+            else if (BindHelper.IsNumericLiteral(bindAs))
+                value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
+            else if (string.Compare(bindAs, "true", true) == 0)
+                value = true;
+            else if (string.Compare(bindAs, "false", true) == 0)
+                value = false;
+            else
+                value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             _scopeChain.SetVariable(name, value);
         }
@@ -402,7 +409,7 @@ namespace HatTrick.Text.Templating
             this.EnsureRightTrim(tag);
 
             string bindAs = tag.BindAs();
-            object target = this.ResolveBindTarget(bindAs, _scopeChain.Peek());
+            object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             string tgt = (target as string);
             if (tgt == null)
@@ -423,97 +430,7 @@ namespace HatTrick.Text.Templating
 
             _scopeChain.DereferenceVariableScope();
         }
-        #endregion
-
-        #region resolve target
-        private object ResolveBindTarget(string bindAs, object localScope)
-        {
-            object target = null;
-            if (bindAs.Length == 1 && bindAs[0] == '$') //append bindto obj
-            {
-                target = localScope;
-            }
-            else if (bindAs[0] == '$' && bindAs[1] == '.') //reflect from bindto object
-            {
-                string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
-                target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
-            }
-            else if (bindAs[0] == ':') //variable reference
-            {
-                target = _scopeChain.AccessVariable(bindAs); 
-            }
-            else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
-            {
-                int lastIdxOf;
-                int cnt = this.CountPattern(bindAs, @"..\", out lastIdxOf);
-                target = this.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (cnt * 3)), _scopeChain.Peek(cnt));
-            }
-            else if (bindAs.Contains("=>")) //lambda expression
-            {
-                //{($.abc, $.xyz) => ConcatToValues}
-                //{("keyVal") => GetSomething}
-                //{(true) => GetSomething}
-                string name;
-                object[] arguments;
-                this.ExtractLambda(bindAs, localScope, out name, out arguments);
-                target = this.LambdaRepo.Invoke(name, arguments);
-            }
-            else
-            {
-                target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
-            }
-            return target;
-        }
-        #endregion
-
-        #region extract lambda
-        private void ExtractLambda(string bindAs, object localScope, out string name, out object[] arguments)
-        {
-            string[] args;
-            _lambdaRepo.Parse(bindAs, out name, out args);
-
-            arguments = this.ParseLambdaArguments(localScope, args);
-        }
-        #endregion
-
-        #region parse lambda arguments
-        private object[] ParseLambdaArguments(object localScope, string[] args)
-        {
-            char doubleQuote = '"';
-            char singleQuote = '\'';
-
-            object[] arguments = new object[args.Length];
-
-            //TODO: JRod, refactor this to lex proper without the SubString calls... 
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (args[i][0] == doubleQuote && args[i][args[i].Length - 1] == doubleQuote)      //double quoted string literal...
-                {
-                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
-                }
-                else if (args[i][0] == singleQuote && args[i][args[i].Length - 1] == singleQuote) //single quoted string literal...
-                {
-                    arguments[i] = args[i].Substring(1, (args[i].Length - 2));
-                }
-                else if ((string.Compare(args[i], "true", true) == 0) || (string.Compare(args[i], "false", true) == 0))
-                {
-                    arguments[i] = bool.Parse(args[i]);
-                }
-                else if (this.TextContains(args[i], ':', out int at))               //numeric literal...
-                {
-                    string value = args[i].Substring(0, at);
-                    string suffix = args[i].Substring(at + 1);
-
-                    arguments[i] = this.LambdaRepo.ParseNumericLiteral(value, suffix);
-                }
-                else
-                {
-                    arguments[i] = this.ResolveBindTarget(args[i], localScope);         //recursive
-                }
-            }
-            return arguments;
-        }
-        #endregion
+        #endregion       
 
         #region text contains
         private bool TextContains(string text, char value, out int at)
@@ -657,46 +574,15 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region count instances of pattern
-        public int CountPattern(string content, string pattern, out int lastIndexOf)
-        {
-            lastIndexOf = -1;
-            int cnt = 0;
-            int idx = 0;
-
-            while ((idx = content.IndexOf(pattern, idx)) != -1)
-            {
-                lastIndexOf = idx;
-                idx += pattern.Length;
-                cnt += 1;
-            }
-            return cnt;
-        }
-        #endregion
-
         #region ensure left trim
         private void EnsureLeftTrim(StringBuilder from, in Tag tag)
         {
             if (tag.ShouldTrimLeft())
             {
-                int len = Environment.NewLine.Length; //new line len
-                bool found = false;//line end found
                 int idx = from.Length - 1;
-                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
+                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' '))
                 {
-                    if (from[idx] == '\n')
-                    {
-                        if (found)
-                        {
-                            break;
-                        }
-                        found = true;
-                        idx -= len;
-                    }
-                    else
-                    {
-                        idx -= 1;
-                    }
+                    idx -= 1;
                 }
                 from.Length = (idx + 1);
             }
@@ -706,17 +592,22 @@ namespace HatTrick.Text.Templating
         #region ensure right trim
         private void EnsureRightTrim(in Tag tag)
         {
-            //if global trim trailing newline || tag has the newline trim marker..
             if (tag.ShouldTrimRight())
             {
-                Action<char> emitTo = (c) => { };//just throw away the whitespace...
+                int nlLen = Environment.NewLine.Length;
+                Action<char> emitTo = (c) => { }; //just throw away the whitespace...
 
+                char lastChar = '\0';
                 Func<char, bool> isNotWhitespace = (c) =>
                 {
+                    lastChar = c;
                     return !(c == ' ' || c == '\t');
                 };
 
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
+
+                if (lastChar == '\r' || lastChar == '\n')
+                    _index += nlLen;
             }
         }
         #endregion

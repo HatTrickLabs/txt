@@ -198,8 +198,23 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Both declaring and referencing a variable requires the variable name be proceeded by a colon *( {?var:myVar = $ } {:myVar} )*.
+- Both declaring and referencing a variable requires the variable name be proceeded by a colon:
+	* Declaration: *{?var:myVar = $ }*
+	* Usage: *{:myVar} )*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
+- Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
+	* String Literal: *{?var:someText = "Hello"}*
+	* Numeric Literal: *{?var:someNum = 3.0d}*
+	* Bound Expression: *{?var:someVal = $.SomeProperty}*
+	* Lambda: *{?var:someVal = () => GetSomeValue}*
+	* Boolean: *{var:isValid = true}*
+- String literal values can be wrapped in double quotes or single quotes.
+- Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
+	* d - double
+	* i - int
+	* f - float/single
+	* m - decimal
+	* l - long
 
 
 ### Partial Template Blocks
@@ -316,7 +331,7 @@ var person = new
 
 
 ### Whitespace Control
-By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
+By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
 ```c#
@@ -395,8 +410,8 @@ We see you don't have any certs.
 ```
 
 ##### Notes:
-- Left trim markers *{-#if}* will trim all preceding whitespace INCLUDING the FIRST newline.
-- Right trim markers *{#if-}* will trim all trailing whitespace NOT INCLUDING newline(s).
+- Left trim markers *{-#if}* will trim all preceding whitespace NOT INCLUDING newline(s).
+- Right trim markers *{#if-}* will trim all trailing whitespace INCLUDING the first encountered newline.
 - To force trim on all applicable tags without including the trim markers, set *TemplateEngine.TrimWhitespace = true*.
 - If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
 - The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
@@ -429,12 +444,11 @@ string result = ngin.Merge(person);
 ```
 
 ##### Notes:
-- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with} and *{>parital}* tags.
+- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}*, *{?var:}* and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
+- Numeric literal argument types are inferred (no need for a type suffix).
 - String literal args can be enclosed in single or double quotes.
 - If a string literal contains a double quote, enclosing the literal with single quotes to avoid the need to escape.
 - I a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
-- If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character. example: "It's easy to escape \"double\" quotes."
-- Numeric literals are typed via as suffix i.e. (223:int)
-- Allowed numeric literal types: int, long, decimal, double, byte
-
+- If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character.  
+  example: "It's easy to escape \\"double\\" quotes."

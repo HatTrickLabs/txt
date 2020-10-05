@@ -30,4 +30,4 @@ First:	Charlie
 Last:	Brown
 
 
-(should be 3 new lines before this line)
+(should be 2 blank lines before this line)

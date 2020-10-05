@@ -5,7 +5,7 @@ Following is a simple test of shifting scope via the with tag.
 {#with Structure.Address}
 Address:
 {+> () => GetAddressPartial}{! this partial has no context outside it's address properties }
-{/with}
+{/with+}
 
 Following is test for shifting forward and backword through
 the scope chain via multi 'with' tag and the ..\ shift construct

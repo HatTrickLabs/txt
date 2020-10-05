@@ -7,7 +7,7 @@
 <div>
     <h4>User's 30 day Login History of Session Length > 20 min:</h4>
     <ul>
-        {-#each ($.LoginAttempts, 20:int) => Resolve30DayLoginAttemptsOfMinDuration-}
+        {-#each ($.LoginAttempts, 20) => Resolve30DayLoginAttemptsOfMinDuration-}
         <li>At: {($.At, 'MM-dd-yyyy hh:mm') => FormatDateTime} Duration: {$.SessionDurationMinutes} minutes</li>
         {-/each-}
     </ul>
