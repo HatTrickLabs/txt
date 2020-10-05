@@ -1,4 +1,6 @@
 ******** Declaration and Usage of String Literals ********
+
+
 {?var:hello = "Hello" }{?var:world = "World" }{?var:exclaim = '!' }
 {?var:salutation = (:hello, ' ') => concat}
 {?var:salutation = (:salutation, :world) => concat}
@@ -13,8 +15,8 @@ salutation: {:salutation}
 {?var:dos = 2.0d }		{! double }
 {?var:tres = 3.000m }	{! decimal }
 
-uno + dos + tres = {(:uno, :dos, :tres) => sumIntDoubleDecimal}	{! pass literal declared variables to func }
-uno + dos + tres = {(1, 2.00, 3.00) => sumIntDoubleDecimal}		{! pass literals directly to func }
+uno + dos + tres = {(:uno, :dos, :tres) => sumIntDoubleDecimal}	{! pass literal declared variables to func +}
+uno + dos + tres = {(1, 2.00, 3.00) => sumIntDoubleDecimal}		{! pass literals directly to func +}
 
 
 

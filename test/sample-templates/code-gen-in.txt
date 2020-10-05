@@ -3,15 +3,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace {NamespaceRoot}
 {{
-	{-#each Model.Enums-}
+	{#each Model.Enums}
 	#region {$.Name}
 	public enum {$.Name} : int
 	{{
-		{-#each $.Items-}
+		{#each $.Items}
 		[Display(Name = "{$.FriendlyName}", Description = "{$.Description}")]
 		{$.Key} = {$.Value},
-		{-/each-}
+		{/each}
 	}}
 	#endregion
-	{/each-}
+
+	{/each}
 }}

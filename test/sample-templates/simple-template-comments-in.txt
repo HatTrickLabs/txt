@@ -1,3 +1,3 @@
-Hello {Name.First},{! this greeting needs to stay informal... first name only}
+Hello {Name.First},{! this greeting needs to stay informal... first name only+}
 
 Welcome to HTL.{! {{Hat Trick Labs}}}

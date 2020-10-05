@@ -14,7 +14,7 @@ namespace HatTrick.Common
 		2 = Secondary,
 	}
 	#endregion
-	
+
 	#region CardType
 	public enum CardType : int
 	{
@@ -26,5 +26,5 @@ namespace HatTrick.Common
 		2 = Amex,
 	}
 	#endregion
-	
+
 }

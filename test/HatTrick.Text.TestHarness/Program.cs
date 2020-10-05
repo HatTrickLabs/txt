@@ -45,7 +45,7 @@ namespace HatTrick.Text.Templating.TestHarness
             WithTagScopeChangeBlocks();
             CodeGen();
             DeclaringAndUsingVariables();
-            LiteralVariableDeclarationAndUsage();
+            LiteralVariableDeclarations();
             SingleLinkScopeChainReference();
             TwoLinkScopeChainReference();
             ThreeLinkScopeChainReference();
@@ -965,7 +965,7 @@ namespace HatTrick.Text.Templating.TestHarness
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = false; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
             string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
@@ -1035,8 +1035,8 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region literals
-        static void LiteralVariableDeclarationAndUsage()
+        #region literal variable declarations
+        static void LiteralVariableDeclarations()
         {
             string name = "literal-variable-declarations";
             string template = ResolveTemplateInput(name);

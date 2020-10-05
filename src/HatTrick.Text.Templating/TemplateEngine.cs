@@ -579,24 +579,10 @@ namespace HatTrick.Text.Templating
         {
             if (tag.ShouldTrimLeft())
             {
-                int len = Environment.NewLine.Length; //new line len
-                bool found = false;//line end found
                 int idx = from.Length - 1;
-                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' ' || from[idx] == '\n'))
+                while (idx > -1 && (from[idx] == '\t' || from[idx] == ' '))
                 {
-                    if (from[idx] == '\n')
-                    {
-                        if (found)
-                        {
-                            break;
-                        }
-                        found = true;
-                        idx -= len;
-                    }
-                    else
-                    {
-                        idx -= 1;
-                    }
+                    idx -= 1;
                 }
                 from.Length = (idx + 1);
             }
@@ -606,17 +592,22 @@ namespace HatTrick.Text.Templating
         #region ensure right trim
         private void EnsureRightTrim(in Tag tag)
         {
-            //if global trim trailing newline || tag has the newline trim marker..
             if (tag.ShouldTrimRight())
             {
-                Action<char> emitTo = (c) => { };//just throw away the whitespace...
+                int nlLen = Environment.NewLine.Length;
+                Action<char> emitTo = (c) => { }; //just throw away the whitespace...
 
+                char lastChar = '\0';
                 Func<char, bool> isNotWhitespace = (c) =>
                 {
+                    lastChar = c;
                     return !(c == ' ' || c == '\t');
                 };
 
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
+
+                if (lastChar == '\r' || lastChar == '\n')
+                    _index += nlLen;
             }
         }
         #endregion

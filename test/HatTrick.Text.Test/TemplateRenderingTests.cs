@@ -756,7 +756,7 @@ namespace HatTrick.Text.Test
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
-            ngin.TrimWhitespace = false; //global flag for whitespace control...
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
 
             //when
             string actual = ngin.Merge(data);
