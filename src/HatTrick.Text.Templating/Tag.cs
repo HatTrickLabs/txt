@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace HatTrick.Text.Templating
 {
-    public struct Tag
+    public ref struct Tag
     {
         #region internals
         private TagKind _kind;
-        private string _tag;
+        private ReadOnlySpan<char> _tag;
         private TrimMark _markers;
         private bool _forceTrim;
         #endregion
@@ -20,7 +20,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region constructors
-        public Tag(string tag, bool forceTrim)
+        public Tag(ReadOnlySpan<char> tag, bool forceTrim)
         {
             _tag = tag;
             _kind = TagKind.Unknown;
@@ -41,7 +41,7 @@ namespace HatTrick.Text.Templating
         #region resolve kind
         private void ResolveKind()
         {
-            string tag = _tag;
+            ReadOnlySpan<char> tag = _tag;
             if (Tag.IsIfTag(tag))               //# if logic tag (boolean switch)
             {
                 _kind = TagKind.If;
@@ -112,7 +112,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is if tag
-        public static bool IsIfTag(string tag)
+        public static bool IsIfTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -123,7 +123,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end if tag
-        public static bool IsEndIfTag(string tag)
+        public static bool IsEndIfTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -134,7 +134,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is each tag
-        public static bool IsEachTag(string tag)
+        public static bool IsEachTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -147,7 +147,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end each tag
-        public static bool IsEndEachTag(string tag)
+        public static bool IsEndEachTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -160,7 +160,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is with tag
-        public static bool IsWithTag(string tag)
+        public static bool IsWithTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -173,7 +173,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end with tag
-        public static bool IsEndWithTag(string tag)
+        public static bool IsEndWithTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -186,7 +186,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is comment tag
-        public static bool IsCommentTag(string tag)
+        public static bool IsCommentTag(ReadOnlySpan<char> tag)
         {
             return tag[0] == '{'
                 && (tag[1] == '!' || (tag[1] == '-' && tag[2] == '!') || (tag[1] == '+' && tag[2] == '!'));
@@ -194,7 +194,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is partial tag
-        public static bool IsPartialTag(string tag)
+        public static bool IsPartialTag(ReadOnlySpan<char> tag)
         {
             return tag[0] == '{'
                 && (tag[1] == '>' || (tag[1] == '-' && tag[2] == '>') || (tag[1] == '+' && tag[2] == '>'));
@@ -202,7 +202,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is variable tag
-        public static bool IsVariableTag(string tag)
+        public static bool IsVariableTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -215,21 +215,21 @@ namespace HatTrick.Text.Templating
 		#endregion
 
 		#region bind as
-		public string BindAs()
+		public ReadOnlySpan<char> BindAs()
         {
-            string bindAs = null;
+            ReadOnlySpan<Char> bindAs = null;
             TagKind kind = _kind;
             switch (kind)
             {
                 case TagKind.Simple:
                     {
-                        string tag = _tag;
-                        bindAs = tag.Substring(1, (tag.Length - 2));
+                        ReadOnlySpan<char> tag = _tag;
+                        bindAs = tag.Slice(1, (tag.Length - 2));
                     }
                     break;
                 case TagKind.If:
                     {
-                        string tag = _tag;
+                        ReadOnlySpan<char> tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 5 : 4;
@@ -240,12 +240,12 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 6)
                                 : (tag.Length - 5);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = tag.Slice(start, len);
                     }
                     break;
                 case TagKind.Each:
                     {
-                        string tag = _tag;
+                        ReadOnlySpan<char> tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
@@ -256,12 +256,12 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 8)
                                 : (tag.Length - 7);
                         
-                        bindAs = tag.Substring(start, len);
+                        bindAs = tag.Slice(start, len);
                     }
                     break;
                 case TagKind.Variable:
                     {
-                        string tag = _tag;
+                        ReadOnlySpan<char> tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 6 : 5;
@@ -272,12 +272,12 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 7)
                                 : (tag.Length - 6);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = tag.Slice(start, len);
                     }
                     break;
                 case TagKind.With:
                     {
-                        string tag = _tag;
+                        ReadOnlySpan<char> tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
@@ -288,12 +288,12 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 8)
                                 : (tag.Length - 7);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = tag.Slice(start, len);
                     }
                     break;
                 case TagKind.Partial:
                     {
-                        string tag = _tag;
+                        ReadOnlySpan<char> tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 3 : 2;
@@ -304,7 +304,7 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 4)
                                 : (tag.Length - 3);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = tag.Slice(start, len);
                     }
                     break;
                 case TagKind.Comment:
@@ -342,7 +342,7 @@ namespace HatTrick.Text.Templating
 		#region to string
 		public override string ToString()
         {
-            return _tag;
+            return _tag.ToString();
         }
         #endregion
     }

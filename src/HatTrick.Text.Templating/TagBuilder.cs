@@ -9,7 +9,8 @@ namespace HatTrick.Text.Templating
     public class TagBuilder
     {
         #region internals
-        private StringBuilder _tag;
+        private char[] _tag;
+        private int _length;
 
         private bool _inSingleQuote;
         private bool _inDoubleQuote;
@@ -22,13 +23,13 @@ namespace HatTrick.Text.Templating
         { get { return _tag[index]; } }
 
         public int Length
-        { get { return _tag.Length; } }
+        { get { return _length;/* _tag.Length; */ } }
         #endregion
 
         #region constructors
         public TagBuilder()
         {
-            _tag = new StringBuilder(60);
+            _tag = new char[256];
             this.Init();
         }
         #endregion
@@ -36,7 +37,8 @@ namespace HatTrick.Text.Templating
         #region init
         private void Init()
         {
-            _tag.Clear();
+            //_tag.Clear();
+            _length = 0;
             _inSingleQuote = false;
             _inDoubleQuote = false;
             _previous = '\0';
@@ -63,7 +65,7 @@ namespace HatTrick.Text.Templating
             //only append white space if inside double or single quotes...
             bool inQuotes = (_inDoubleQuote || _inSingleQuote);
             if (!(c == space || c == tab) || inQuotes)
-                _tag.Append(c);
+                _tag[_length++] = c;
 
             _previous = c;
         }
@@ -79,8 +81,15 @@ namespace HatTrick.Text.Templating
         #region to string
         public override string ToString()
         {
-            return _tag.ToString();
+            return new string(_tag, 0, _length);
         }
         #endregion
-    }
+
+        #region get as readonly span <char>
+        public ReadOnlySpan<char> GetAsReadOnlySpan()
+        {
+            return new ReadOnlySpan<char>(_tag, 0, _length);
+        }
+		#endregion
+	}
 }

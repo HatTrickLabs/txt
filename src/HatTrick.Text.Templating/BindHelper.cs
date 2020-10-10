@@ -8,7 +8,7 @@ namespace HatTrick.Text.Templating
 	public static class BindHelper
 	{
         #region resolve bind target
-		public static object ResolveBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
+		public static object ResolveBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
         {
             object target = null;
             object localScope = scopeChain.Peek(scopeLinkDepth);
@@ -18,37 +18,37 @@ namespace HatTrick.Text.Templating
             }
             else if (bindAs[0] == '$' && bindAs[1] == '.') //reflect from bindto object
             {
-                string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
-                target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
+                ReadOnlySpan<char> expression = bindAs.Slice(2, bindAs.Length - 2);//remove the $.
+                target = ReflectionHelper.Expression.ReflectItem(localScope, new string(expression));
             }
             else if (bindAs[0] == ':') //variable reference
             {
-                target = scopeChain.AccessVariable(bindAs);
+                target = scopeChain.AccessVariable(new string(bindAs));
             }
             else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
             {
                 int lastIdxOf;
-                int depth = BindHelper.CountInstancesOfPattern(bindAs, @"..\", out lastIdxOf);
-                target = BindHelper.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
+                int depth = BindHelper.CountInstancesOfPattern(new string(bindAs), @"..\", out lastIdxOf);
+                target = BindHelper.ResolveBindTarget(bindAs.Slice(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
             }
             else if (BindHelper.IsLambdaExpression(bindAs)) //lambda expression
             {
                 //{($.abc, $.xyz) => ConcatToValues}
                 //{("keyVal") => GetSomething}
                 //{(true) => GetSomething}
-                Func<object> lambda = lambdaRepo.Resolve(bindAs, scopeChain);
+                Func<object> lambda = lambdaRepo.Resolve(new string(bindAs), scopeChain);
                 target = lambda();
             }
             else
             {
-                target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
+                target = ReflectionHelper.Expression.ReflectItem(localScope, new string(bindAs));
             }
             return target;
         }
         #endregion
 
         #region is lambda expression
-        public static bool IsLambdaExpression(string bindAs)
+        public static bool IsLambdaExpression(ReadOnlySpan<char> bindAs)
         {
             return bindAs.IndexOf("=>") > -1;
         }

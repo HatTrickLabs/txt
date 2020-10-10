@@ -128,7 +128,7 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.RollTill(_nextTag.Append, '}', true, false))
                     {
-                        Tag tag = new Tag(_nextTag.ToString(), _trimWhitespace);
+                        Tag tag = new Tag(_nextTag.GetAsReadOnlySpan(), _trimWhitespace);
                         _progress?.Invoke(_lineNum, tag.ToString());
                         this.HandleTag(tag);
                     }
@@ -183,7 +183,7 @@ namespace HatTrick.Text.Templating
         #region handle simple tag
         private void HandleSimpleTag(in Tag tag)
         {
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             _result.Append(target ?? string.Empty);
@@ -196,6 +196,9 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
+            ReadOnlySpan<char> bindAs = tag.BindAs();
+            bool negate = bindAs[0] == '!';
+
             StringBuilder block = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
@@ -207,10 +210,7 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(block, closeTag);
             this.EnsureRightTrim(closeTag);
 
-            string bindAs = tag.BindAs();
-            bool negate = bindAs[0] == '!';
-
-            object target = BindHelper.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _lambdaRepo, _scopeChain);
+            object target = BindHelper.ResolveBindTarget(negate ? bindAs.Slice(1) : bindAs, _lambdaRepo, _scopeChain);
 
             bool render = this.IsTrue(target);
 
@@ -278,6 +278,8 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
+            ReadOnlySpan<char> bindAs = tag.BindAs();
+
             StringBuilder block = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
@@ -288,15 +290,13 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(block, closeTag);
             this.EnsureRightTrim(closeTag);
 
-            string bindAs = tag.BindAs();
-
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             if (!(target == null)) //if null just ignore
             {
                 //if target is not enumerable, should not be bound to an #each tag
                 if (!(target is System.Collections.IEnumerable))
-                { throw new MergeException($"#each tag bound to non-enumerable object: {bindAs}"); }
+                { throw new MergeException($"#each tag bound to non-enumerable object: {bindAs.ToString()}"); }
 
                 //cast to enumerable
                 var items = (System.Collections.IEnumerable)target;
@@ -325,6 +325,8 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
+            ReadOnlySpan<char> bindAs = tag.BindAs();
+
             StringBuilder block = new StringBuilder();
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
@@ -335,7 +337,7 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(block, closeTag);
             this.EnsureRightTrim(closeTag);
 
-            string bindAs = tag.BindAs();
+
 
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
@@ -364,7 +366,7 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            string expression = tag.BindAs(); //example:  :name=$.Name
+            ReadOnlySpan<char> expression = tag.BindAs(); //example:  :name=$.Name
 
             StringBuilder sb = new StringBuilder();
             string name = null;
@@ -382,7 +384,7 @@ namespace HatTrick.Text.Templating
                 sb.Append(expression[i]);
             }
             if (!found)
-                throw new MergeException($"encountered invalid variable, no assignment operator '=' found,  tag: {tag}");
+                throw new MergeException($"encountered invalid variable, no assignment operator '=' found,  tag: {tag.ToString()}");
 
             bindAs = sb.ToString();
 
@@ -408,12 +410,12 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             string tgt = (target as string);
             if (tgt == null)
-            { throw new MergeException($"#sub template tag: {tag} reflected value is not typeof string: {target}"); }
+            { throw new MergeException($"#sub template tag: {tag.ToString()} reflected value is not typeof string: {target}"); }
 
             _scopeChain.ApplyVariableScopeMarker();
 
@@ -524,7 +526,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region roll blocked content to action till
-        private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out Tag endTag)
+        delegate bool Till(ReadOnlySpan<char> value);
+        delegate bool Ensure(ReadOnlySpan<char> value);
+
+        private void RollBlockedContentTill(Action<char> emitTo, Till till, Ensure ensuring, out Tag endTag)
         {
             endTag = default;
             int offset = 1;// i.e. we are inside 1 #if tag and looking for its /if tag but must account for contained #if tags...
@@ -542,10 +547,10 @@ namespace HatTrick.Text.Templating
                 if (_nextTag.Length == 0)
                 { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
 
-                if (!till(_nextTag.ToString()))
+                if (!till(_nextTag.GetAsReadOnlySpan()))
                 {
                     tagIsContent = true;
-                    if (ensuring(_nextTag.ToString()))
+                    if (ensuring(_nextTag.GetAsReadOnlySpan()))
                     {
                         offset += 1;
                     }
@@ -559,7 +564,7 @@ namespace HatTrick.Text.Templating
                     }
                     else
                     {
-                        endTag = new Tag(_nextTag.ToString(), _trimWhitespace);
+                        endTag = new Tag(_nextTag.GetAsReadOnlySpan(), _trimWhitespace);
                     }
                 }
                 if (tagIsContent)
