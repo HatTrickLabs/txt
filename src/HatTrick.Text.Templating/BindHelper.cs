@@ -23,7 +23,18 @@ namespace HatTrick.Text.Templating
             }
             else if (bindAs[0] == ':') //variable reference
             {
-                target = scopeChain.AccessVariable(bindAs);
+                int dot = bindAs.IndexOf('.');
+                if (dot > -1)
+                {
+                    target = scopeChain.AccessVariable(bindAs.Substring(0, dot));
+                    scopeChain.Push(target);
+                    target = BindHelper.ResolveBindTarget(bindAs.Substring(++dot, bindAs.Length - dot), lambdaRepo, scopeChain);
+                    scopeChain.Pop();
+                }
+                else
+                {
+                    target = scopeChain.AccessVariable(bindAs);
+                }
             }
             else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
             {

@@ -13,12 +13,8 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.0.0</Version>
-    <PackageReleaseNotes>1. Enhanced white-space control: allow white-space retention via the + tag marker.
-2. Variable declaration and usage within templates.
-3. Refactored lambda repo (infer numeric literals, allow declared variables as arguments).
-4. Fixed whitespace control to trim 1 newline from the right vs the left of block tags.
-5. Implemented formal unit test framework.</PackageReleaseNotes>
+    <Version>2.1.0</Version>
+    <PackageReleaseNotes>A fix for implementation overlook.   Declared variables that are bound to complex objects can now be used with nested reflection.  ex:   {:myVar.Property1.Property2}</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
