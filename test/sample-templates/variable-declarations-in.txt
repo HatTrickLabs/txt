@@ -1,6 +1,7 @@
 Hello {Contact.Name.First} {Contact.Name.Last},
 {?var:someVal = () => GetSomeVal }
 
+{?var:root = $ }
 {?var:firstName = $.Contact.Name.First}
 {?var:lastName = $.Contact.Name.Last}
 {#with Structure}
@@ -27,7 +28,7 @@ Inspected for:	{:lastName}, {:firstName}
 *************
 {:someVal}
 
-{?var:cityAndState = (Structure.Address) => GetCityAndState }
+{?var:cityAndState = (:root.Structure.Address) => GetCityAndState }
 .......
 {:cityAndState}
 {#with Structure.Address}
@@ -41,3 +42,5 @@ Inspected for:	{:lastName}, {:firstName}
 {:abc} + {:firstName} + {Last}
 {/with}
 {/if}
+
+{:root.Contact.Name.Last}
