@@ -46,6 +46,8 @@ namespace HatTrick.Text.Templating.TestHarness
             CodeGen();
             DeclaringAndUsingVariables();
             LiteralVariableDeclarations();
+            ReAssigningVariableValues();
+            ComplexReAssignmingVariableValues();
             SingleLinkScopeChainReference();
             TwoLinkScopeChainReference();
             ThreeLinkScopeChainReference();
@@ -54,6 +56,9 @@ namespace HatTrick.Text.Templating.TestHarness
             ScopeChainVariableReference();
             VariableScopeMarkerOnNullStack();
             VariableScopeMarkerOnNonNullStack();
+            VariableReAssignment();
+            OuterScopeVariableReAssignment();
+            LargeScopeChainAndVariableStacks();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -432,7 +437,7 @@ namespace HatTrick.Text.Templating.TestHarness
             var data = new
             {
                 Name = new { First = "Charlie", Last = "Brown" },
-                Certifications = new[] 
+                Certifications = new[]
                 {
                     new { Cert = "Microsoft Certified Architect", Abbr = "MCA", AttainedAt = DateTime.Parse("2016-05-01").ToString("MM/dd/yyyy") },
                     new { Cert = "Red Hat Certified Engineer", Abbr = "RHCE", AttainedAt = DateTime.Parse("2017-06-01").ToString("MM/dd/yyyy") },
@@ -505,10 +510,10 @@ namespace HatTrick.Text.Templating.TestHarness
 
             RenderOutput(name, passed);
         }
-		#endregion
+        #endregion
 
-		#region walking the scope chain x
-		static void WalkingTheScopeChain()
+        #region walking the scope chain x
+        static void WalkingTheScopeChain()
         {
             string name = "walking-the-scope-chain";
             string template = ResolveTemplateInput(name);
@@ -518,7 +523,7 @@ namespace HatTrick.Text.Templating.TestHarness
                 Name = new { First = "Charlie", Last = "Brown" },
                 Favorite = new
                 {
-                   Things = new object[]
+                    Things = new object[]
                    {
                        new { Name = "Local", Values = new[] { "El Paso", "Houston", "Austin" } },
                        new { Name = "Junk Food", Values = new[] { "Black Licorice", "Candy Corn", "Good & Plenty" } }
@@ -708,10 +713,10 @@ namespace HatTrick.Text.Templating.TestHarness
 
             RenderOutput(name, passed);
         }
-		#endregion
+        #endregion
 
-		#region complex lambda expressions x
-		static void ComplexLambdaExpressions()
+        #region complex lambda expressions x
+        static void ComplexLambdaExpressions()
         {
             string name = "complex-lambda-expressions";
             string template = ResolveTemplateInput(name);
@@ -870,7 +875,7 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(FormatDateTime), FormatDateTime);
 
             string result = ngin.Merge(data);
-               
+
 
             string expected = ResolveTemplateOutput(name)
                 .Replace("####now-1####", now.AddDays(-1).ToString("MM-dd-yyyy hh:mm"))
@@ -1052,6 +1057,50 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(concat), concat);
 
             string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region re assigning variable values
+        static void ReAssigningVariableValues()
+        {
+            string name = "variable-re-assignment";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region complex re assigning variable values
+        static void ComplexReAssignmingVariableValues()
+        {
+            string name = "complex-variable-re-assignment";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, string, string> concat = (v1, v2) => v1 + v2;
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;
+            ngin.LambdaRepo.Register(nameof(concat), concat);
+
+            string result = ngin.Merge(true);
 
             string expected = ResolveTemplateOutput(name);
 
@@ -1372,10 +1421,104 @@ namespace HatTrick.Text.Templating.TestHarness
             RenderOutput(nameof(VariableScopeMarkerOnNullStack), passed);
         }
         #endregion
-    }
 
-    #region person class
-    public class Person
+        #region variable re-assignment
+        private static void VariableReAssignment()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            chain.Push("link1");
+            chain.Push("link2");
+            chain.Push("link3");
+
+            //create a couple jnk vars
+            chain.SetVariable(":firstName", "Jerrod");
+            chain.SetVariable(":lastName", "Eiman");
+
+            int age = 99;
+            chain.SetVariable(":age", age);
+            chain.UpdateVariable(":age", ++age); //increment age to 100
+
+            bool passed = 100 == (int)chain.AccessVariable(":age");
+
+            RenderOutput(nameof(VariableReAssignment), passed);
+        }
+        #endregion
+
+        #region variable re-assignment
+        private static void OuterScopeVariableReAssignment()
+        {
+            ScopeChain chain = new ScopeChain();
+
+            chain.Push("link1");
+            chain.SetVariable(":p1FirstName", "Charlie");
+            chain.SetVariable(":p1LastName", "Brown");
+            chain.SetVariable(":p1Age", 8);
+
+            chain.Push("link2");
+            chain.SetVariable(":p2FirstName", "Susie");
+            chain.SetVariable(":p2LastName", "Derkins");
+            chain.SetVariable(":p2Age", 6);
+
+            chain.Push("link3");
+            chain.SetVariable(":p3FirstName", "GI");
+            chain.SetVariable(":p3LastName", "Joe");
+            chain.SetVariable(":p3Age", 32);
+
+            chain.Push("link4");
+            chain.Push("link5");
+            chain.Push("link6");
+            chain.Push("link7");
+            chain.Push("link8");
+            chain.Push("link9");
+            chain.Push("link10");
+
+            chain.UpdateVariable(":p1Age", ((int)chain.AccessVariable(":p1Age")) + 1); //increment age to 9
+            chain.UpdateVariable(":p2Age", ((int)chain.AccessVariable(":p2Age")) + 1); //increment age to 7
+            chain.UpdateVariable(":p3Age", ((int)chain.AccessVariable(":p3Age")) + 1); //increment age to 33
+
+            bool passed = 9 == (int)chain.AccessVariable(":p1Age")
+                       && 7 == (int)chain.AccessVariable(":p2Age")
+                       && 33 == (int)chain.AccessVariable(":p3Age");
+
+            RenderOutput(nameof(OuterScopeVariableReAssignment), passed);
+        }
+        #endregion
+
+        #region large scope chain and variable stacks
+        private static void LargeScopeChainAndVariableStacks()
+        {
+            ScopeChain chain = new ScopeChain();
+            
+			for (int i = 0; i < 50; i++)
+			{
+                chain.Push(i.ToString());
+				for (int j = 0; j < 50; j++)
+				{
+                    chain.SetVariable(i.ToString() + j.ToString(), j);
+				}
+			}
+
+            bool passed = true;
+			for (int i = 49; i > -1; i--)
+			{
+                for (int j = 0; j < 50; j++)
+                {
+                    int xxx = (int)chain.AccessVariable(i.ToString() + j.ToString());
+                    passed = passed & xxx == j;
+                    if (!passed)
+                        break;
+                }
+                chain.Pop();
+            }
+
+            RenderOutput(nameof(LargeScopeChainAndVariableStacks), passed);
+        }
+		#endregion
+	}
+
+	#region person class
+	public class Person
     {
         public int Age;
 

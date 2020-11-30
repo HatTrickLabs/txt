@@ -15,7 +15,8 @@ namespace HatTrick.Text.Templating
         EndWith,
         Partial,
         Comment,
-        Variable
+        VarDeclare,
+        VarAssign,
     }
     #endregion
 }
