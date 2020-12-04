@@ -152,8 +152,8 @@ We see you currently hold  the following certs:
 - the ..\ operator can be used to walk the scope chain.
 
 
-### Variable Declaration and Usage
-The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.
+### Variable Declaration Assignment/Reassignment and Usage
+The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
 ```c#
@@ -198,7 +198,7 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Both declaring and referencing a variable requires the variable name be proceeded by a colon:
+- Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
 	* Usage: *{:myVar} )*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
@@ -331,7 +331,7 @@ var person = new
 
 
 ### Whitespace Control
-By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
+By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}, {?}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
 ```c#
@@ -444,11 +444,11 @@ string result = ngin.Merge(person);
 ```
 
 ##### Notes:
-- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}*, *{?var:}* and *{>parital}* tags.
+- Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}*, *{?var:},* *{?}* and *{>parital}* tags.
 - Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
 - Numeric literal argument types are inferred (no need for a type suffix).
 - String literal args can be enclosed in single or double quotes.
-- If a string literal contains a double quote, enclosing the literal with single quotes to avoid the need to escape.
-- I a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
+- If a string literal contains a double quote, enclose the literal with single quotes to avoid the need to escape.
+- If a string literal cotains a single quote, enclose the literal with double quotes to avoid the need to escape.
 - If a string literal contains both single and double quotes, the \ backslash char can be used as the escape character.  
   example: "It's easy to escape \\"double\\" quotes."
