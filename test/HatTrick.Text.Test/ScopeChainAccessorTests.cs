@@ -232,5 +232,30 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(7, (int)chain.AccessVariable(":p2Age"));
         }
+
+        [Fact]
+        public void Does_Variable_Scope_Multi_Demarcation_Work_Correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            chain.Push("link1");
+            chain.Push("link2");
+            chain.SetVariable("v2", "x");
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("v2", "y");
+            chain.ApplyVariableScopeMarker();
+            chain.ApplyVariableScopeMarker();
+            chain.ApplyVariableScopeMarker();
+
+            //when
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            var v2 = (string)chain.AccessVariable("v2");
+
+            //then
+            Assert.Equal("x", v2);
+        }
     }
 }

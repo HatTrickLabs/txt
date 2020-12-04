@@ -315,14 +315,14 @@ namespace HatTrick.Text.Templating
 		#region internals
 		private string _name;
 		private object _value;
-		private bool _isMarked;
+		private int _scopeDemarkation;
 		private VariableStack _subStack;
 		#endregion
 
 		#region interface
 		public string Name => _name;
 		public object Value => _value;
-		public bool IsMarked => _isMarked;
+		public bool IsMarked => _scopeDemarkation > 0;
 		public VariableStack SubStack => _subStack;
 		#endregion
 
@@ -342,14 +342,14 @@ namespace HatTrick.Text.Templating
 		#region apply scope marker
 		public void ApplyScopeMarker()
 		{
-			_isMarked = true;
+			_scopeDemarkation += 1;
 		}
 		#endregion
 
 		#region remove scope marker
 		public void RemoveScopeMarker()
 		{
-			_isMarked = false;
+			_scopeDemarkation -= 1;
 		}
 		#endregion
 

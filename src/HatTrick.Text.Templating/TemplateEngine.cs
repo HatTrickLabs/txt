@@ -315,8 +315,10 @@ namespace HatTrick.Text.Templating
 
                 foreach (var item in items)
                 {
+                    _scopeChain.ApplyVariableScopeMarker();
                     itemContent = subEngine.Merge(item);
                     _result.Append(itemContent);
+                    _scopeChain.DereferenceVariableScope();
                 }
             }
         }
@@ -413,7 +415,7 @@ namespace HatTrick.Text.Templating
         }
 		#endregion
 
-		#region handle variable tag
+		#region handle variable declare tag
 		private void HandleVariableDeclareTag(in Tag tag)
         {
             this.HandleVariableTag(in tag, true);
