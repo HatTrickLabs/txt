@@ -201,6 +201,7 @@ Fields:
 - Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
 	* Usage: *{:myVar} )*
+	* Reassignment *{?myVar = "hello"}
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
 - Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
 	* String Literal: *{?var:someText = "Hello"}*
