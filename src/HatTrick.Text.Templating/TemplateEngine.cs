@@ -147,25 +147,28 @@ namespace HatTrick.Text.Templating
         {
             switch (tag.Kind)
             {
-                case TagKind.Simple:        //simple tag
+                case TagKind.Simple:
                     this.HandleSimpleTag(in tag);
                     break;
-                case TagKind.If:            //# if logic tag (boolean switch)
+                case TagKind.If:
                     this.HandleIfTag(in tag);
                     break;
-                case TagKind.Each:          //#each enumeration
+                case TagKind.Each:
                     this.HandleEachTag(in tag);
                     break;
                 case TagKind.With:
                     this.HandleWithTag(in tag);
                     break;
-                case TagKind.Variable:
-                    this.HandleVariableTag(in tag);
+                case TagKind.VarDeclare:
+                    this.HandleVariableDeclareTag(in tag);
                     break;
-                case TagKind.Partial:       //sub template tag
+                case TagKind.VarAssign:
+                    this.HandleVariableAssignTag(in tag);
+                    break;
+                case TagKind.Partial:
                     this.HandlePartialTag(in tag);
                     break;
-                case TagKind.Comment:       //comment tag
+                case TagKind.Comment:
                     this.HandleCommentTag(in tag);
                     break;
             }
@@ -312,8 +315,10 @@ namespace HatTrick.Text.Templating
 
                 foreach (var item in items)
                 {
+                    _scopeChain.ApplyVariableScopeMarker();
                     itemContent = subEngine.Merge(item);
                     _result.Append(itemContent);
+                    _scopeChain.DereferenceVariableScope();
                 }
             }
         }
@@ -359,51 +364,73 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle variable tag
-        private void HandleVariableTag(in Tag tag)
+        private void HandleVariableTag(in Tag tag, bool isDeclaration)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            string expression = tag.BindAs(); //example:  :name=$.Name
+            string expression = tag.BindAs(); //example:  :name=$.Name, or with no assign example:  :name
 
             StringBuilder sb = new StringBuilder();
             string name = null;
-            string bindAs;
-            bool found = false;
+            bool assignment = false;
             for (int i = 0; i < expression.Length; i++)
             {
-                if (expression[i] == '=' && !(expression[i + 1] == '>'))
+                if (!assignment && expression[i] == '=')
                 {
                     name = sb.ToString();
                     sb.Clear();
-                    found = true;
+                    assignment = true;
                     continue;
                 }
                 sb.Append(expression[i]);
             }
-            if (!found)
-                throw new MergeException($"encountered invalid variable, no assignment operator '=' found,  tag: {tag}");
 
-            bindAs = sb.ToString();
+            if (!assignment)
+            {
+                name = sb.ToString();
+            }
+
+            string bindAs = assignment ? sb.ToString() : null;
 
             object value = null;
-            if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
-                value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
-            else if (BindHelper.IsNumericLiteral(bindAs))
-                value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
-            else if (string.Compare(bindAs, "true", true) == 0)
-                value = true;
-            else if (string.Compare(bindAs, "false", true) == 0)
-                value = false;
-            else
-                value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+            if (assignment)
+            {
+                if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
+                    value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
+                else if (BindHelper.IsNumericLiteral(bindAs))
+                    value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
+                else if (string.Compare(bindAs, "true", true) == 0)
+                    value = true;
+                else if (string.Compare(bindAs, "false", true) == 0)
+                    value = false;
+                else
+                    value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+            }
 
-            _scopeChain.SetVariable(name, value);
+            if (isDeclaration)
+                _scopeChain.SetVariable(name, value);
+            else
+                _scopeChain.UpdateVariable(name, value);
+        }
+		#endregion
+
+		#region handle variable declare tag
+		private void HandleVariableDeclareTag(in Tag tag)
+        {
+            this.HandleVariableTag(in tag, true);
         }
         #endregion
 
-        #region handle partial tag (sub templates)
-        private void HandlePartialTag(in Tag tag)
+        #region handle variable assign tag
+        private void HandleVariableAssignTag(in Tag tag)
+        {
+            this.HandleVariableTag(in tag, false);
+        }
+		#endregion
+
+		#region handle partial tag (sub templates)
+		private void HandlePartialTag(in Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);

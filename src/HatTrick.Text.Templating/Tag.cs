@@ -42,43 +42,47 @@ namespace HatTrick.Text.Templating
         private void ResolveKind()
         {
             string tag = _tag;
-            if (Tag.IsIfTag(tag))               //# if logic tag (boolean switch)
+            if (Tag.IsIfTag(tag))                               //# if logic tag (boolean switch)
             {
                 _kind = TagKind.If;
             }
-            else if (Tag.IsEndIfTag(tag))
+            else if (Tag.IsEndIfTag(tag))                       //end if
             {
                 _kind = TagKind.EndIf;
             }
-            else if (Tag.IsEachTag(tag))        //#each enumeration
+            else if (Tag.IsEachTag(tag))                        //#each enumeration
             {
                 _kind = TagKind.Each;
             }
-            else if (Tag.IsEndEachTag(tag))
+            else if (Tag.IsEndEachTag(tag))                     //end each
             {
                 _kind = TagKind.EndEach;
             }
-            else if (Tag.IsWithTag(tag))        //#with tag
+            else if (Tag.IsWithTag(tag))                        //#with tag
             {
                 _kind = TagKind.With;
             }
-            else if (Tag.IsEndWithTag(tag))
+            else if (Tag.IsEndWithTag(tag))                     //end with
             {
                 _kind = TagKind.EndWith;
             }
-            else if (Tag.IsPartialTag(tag))     //sub template tag
+            else if (Tag.IsPartialTag(tag))                     //sub template tag
             {
                 _kind = TagKind.Partial;
             }
-            else if (Tag.IsVariableTag(tag))
+            else if (Tag.IsVariableDeclareTag(tag))             //variable declaratino 
             {
-                _kind = TagKind.Variable;
+                _kind = TagKind.VarDeclare;
             }
-            else if (Tag.IsCommentTag(tag))     //comment tag
+            else if (Tag.IsVariableAssignTag(tag))              //variable assignment
+            {
+                _kind = TagKind.VarAssign;
+            }
+            else if (Tag.IsCommentTag(tag))                     //comment tag
             {
                 _kind = TagKind.Comment;
             }
-            else                                //simple tag
+            else                                                //simple tag
             {
                 _kind = TagKind.Simple;
             }
@@ -201,8 +205,8 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region is variable tag
-        public static bool IsVariableTag(string tag)
+        #region is variable declare tag
+        private static bool IsVariableDeclareTag(string tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -211,25 +215,34 @@ namespace HatTrick.Text.Templating
                 && (tag[3] == 'v' || tag[3] == 'a')
                 && (tag[4] == 'a' || tag[4] == 'r')
                 && (tag[5] == 'r' || tag[5] == ':');
-        }
-		#endregion
+		}
+        #endregion
+
+        #region is variable declare tag
+        private static bool IsVariableAssignTag(string tag)
+        {
+            return tag.Length > 4
+                && tag[0] == '{'
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '?')
+                && (tag[2] == '?' || tag[2] == ':');
+		}
+        #endregion
 
 		#region bind as
 		public string BindAs()
         {
+            char[] tag = _tag.ToCharArray();
             string bindAs = null;
             TagKind kind = _kind;
             switch (kind)
             {
                 case TagKind.Simple:
                     {
-                        string tag = _tag;
-                        bindAs = tag.Substring(1, (tag.Length - 2));
+                        bindAs = new string(tag, 1, tag.Length - 2);
                     }
                     break;
                 case TagKind.If:
                     {
-                        string tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 5 : 4;
@@ -240,12 +253,11 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 6)
                                 : (tag.Length - 5);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = new string(tag, start, len);
                     }
                     break;
                 case TagKind.Each:
                     {
-                        string tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
@@ -255,29 +267,42 @@ namespace HatTrick.Text.Templating
                             : (left || right)
                                 ? (tag.Length - 8)
                                 : (tag.Length - 7);
-                        
-                        bindAs = tag.Substring(start, len);
+
+                        bindAs = new string(tag, start, len);
                     }
                     break;
-                case TagKind.Variable:
+                case TagKind.VarDeclare:
                     {
-                        string tag = _tag;
-                        bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
-                        bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
-                        int start = left ? 6 : 5;
+						bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+						bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
+						int start = left ? 6 : 5;
 
-                        int len = (left && right)
-                            ? (tag.Length - 8)
-                            : (left || right)
-                                ? (tag.Length - 7)
-                                : (tag.Length - 6);
+						int len = (left && right)
+							? (tag.Length - 8)
+							: (left || right)
+								? (tag.Length - 7)
+								: (tag.Length - 6);
 
-                        bindAs = tag.Substring(start, len);
-                    }
+                        bindAs = new string(tag, start, len);
+					}
+                    break;
+                case TagKind.VarAssign:
+                    {
+						bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
+						bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
+						int start = left ? 3 : 2;
+
+						int len = (left && right)
+							? (tag.Length - 5)
+							: (left || right)
+								? (tag.Length - 4)
+								: (tag.Length - 3);
+
+                        bindAs = new string(tag, start, len);
+					}
                     break;
                 case TagKind.With:
                     {
-                        string tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 7 : 6;
@@ -288,12 +313,11 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 8)
                                 : (tag.Length - 7);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = new string(tag, start, len);
                     }
                     break;
                 case TagKind.Partial:
                     {
-                        string tag = _tag;
                         bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
                         bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
                         int start = left ? 3 : 2;
@@ -304,7 +328,7 @@ namespace HatTrick.Text.Templating
                                 ? (tag.Length - 4)
                                 : (tag.Length - 3);
 
-                        bindAs = tag.Substring(start, len);
+                        bindAs = new string(tag, start, len);
                     }
                     break;
                 case TagKind.Comment:

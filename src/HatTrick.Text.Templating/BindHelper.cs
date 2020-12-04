@@ -103,7 +103,7 @@ namespace HatTrick.Text.Templating
         {
             return value != null 
                 && value != string.Empty 
-                && (char.IsDigit(value[0]) || value[0] == '.');
+                && (char.IsDigit(value[0]) || (value[0] == '.' && value[1] != '.'));
         }
         #endregion
 

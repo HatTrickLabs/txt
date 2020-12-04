@@ -1,0 +1,14 @@
+{?var:x}
+{?var:y}
+{?var:z}
+..........................
+{#if $}{?  :x = 'a'}{/if}{! value passed in is true, value of :x should be 'a' after these conditions}
+{#if !$}{? :x = 'b'}{/if}
+..........................
+Value of :x after double condition is: {:x}
+{#if $}
+{?var:x = 'c'} {! declare ANOTHER x within this if block.. takes precedence over global :x }
+Value of :x within if block with another declaration: {:x}
+{/if}
+..........................
+Value of :x after close of if block: {:x}

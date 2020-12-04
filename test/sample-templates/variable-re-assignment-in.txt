@@ -1,0 +1,7 @@
+{?var:firstName="Charlie"}
+{?var:lastName = "Brown"}
+{?var:fullName = (:firstName, ' ') => concat}
+{?:fullName = (:fullName, :lastName) => concat}
+...
+The full name is: {:fullName}
+...

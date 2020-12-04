@@ -13,8 +13,11 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.1.0</Version>
-    <PackageReleaseNotes>A fix for implementation overlook.   Declared variables that are bound to complex objects can now be used with nested reflection.  ex:   {:myVar.Property1.Property2}</PackageReleaseNotes>
+    <Version>2.1.1</Version>
+    <PackageReleaseNotes>Variable re-assignment feature.  Templates now support:
+- Variable declaration without assignment.
+- Variable declaration with assignment.
+- Variable re-assignement.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 

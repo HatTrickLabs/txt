@@ -163,5 +163,99 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal("value must be < ScopeChain.Depth (Parameter 'back')", ex.Message);
         }
+
+        [Fact]
+        public void Does_Variable_ReAssignment_Work_Correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            chain.Push("link1");
+            chain.SetVariable("v1", "foo");
+
+            //when
+            chain.UpdateVariable("v1", "bar");
+            string v1 = (string)chain.AccessVariable("v1");
+
+            //then
+            Assert.Equal("bar", v1);
+        }
+
+        [Fact]
+        public void Does_Variable_ReAssignment_On_Multi_Link_Scope_Chain_Work_Correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            chain.Push("link1");
+            chain.Push("link2");
+            chain.Push("link3");
+            int age = 99;
+            chain.SetVariable(":age", age);
+
+            //when
+            chain.UpdateVariable(":age", ++age); //increment age to 100
+
+            //then 
+            Assert.Equal(100, (int)chain.AccessVariable(":age"));
+        }
+
+        [Fact]
+        public void Does_Outer_Scope_Variable_ReAssignment_On_Multi_Link_Scope_Chain_Work_Correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            chain.Push("link1");
+            chain.SetVariable(":p1FirstName", "Charlie");
+            chain.SetVariable(":p1LastName", "Brown");
+            chain.SetVariable(":p1Age", 8);
+
+            chain.Push("link2");
+            chain.SetVariable(":p2FirstName", "Susie");
+            chain.SetVariable(":p2LastName", "Derkins");
+            chain.SetVariable(":p2Age", 6);
+
+            chain.Push("link3");
+            chain.SetVariable(":p3FirstName", "GI");
+            chain.SetVariable(":p3LastName", "Joe");
+            chain.SetVariable(":p3Age", 32);
+
+            chain.Push("link4");
+            chain.Push("link5");
+            chain.Push("link6");
+            chain.Push("link7");
+            chain.Push("link8");
+            chain.Push("link9");
+            chain.Push("link10");
+
+            //when
+            chain.UpdateVariable(":p2Age", ((int)chain.AccessVariable(":p2Age")) + 1); //increment age to 7
+
+            //then
+            Assert.Equal(7, (int)chain.AccessVariable(":p2Age"));
+        }
+
+        [Fact]
+        public void Does_Variable_Scope_Multi_Demarcation_Work_Correctly()
+        {
+            //given
+            ScopeChain chain = new ScopeChain();
+            chain.Push("link1");
+            chain.Push("link2");
+            chain.SetVariable("v2", "x");
+            chain.ApplyVariableScopeMarker();
+            chain.SetVariable("v2", "y");
+            chain.ApplyVariableScopeMarker();
+            chain.ApplyVariableScopeMarker();
+            chain.ApplyVariableScopeMarker();
+
+            //when
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            chain.DereferenceVariableScope();
+            var v2 = (string)chain.AccessVariable("v2");
+
+            //then
+            Assert.Equal("x", v2);
+        }
     }
 }
