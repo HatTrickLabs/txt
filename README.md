@@ -152,7 +152,7 @@ We see you currently hold  the following certs:
 - the ..\ operator can be used to walk the scope chain.
 
 
-### Variable Declaration Assignment/Reassignment and Usage
+### Variable Declaration, Assignment/Reassignment and Usage
 The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
@@ -200,8 +200,8 @@ Fields:
 ##### Notes:
 - Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
-	* Usage: *{:myVar} )*
-	* Reassignment *{?myVar = "hello"}
+	* Usage: *{:myVar}*
+	* Reassignment *{?myVar = "hello"}*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
 - Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
 	* String Literal: *{?var:someText = "Hello"}*
