@@ -13,11 +13,8 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.1.1</Version>
-    <PackageReleaseNotes>Variable re-assignment feature.  Templates now support:
-- Variable declaration without assignment.
-- Variable declaration with assignment.
-- Variable re-assignement.</PackageReleaseNotes>
+    <Version>2.1.2</Version>
+    <PackageReleaseNotes>Issue fix:  Fixed whitespace trim logic when cris crossing line endings (unix style template on a windows runtime or vise versa).</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 

@@ -621,7 +621,6 @@ namespace HatTrick.Text.Templating
         {
             if (tag.ShouldTrimRight())
             {
-                int nlLen = Environment.NewLine.Length;
                 Action<char> emitTo = (c) => { }; //just throw away the whitespace...
 
                 char lastChar = '\0';
@@ -633,8 +632,10 @@ namespace HatTrick.Text.Templating
 
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
 
-                if (lastChar == '\r' || lastChar == '\n')
-                    _index += nlLen;
+                if (lastChar == '\r' && this.PeekAt(_index + 1) == '\n')
+                    _index += 2;
+                else if (lastChar == '\n' || lastChar == '\r') //the second condition will eliminate rogue \r chars...
+                    _index += 1;
             }
         }
         #endregion
