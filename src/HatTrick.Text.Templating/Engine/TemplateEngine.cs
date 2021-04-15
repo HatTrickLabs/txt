@@ -133,7 +133,9 @@ namespace HatTrick.Text.Templating
                         this.HandleTag(tag);
                     }
                     else
-                    { throw new MergeException("enountered un-closed tag; '}' never found"); }
+                    { 
+                        throw new MergeException("enountered un-closed tag; '}' never found"); 
+                    }
                 }
                 _nextTag.Reset();
             }
@@ -459,21 +461,6 @@ namespace HatTrick.Text.Templating
         }
         #endregion       
 
-        #region text contains
-        private bool TextContains(string text, char value, out int at)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                at = -1;
-            }
-            else
-            {
-                at = text.IndexOf(value);
-            }
-            return at > 0;
-        }
-        #endregion
-
         #region peek
         public char Peek()
         {
@@ -513,6 +500,8 @@ namespace HatTrick.Text.Templating
                 {
                     _lineNum += 1;
                 }
+
+                //check for escaped brackets BEFORE checking the till condition
                 if (c == '{' || c == '}')
                 {
                     char next = this.PeekAt(_index + 1);
@@ -530,6 +519,8 @@ namespace HatTrick.Text.Templating
                         continue;
                     }
                 }
+
+
                 if (till(c))
                 {
                     if (greedy)
@@ -633,9 +624,14 @@ namespace HatTrick.Text.Templating
                 bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
 
                 if (lastChar == '\r' && this.PeekAt(_index + 1) == '\n')
+                {
                     _index += 2;
+                    _lineNum += 1; //increment line count, the RollTill function bailed out before the \n so the line was not counted
+                }
                 else if (lastChar == '\n' || lastChar == '\r') //the second condition will eliminate rogue \r chars...
+                {
                     _index += 1;
+                }
             }
         }
         #endregion

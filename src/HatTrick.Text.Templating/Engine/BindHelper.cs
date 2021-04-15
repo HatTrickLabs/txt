@@ -12,54 +12,79 @@ namespace HatTrick.Text.Templating
         {
             object target = null;
             object localScope = scopeChain.Peek(scopeLinkDepth);
-            if (bindAs.Length == 1 && bindAs[0] == '$') //append bindto obj
-            {
+
+            if (bindAs.Length == 1 && bindAs[0] == '$')//append bindto obj
                 target = localScope;
-            }
-            else if (bindAs[0] == '$' && bindAs[1] == '.') //reflect from bindto object
+
+            else if (bindAs[0] == '$' && bindAs[1] == '.')//reflect from bindto object
+                target = BindHelper.ResolveRootedBindTarget(bindAs, localScope);
+
+            else if (bindAs[0] == ':')//variable reference
+                target = BindHelper.ResolveVariableReferenceBindTarget(bindAs, lambdaRepo, scopeChain);
+
+            else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')//scope chain walk ..\
+                target = BindHelper.ResolveScopeWalkBindTarget(bindAs, lambdaRepo, scopeChain);
+
+            else if (BindHelper.IsLambdaExpression(bindAs))//lambda expression
+                target = BindHelper.ResolveLambdaExpressionBindTarget(bindAs, lambdaRepo, scopeChain);
+
+            else//simple bind
+                target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
+
+            return target;
+        }
+        #endregion
+
+        #region resolve rooted bind target
+        private static object ResolveRootedBindTarget(string bindAs, object localScope)
+        {
+            string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
+            object target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
+            return target;
+        }
+		#endregion
+
+		#region resolve variable reference bind target
+		private static object ResolveVariableReferenceBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        {
+            object target = null;
+            int dot = bindAs.IndexOf('.');
+            if (dot > -1)
             {
-                string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
-                target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
-            }
-            else if (bindAs[0] == ':') //variable reference
-            {
-                int dot = bindAs.IndexOf('.');
-                if (dot > -1)
-                {
-                    target = scopeChain.AccessVariable(bindAs.Substring(0, dot));
-                    scopeChain.Push(target);
-                    target = BindHelper.ResolveBindTarget(bindAs.Substring(++dot, bindAs.Length - dot), lambdaRepo, scopeChain);
-                    scopeChain.Pop();
-                }
-                else
-                {
-                    target = scopeChain.AccessVariable(bindAs);
-                }
-            }
-            else if (bindAs[0] == '.' && bindAs[1] == '.' && bindAs[2] == '\\')
-            {
-                int lastIdxOf;
-                int depth = BindHelper.CountInstancesOfPattern(bindAs, @"..\", out lastIdxOf);
-                target = BindHelper.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
-            }
-            else if (BindHelper.IsLambdaExpression(bindAs)) //lambda expression
-            {
-                //{($.abc, $.xyz) => ConcatToValues}
-                //{("keyVal") => GetSomething}
-                //{(true) => GetSomething}
-                Func<object> lambda = lambdaRepo.Resolve(bindAs, scopeChain);
-                target = lambda();
+                target = scopeChain.AccessVariable(bindAs.Substring(0, dot));
+                scopeChain.Push(target);
+                target = BindHelper.ResolveBindTarget(bindAs.Substring(++dot, bindAs.Length - dot), lambdaRepo, scopeChain);
+                scopeChain.Pop();
             }
             else
             {
-                target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
+                target = scopeChain.AccessVariable(bindAs);
             }
             return target;
         }
         #endregion
 
-        #region is lambda expression
-        public static bool IsLambdaExpression(string bindAs)
+        #region resolve scope walk bind target
+        private static object ResolveScopeWalkBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        {
+            int lastIdxOf;
+            int depth = BindHelper.CountInstancesOfPattern(bindAs, @"..\", out lastIdxOf);
+            object target = BindHelper.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
+            return target;
+        }
+		#endregion
+
+		#region resolve lamba expression bind target
+		private static object ResolveLambdaExpressionBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        {
+            Func<object> lambda = lambdaRepo.Resolve(bindAs, scopeChain);
+            object target = lambda();
+            return target;
+        }
+		#endregion
+
+		#region is lambda expression
+		public static bool IsLambdaExpression(string bindAs)
         {
             return bindAs.IndexOf("=>") > -1;
         }
@@ -103,7 +128,12 @@ namespace HatTrick.Text.Templating
         {
             return value != null 
                 && value != string.Empty 
-                && (char.IsDigit(value[0]) || (value[0] == '.' && value[1] != '.'));
+                && (
+                    char.IsDigit(value[0]) 
+                    || value[0] == '+' 
+                    || value[0] == '-' 
+                    || (value[0] == '.' && value[1] != '.')// ../ is a scope walk literal...
+                );
         }
         #endregion
 
@@ -164,31 +194,36 @@ namespace HatTrick.Text.Templating
                 case TypeCode.Decimal:
                     if (!decimal.TryParse(literal.TrimEnd('m', 'M'), out decimal dec))
                         throw new MergeException(exceptionMsg(TypeCode.Decimal, literal));
+
                     value = dec;
                     break;
                 case TypeCode.Double:
                     if (!double.TryParse(literal.TrimEnd('d', 'D'), out double dbl))
                         throw new MergeException(exceptionMsg(TypeCode.Double, literal));
+
                     value = dbl;
                     break;
                 case TypeCode.Int32:
                     if (!int.TryParse(literal.TrimEnd('i', 'I'), out int i))
                         throw new MergeException(exceptionMsg(TypeCode.Int32, literal));
+
                     value = i;
                     break;
                 case TypeCode.Int64:
                     if (!long.TryParse(literal.TrimEnd('l', 'L'), out long l))
                         throw new MergeException(exceptionMsg(TypeCode.Int64, literal));
+
                     value = l;
                     break;
                 case TypeCode.Single:
                     if (!Single.TryParse(literal.TrimEnd('f', 'F'), out Single s))
                         throw new MergeException(exceptionMsg(TypeCode.Single, literal));
+
                     value = s;
                     break;
                 case TypeCode.Empty:
                 default:
-                    throw new MergeException($"attempted to parse numeric literal: {literal} type could not be determined");
+                    throw new MergeException($"attempted to parse numeric literal: {literal} type could not be determined. valid type postfix values: m,d,i,l,f");
             }
 
             return value;

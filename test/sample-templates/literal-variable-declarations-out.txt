@@ -6,11 +6,21 @@ salutation: Hello World!
 
 
 
-******** Declaration and Usage of Numeric Literals ********
+******** Declaration and Usage of Positive Numeric Literals ********
 
 uno + dos + tres = 6.000
 uno + dos + tres = 6.00
 
+******** Declaration and Usage of Unsigned Numeric Literals ********
+
+******** Declaration and Usage of Signed Numeric Literals ********
+uno + dos + tres = -6.000
+uno + dos + tres = -6.00
+uno + dos + tres = 6.00
+uno + dos + tres = -1.500
+
+******** Sign followed by decimal **********
+negative percent: -0.25
 
 
 ******** Declaration and Usage of String Literals Containing Quotes ********
