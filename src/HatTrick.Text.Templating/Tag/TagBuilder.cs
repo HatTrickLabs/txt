@@ -18,11 +18,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region interface
-        public char this[int index]
-        { get { return _tag[index]; } }
+        public char this[int index] => _tag[index];
 
-        public int Length
-        { get { return _tag.Length; } }
+        public int Length => _tag.Length;
         #endregion
 
         #region constructors
@@ -46,11 +44,11 @@ namespace HatTrick.Text.Templating
         #region append
         public void Append(char c)
         {
-            char escape         = '\\';
-            char singleQuote    = '\'';
-            char doubleQuote    = '"';
-            char tab            = '\t';
-            char space          = ' ';
+            char escape = '\\';
+            char singleQuote = '\'';
+            char doubleQuote = '"';
+            char tab = '\t';
+            char space = ' ';
 
             //if double quote & not escaped & not already inside single quotes...
             if (c == doubleQuote && _previous != escape && !_inSingleQuote)
@@ -62,7 +60,9 @@ namespace HatTrick.Text.Templating
 
             //only append white space if inside double or single quotes...
             bool inQuotes = (_inDoubleQuote || _inSingleQuote);
-            if (!(c == space || c == tab) || inQuotes)
+            bool isNotWhitespace = !(c == space || c == tab);
+
+            if (isNotWhitespace || inQuotes)
                 _tag.Append(c);
 
             _previous = c;
@@ -70,17 +70,11 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region reset
-        public void Reset()
-        {
-            this.Init();
-        }
+        public void Reset() => this.Init();
         #endregion
 
         #region to string
-        public override string ToString()
-        {
-            return _tag.ToString();
-        }
+        public override string ToString() => _tag.ToString();
         #endregion
     }
 }

@@ -13,9 +13,17 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.1.2</Version>
-    <PackageReleaseNotes>Issue fix:  Fixed whitespace trim logic when cris crossing line endings (unix style template on a windows runtime or vise versa).</PackageReleaseNotes>
+    <Version>2.1.3</Version>
+    <PackageReleaseNotes>fixed:  Issue #54 - parsing of signed numeric literals.  Issue #55 - right trim throws off line count.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

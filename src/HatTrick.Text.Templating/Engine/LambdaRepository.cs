@@ -307,7 +307,7 @@ namespace HatTrick.Text.Templating
         private object EnsureDecimalArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '.') //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!decimal.TryParse(arg, out decimal d))
                 {
@@ -326,7 +326,7 @@ namespace HatTrick.Text.Templating
         private object EnsureDoubleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '.') //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!double.TryParse(arg, out double d))
                 {
@@ -345,7 +345,7 @@ namespace HatTrick.Text.Templating
         private object EnsureInt16Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!Int16.TryParse(arg, out Int16 i))
                 {
@@ -364,7 +364,7 @@ namespace HatTrick.Text.Templating
         private object EnsureInt32Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!int.TryParse(arg, out int i))
                 {
@@ -383,7 +383,7 @@ namespace HatTrick.Text.Templating
         private object EnsureInt64Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!long.TryParse(arg, out long l))
                 {
@@ -402,7 +402,7 @@ namespace HatTrick.Text.Templating
         private object EnsureSByteArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!sbyte.TryParse(arg, out sbyte s))
                 {
@@ -421,7 +421,7 @@ namespace HatTrick.Text.Templating
         private object EnsureSingleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
             {
                 if (!Single.TryParse(arg, out Single s))
                 {
@@ -515,6 +515,7 @@ namespace HatTrick.Text.Templating
             string msg = "attempted function invocation with invalid parameter. "
                            + $"lambda name: {lambdaName}  expected: a properly formated {expectedType} literal. "
                            + $"value provided: {arg} at parameter position: {index}";
+
             return msg;
         }
         #endregion
