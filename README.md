@@ -148,7 +148,8 @@ We see you currently hold  the following certs:
 ##### Notes:
 - An each block bound to a *falsy* value (null or empty) will result in no block content rendered.
 - *{#each}* tags work on any object that implements the *System.Collections.IEnumerable* interface.
-- The $ reserved varible always references the root value of local scope (*this*).  $ can be used in any tag within a template.
+- The $ reserved varible always references the root value of local scope (*this*).  The value of $ changes every time scope changes
+  and can be used within any template tag..
 - the ..\ operator can be used to walk the scope chain.
 
 
@@ -201,7 +202,7 @@ Fields:
 - Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
 	* Usage: *{:myVar}*
-	* Reassignment *{?myVar = "hello"}*
+	* Reassignment *{?:myVar = "hello"}*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
 - Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
 	* String Literal: *{?var:someText = "Hello"}*
