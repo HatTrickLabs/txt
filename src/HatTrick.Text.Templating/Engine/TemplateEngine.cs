@@ -287,7 +287,7 @@ namespace HatTrick.Text.Templating
 
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
 
-            //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
+            //roll and emit until proper #/each tag found (allowing nested #each #/each tags
             Tag closeTag;
             this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndEachTag, Tag.IsEachTag, out closeTag);
             this.EnsureLeftTrim(block, closeTag);

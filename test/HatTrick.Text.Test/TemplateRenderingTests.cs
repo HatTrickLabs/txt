@@ -841,5 +841,25 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(expected, actual);
         }
+
+        [Theory]
+        [Templates("lambda-char-literals-in.txt", "lambda-char-literals-out.txt")]
+        public void Do_lambda_char_literals_get_typed_correctly(string template, string expected)
+        {
+            //given 
+            Func<string, char, string[]> splitString = (items, delim) => items.Split(delim);
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(splitString), splitString);
+
+            var data = new { Names = "Charlie,Schroeder,Lucy,Snoopy,Woodstock,Marcie,Sally,Linus,Rerun" };
+            
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
     }
 }

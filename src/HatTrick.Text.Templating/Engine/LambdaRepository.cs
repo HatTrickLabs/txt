@@ -275,7 +275,12 @@ namespace HatTrick.Text.Templating
             object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                target = arg.Substring(1, (arg.Length - 2));
+                string val = arg.Substring(1, (arg.Length - 2));
+                if (!char.TryParse(val, out char c))
+                {
+                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Char));
+                }
+                target = c;
             }
             else
             {

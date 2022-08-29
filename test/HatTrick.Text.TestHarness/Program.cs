@@ -40,6 +40,7 @@ namespace HatTrick.Text.Templating.TestHarness
             MultiLineTemplateComments();
             SimpleLambdaExpressions();
             LambdaNumericLiterals();
+            LambdaCharLiterals();
             ComplexLambdaExpressions();
             LambdaExpressionDrivenBlocks();
             WithTagScopeChangeBlocks();
@@ -706,6 +707,30 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(SumIntDoubleDecimal), SumIntDoubleDecimal);
 
             string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region lambda char literals x
+        static void LambdaCharLiterals()
+        {
+            string name = "lambda-char-literals";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, char, string[]> splitString = (items, delim) => items.Split(delim);
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(splitString), splitString);
+
+            var data = new { Names = "Charlie,Schroeder,Lucy,Snoopy,Woodstock,Marcie,Sally,Linus,Rerun" };
+
+            string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
 
