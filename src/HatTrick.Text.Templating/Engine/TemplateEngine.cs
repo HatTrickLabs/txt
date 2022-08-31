@@ -8,8 +8,6 @@ namespace HatTrick.Text.Templating
     {
         #region internals
         private int _index;
-        private int _lineNum;
-        private Action<int, string> _progress;
 
         private string _template;
 
@@ -18,9 +16,8 @@ namespace HatTrick.Text.Templating
         private LambdaRepository _lambdaRepo;
 
         private StringBuilder _result;
-        private Action<char> _appendToResult;
 
-        private TagBuilder _nextTag;
+        private StringBuilder _tag;
 
         private int _maxStack = 25;
         private bool _trimWhitespace;
@@ -38,12 +35,6 @@ namespace HatTrick.Text.Templating
             get { return (_lambdaRepo == null) ? _lambdaRepo = new LambdaRepository() : _lambdaRepo;  }
             set { _lambdaRepo = value; }
         }
-
-        public Action<int, string> ProgressListener
-        {
-            get { return _progress; }
-            set { _progress = value; }
-        }
         #endregion
 
         #region constructors
@@ -51,9 +42,8 @@ namespace HatTrick.Text.Templating
         {
             _index = 0;
             _template = template;
-            _nextTag = new TagBuilder();
+            _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
-            _appendToResult = (c) => { _result.Append(c); };
             _scopeChain = new ScopeChain();
         }
         #endregion
@@ -96,14 +86,6 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region with progress listener
-        private TemplateEngine WithProgressListener(Action<int, string> listener)
-        {
-            _progress = listener;
-            return this; 
-        }
-        #endregion
-
         #region merge
         public string Merge(object bindTo)
         {
@@ -116,28 +98,22 @@ namespace HatTrick.Text.Templating
         private string Merge()
         {
             _result.Clear();
-            _nextTag.Reset();
+            _tag.Clear();
             _index = 0;
-            _lineNum = string.IsNullOrEmpty(_template) ? 0 : 1;
 
             char eot = (char)3; //end of text....
 
             while (this.Peek() != eot)
             {
-                if (this.RollTill(_appendToResult, '{', false, false))
+                if (this.MunchContent(ref _result, false))
                 {
-                    if (this.RollTill(_nextTag.Append, '}', true, false))
-                    {
-                        Tag tag = new Tag(_nextTag.ToString(), _trimWhitespace);
-                        _progress?.Invoke(_lineNum, tag.ToString());
-                        this.HandleTag(tag);
-                    }
+                    if (this.MunchTag(ref _tag))
+                        this.HandleTag(new Tag(_tag.ToString(), _trimWhitespace));
+
                     else
-                    { 
-                        throw new MergeException("enountered un-closed tag; '}' never found"); 
-                    }
+                        throw new MergeException("enountered un-closed tag; '}' never found");
                 }
-                _nextTag.Reset();
+                _tag.Clear();
             }
 
             return _result.ToString();
@@ -147,46 +123,46 @@ namespace HatTrick.Text.Templating
         #region handle tag
         private void HandleTag(Tag tag)
         {
-            switch (tag.Kind)
+            switch (tag.Type)
             {
-                case TagKind.Simple:
-                    this.HandleSimpleTag(in tag);
+                case TagType.Simple:
+                    this.HandleSimpleTag(tag);
                     break;
-                case TagKind.If:
-                    this.HandleIfTag(in tag);
+                case TagType.If:
+                    this.HandleIfTag(tag);
                     break;
-                case TagKind.Each:
-                    this.HandleEachTag(in tag);
+                case TagType.Each:
+                    this.HandleEachTag(tag);
                     break;
-                case TagKind.With:
-                    this.HandleWithTag(in tag);
+                case TagType.With:
+                    this.HandleWithTag(tag);
                     break;
-                case TagKind.VarDeclare:
-                    this.HandleVariableDeclareTag(in tag);
+                case TagType.VarDeclare:
+                    this.HandleVariableDeclareTag(tag);
                     break;
-                case TagKind.VarAssign:
-                    this.HandleVariableAssignTag(in tag);
+                case TagType.VarAssign:
+                    this.HandleVariableAssignTag(tag);
                     break;
-                case TagKind.Partial:
-                    this.HandlePartialTag(in tag);
+                case TagType.Partial:
+                    this.HandlePartialTag(tag);
                     break;
-                case TagKind.Comment:
-                    this.HandleCommentTag(in tag);
+                case TagType.Comment:
+                    this.HandleCommentTag(tag);
                     break;
             }
         }
         #endregion
 
         #region handle comment tag
-        private void HandleCommentTag(in Tag tag)
+        private void HandleCommentTag(Tag tag)
         {
-            this.EnsureLeftTrim(_result, in tag);
-            this.EnsureRightTrim(in tag);
+            this.EnsureLeftTrim(_result, tag);
+            this.EnsureRightTrim(tag);
         }
         #endregion
 
         #region handle simple tag
-        private void HandleSimpleTag(in Tag tag)
+        private void HandleSimpleTag(Tag tag)
         {
             string bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
@@ -196,21 +172,19 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle if tag
-        private void HandleIfTag(in Tag tag)
+        private void HandleIfTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
             StringBuilder block = new StringBuilder();
 
-            Action<char> emitEnclosedTo = (s) => { block.Append(s); };
-
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
-            Tag closeTag;
-            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndIfTag, Tag.IsIfTag, out closeTag);
+            Tag endTag;
+            this.MunchBlock(ref block, TagType.If, out endTag);
 
-            this.EnsureLeftTrim(block, closeTag);
-            this.EnsureRightTrim(closeTag);
+            this.EnsureLeftTrim(block, endTag);
+            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
@@ -227,7 +201,6 @@ namespace HatTrick.Text.Templating
                 _scopeChain.ApplyVariableScopeMarker();
 
                 TemplateEngine subEngine = new TemplateEngine(block.ToString())
-                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -278,20 +251,18 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle each tag
-        private void HandleEachTag(in Tag tag)
+        private void HandleEachTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
             StringBuilder block = new StringBuilder();
 
-            Action<char> emitEnclosedTo = (s) => { block.Append(s); };
-
             //roll and emit until proper #/each tag found (allowing nested #each #/each tags
-            Tag closeTag;
-            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndEachTag, Tag.IsEachTag, out closeTag);
-            this.EnsureLeftTrim(block, closeTag);
-            this.EnsureRightTrim(closeTag);
+            Tag endTag;
+            this.MunchBlock(ref block, TagType.Each, out endTag);
+            this.EnsureLeftTrim(block, endTag);
+            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
 
@@ -309,7 +280,6 @@ namespace HatTrick.Text.Templating
 
                 TemplateEngine subEngine;
                 subEngine = new TemplateEngine(block.ToString())
-                    .WithProgressListener(_progress)
                     .WithWhitespaceSuppression(_trimWhitespace)
                     .WithScopeChain(_scopeChain)
                     .WithMaxStack(_maxStack)
@@ -327,7 +297,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle with tag
-        private void HandleWithTag(in Tag tag)
+        private void HandleWithTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -337,10 +307,10 @@ namespace HatTrick.Text.Templating
             Action<char> emitEnclosedTo = (s) => { block.Append(s); };
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
-            Tag closeTag;
-            this.RollBlockedContentTill(emitEnclosedTo, Tag.IsEndWithTag, Tag.IsWithTag, out closeTag);
-            this.EnsureLeftTrim(block, closeTag);
-            this.EnsureRightTrim(closeTag);
+            Tag endTag;
+            this.MunchBlock(ref block, TagType.With, out endTag);
+            this.EnsureLeftTrim(block, endTag);
+            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
 
@@ -352,7 +322,6 @@ namespace HatTrick.Text.Templating
             _scopeChain.ApplyVariableScopeMarker();
 
             subEngine = new TemplateEngine(block.ToString())
-                .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(_trimWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack)
@@ -366,7 +335,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region handle variable tag
-        private void HandleVariableTag(in Tag tag, bool isDeclaration)
+        private void HandleVariableTag(Tag tag, bool isDeclaration)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -418,21 +387,21 @@ namespace HatTrick.Text.Templating
 		#endregion
 
 		#region handle variable declare tag
-		private void HandleVariableDeclareTag(in Tag tag)
+		private void HandleVariableDeclareTag(Tag tag)
         {
-            this.HandleVariableTag(in tag, true);
+            this.HandleVariableTag(tag, true);
         }
         #endregion
 
         #region handle variable assign tag
-        private void HandleVariableAssignTag(in Tag tag)
+        private void HandleVariableAssignTag(Tag tag)
         {
-            this.HandleVariableTag(in tag, false);
+            this.HandleVariableTag(tag, false);
         }
 		#endregion
 
 		#region handle partial tag (sub templates)
-		private void HandlePartialTag(in Tag tag)
+		private void HandlePartialTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
@@ -447,7 +416,6 @@ namespace HatTrick.Text.Templating
             _scopeChain.ApplyVariableScopeMarker();
 
             TemplateEngine subEngine = new TemplateEngine(tgt)
-                .WithProgressListener(_progress)
                 .WithWhitespaceSuppression(_trimWhitespace)
                 .WithScopeChain(_scopeChain)
                 .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
@@ -473,127 +441,175 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region peek at
-        public char PeekAt(int indexOf)
+        public char Peek(int forward)
         {
-            char c = (_template.Length > indexOf)
-                ? _template[indexOf]
+            int at = _index + forward;
+            char c = (_template.Length > at)
+                ? _template[at]
                 : (char)3; //eot (end of text)
 
             return c;
         }
         #endregion
 
-        #region roll till
-        private bool RollTill(Action<char> emitTo, char till, bool greedy, bool isSubBlock)
+        #region read
+        private char Read()
         {
-            return this.RollTill(emitTo, (c) => c == till, greedy, isSubBlock);
-        }
+            char c = (_template.Length > _index)
+                 ? _template[_index++]
+                 : (char)3; //eot (end of text)
 
-        private bool RollTill(Action<char> emitTo, Func<char, bool> till, bool greedy, bool isSubBlock, bool breakOnEscape = false)
-        {
-            bool found = false;
-            char eot = (char)3;
-            char c;
-            while((c = this.Peek()) != eot)
-            {
-                if (c == '\n')
-                {
-                    _lineNum += 1;
-                }
-
-                //check for escaped brackets BEFORE checking the till condition
-                if (c == '{' || c == '}')
-                {
-                    char next = this.PeekAt(_index + 1);
-                    if (c == next)
-                    {
-                        if (breakOnEscape)
-                            break;
-
-                        emitTo(c);
-                        if (isSubBlock)
-                        {
-                            emitTo(next);
-                        }
-                        _index += 2;
-                        continue;
-                    }
-                }
-
-
-                if (till(c))
-                {
-                    if (greedy)
-                    {
-                        emitTo(c);
-                        _index += 1;
-                    }
-                    found = true;
-                    break;
-                }
-                else
-                {
-                    emitTo(c);
-                    _index += 1;
-                }
-            }
-            return found;
+            return c;
         }
         #endregion
 
-        #region roll blocked content to action till
-        private void RollBlockedContentTill(Action<char> emitTo, Func<string, bool> till, Func<string, bool> ensuring, out Tag endTag)
+        #region munch
+        private bool MunchContent(ref StringBuilder output, bool isSubBlock)
         {
-            endTag = default;
-            int offset = 1;// i.e. we are inside 1 #if tag and looking for its /if tag but must account for contained #if tags...
-            bool tagIsContent;
-            do
+            char c;
+            char eot = (char)3; //eot (end of text)
+            while ((c = this.Read()) != eot)
             {
-                //look for the next tag...
-                this.RollTill(emitTo, '{', false, true);
-
-                _nextTag.Reset();
-                tagIsContent = false;
-
-                this.RollTill(_nextTag.Append, '}', true, true);
-
-                if (_nextTag.Length == 0)
-                { throw new MergeException($"enountered un-closed tag; 'till' condition never found"); }
-
-                if (!till(_nextTag.ToString()))
+                if (c == '{' && this.Peek() == '{')
                 {
-                    tagIsContent = true;
-                    if (ensuring(_nextTag.ToString()))
-                    {
-                        offset += 1;
-                    }
+                    
+                    if (isSubBlock) //if parsing blocked template content, maintain the escape char
+                        output.Append(c).Append(this.Read());
+
+                    else //throw away the first one(the escape char) and write the second one
+                        output.Append(this.Read());
+                    
+                    continue;
                 }
-                else
+
+                if (c == '{') //if open bracket that is not escaped, we found a tag
                 {
-                    offset -= 1;
-                    if (offset > 0)
+                    _index -= 1;//back the index up 1 spot to basically pop the open tag char '{' back into the read queue
+                    return true;
+                }
+
+                if (c == '}')
+                {
+                    if (this.Peek() == '}')
                     {
-                        tagIsContent = true;
+                        if (isSubBlock) //if parsing blocked template content, maintain the escape char
+                            output.Append(c).Append(this.Read());
+
+                        else //throw away the first one(the escape char) and write the second one
+                            output.Append(this.Read());
+
+                        continue;
                     }
                     else
                     {
-                        endTag = new Tag(_nextTag.ToString(), _trimWhitespace);
-                    }
-                }
-                if (tagIsContent)
-                {
-                    for (int i = 0; i < _nextTag.Length; i++)
-                    {
-                        emitTo(_nextTag[i]);
+                        throw new MergeException("encountered un-escaped close tag '}' within template content");
                     }
                 }
 
-            } while (offset > 0);
+                output.Append(c);
+            }
+            return false;
+        }
+
+        private bool MunchTag(ref StringBuilder tag)
+        {
+            bool inSingleQuote = false;
+            bool inDoubleQuote = false;
+            char escape = '\\';
+            char singleQuote = '\'';
+            char doubleQuote = '"';
+            char tab = '\t';
+            char space = ' ';
+            char nl = '\n';
+            char cr = '\r';
+            char previous = '\0';
+            char c = '\0';
+            char eot = (char)3; //(end of text)
+
+            int offset = 0;
+            bool isComment = false;
+            Func<StringBuilder, bool> isCommentTag = (StringBuilder sb) =>
+            {
+                return isComment ? isComment : (isComment = Tag.IsCommentTag(sb.ToString()));
+            };
+
+            while ((c = this.Read()) != eot)
+            {
+                if (c == '{')
+                    offset += 1;
+
+                else if (c == '}')
+                    offset -= 1;
+
+                //if double quote & not escaped & not already inside single quotes...
+                if (c == doubleQuote && previous != escape && !inSingleQuote)
+                    inDoubleQuote = !inDoubleQuote;
+
+                //if single quote & not escaped & not already inside double quotes...
+                if (c == singleQuote && previous != escape && !inDoubleQuote)
+                    inSingleQuote = !inSingleQuote;
+
+                //only append white space if inside double or single quotes...
+                bool inQuotes = (inDoubleQuote || inSingleQuote);
+                bool isWhiteSpace = c == space || c == tab || c == nl || c == cr;
+
+                if (!isWhiteSpace || inQuotes)
+                    tag.Append(c);
+
+                if (c == '}' && (!inQuotes || isCommentTag(tag)) && !(offset > 0 && isCommentTag(tag)))
+                    return true;
+
+                previous = c;
+            }
+            return false;
+        }
+
+        public void MunchBlock(ref StringBuilder output, TagType beginType, out Tag endTag)
+        {
+            char c;
+            char eot = (char)3; //(end of text)
+            int offset = 1; // need to ensure we bypass any nested tags
+            var tagBuffer = new StringBuilder(60);
+            TagType endType = Tag.ResolveEndTagType(beginType);
+            endTag = null;
+
+            while ((c = this.Peek()) != eot)
+            {
+                if (this.MunchContent(ref output, true))
+                {
+                    if (this.MunchTag(ref tagBuffer))
+                    {
+                        string tag = tagBuffer.ToString();
+                        TagType type = Tag.ResolveType(tag);
+
+                        if (type == beginType)
+                            offset += 1;
+
+                        if (type == endType)
+                            offset -= 1;
+
+                        if (offset > 0)
+                            output.Append(tag);
+
+                        if (offset == 0)
+                        {
+                            //we found the end tag...
+                            endTag = new Tag(tag, _trimWhitespace);
+                            break;
+                        }
+                        tagBuffer.Clear();
+                    }
+                    else
+                    {
+                        throw new MergeException($"enountered un-closed tag...'{endType}' tag never found");
+                    }
+                }
+            }
         }
         #endregion
 
         #region ensure left trim
-        private void EnsureLeftTrim(StringBuilder from, in Tag tag)
+        private void EnsureLeftTrim(StringBuilder from, Tag tag)
         {
             if (tag.ShouldTrimLeft())
             {
@@ -608,30 +624,30 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region ensure right trim
-        private void EnsureRightTrim(in Tag tag)
+        private void EnsureRightTrim(Tag tag)
         {
             if (tag.ShouldTrimRight())
             {
-                Action<char> emitTo = (c) => { }; //just throw away the whitespace...
-
                 char lastChar = '\0';
-                Func<char, bool> isNotWhitespace = (c) =>
+                Func<char, bool> isWhitespace = (c) =>
                 {
                     lastChar = c;
-                    return !(c == ' ' || c == '\t');
+                    return c == ' ' || c == '\t';
                 };
 
-                bool found = this.RollTill(emitTo, isNotWhitespace, false, false, true);
+                //dispose of read until we encounter something other than <space> or <tab>
+                while (isWhitespace(this.Peek()))
+                {
+                    _ = this.Read(); //throw away the whitespace...
+                }
 
-                if (lastChar == '\r' && this.PeekAt(_index + 1) == '\n')
-                {
-                    _index += 2;
-                    _lineNum += 1; //increment line count, the RollTill function bailed out before the \n so the line was not counted
-                }
-                else if (lastChar == '\n' || lastChar == '\r') //the second condition will eliminate rogue \r chars...
-                {
-                    _index += 1;
-                }
+                //must account for the removal of the 1 newline for both unix and windows based systems...could be 1 or two chars needing disposed
+                if (lastChar == '\r' || lastChar == '\n')
+                    _ = this.Read();
+
+                lastChar = this.Peek();
+                if (lastChar == '\r' || lastChar == '\n')
+                    _ = this.Read();
             }
         }
         #endregion

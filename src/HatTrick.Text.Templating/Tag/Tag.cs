@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace HatTrick.Text.Templating
 {
-    public struct Tag
+    public class Tag
     {
         #region internals
-        private TagKind _kind;
+        private TagType _type;
         private string _tag;
         private int _tagLength;
         private TrimMark _markers;
@@ -17,7 +17,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region interface
-        public TagKind Kind => _kind;
+        public TagType Type => _type;
         #endregion
 
         #region constructors
@@ -25,7 +25,7 @@ namespace HatTrick.Text.Templating
         {
             _tag = tag;
             _tagLength = tag.Length;
-            _kind = TagKind.Simple;
+            _type = TagType.Simple;
             _markers = TrimMark.None;
             _forceTrim = forceTrim;
             this.Init();
@@ -35,54 +35,93 @@ namespace HatTrick.Text.Templating
         #region init
         private void Init()
         {
-            this.ResolveKind();
+            _type = Tag.ResolveType(_tag);
             this.ResolveTrimMarkers();
         }
         #endregion
 
-        #region resolve kind
-        private void ResolveKind()
+        #region resolve type
+        public static TagType ResolveType(string tag)
         {
-            string tag = _tag;
             if (Tag.IsIfTag(tag))                       //# if logic tag (boolean switch)
-                _kind = TagKind.If;
+                return TagType.If;
 
             else if (Tag.IsEndIfTag(tag))               //end if
-                _kind = TagKind.EndIf;
+                return TagType.EndIf;
 
             else if (Tag.IsEachTag(tag))                //#each enumeration
-                _kind = TagKind.Each;
+                return TagType.Each;
 
             else if (Tag.IsEndEachTag(tag))             //end each
-                _kind = TagKind.EndEach;
+                return TagType.EndEach;
 
             else if (Tag.IsWithTag(tag))                //#with tag
-                _kind = TagKind.With;
+                return TagType.With;
 
             else if (Tag.IsEndWithTag(tag))             //end with
-                _kind = TagKind.EndWith;
+                return TagType.EndWith;
 
             else if (Tag.IsPartialTag(tag))             //sub template tag
-                _kind = TagKind.Partial;
+                return TagType.Partial;
 
             else if (Tag.IsVariableDeclareTag(tag))     //variable declaratino 
-                _kind = TagKind.VarDeclare;
+                return TagType.VarDeclare;
 
             else if (Tag.IsVariableAssignTag(tag))      //variable assignment
-                _kind = TagKind.VarAssign;
+                return TagType.VarAssign;
 
             else if (Tag.IsCommentTag(tag))             //comment tag
-                _kind = TagKind.Comment;
+                return TagType.Comment;
 
             else                                        //simple tag
-                _kind = TagKind.Simple;
+                return TagType.Simple;
+        }
+        #endregion
+
+        #region resolve end tag type
+        public static TagType ResolveEndTagType(TagType type)
+        {
+            if (!Tag.IsBlockTag(type, out BlockTagOrientation? orientation) || orientation.Value != BlockTagOrientation.Begin)
+                throw new ArgumentException($"Arg is not a valid begin block tag type: {type}... valid block begin tags are (If, Each, With)", nameof(type));
+
+            if (type == TagType.If)
+                return TagType.EndIf;
+            else if (type == TagType.Each)
+                return TagType.EndEach;
+            else if (type == TagType.With)
+                return TagType.EndWith;
+            else
+                throw new ArgumentException($"Encountered un-known TagType: {type}", nameof(type));
+        }
+        #endregion
+
+        #region is begin block tag
+        public static bool IsBlockTag(TagType type, out BlockTagOrientation? orientation)
+        {
+            orientation = null;
+
+            bool isBlock = type == TagType.If 
+                        || type == TagType.Each 
+                        || type == TagType.With 
+                        || type == TagType.EndIf 
+                        || type == TagType.EndEach 
+                        || type == TagType.EndWith;
+
+            if (isBlock)
+            {
+                orientation = (type == TagType.If || type == TagType.Each || type == TagType.With) 
+                    ? BlockTagOrientation.Begin 
+                    : BlockTagOrientation.End;
+            }
+
+            return isBlock;
         }
         #endregion
 
         #region resolve trim markers
         private void ResolveTrimMarkers()
         {
-            if (_kind == TagKind.Simple)
+            if (_type == TagType.Simple)
                 return;
 
             if (_tag[1] == '-')                     //has discard left trim mark...
@@ -221,7 +260,7 @@ namespace HatTrick.Text.Templating
 		public string BindAs()
         {
             string bindAs = null;
-            TagKind kind = _kind;
+            TagType type = _type;
 
             int start = 0;
             int len = 0;
@@ -230,41 +269,41 @@ namespace HatTrick.Text.Templating
             bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
             bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);
 
-            switch (kind)
+            switch (type)
             {
-                case TagKind.Simple:
+                case TagType.Simple:
                     start = 1;
                     maxLen = _tagLength - 2;
                     break;
-                case TagKind.If:
+                case TagType.If:
                     start = left ? 5 : 4;
                     maxLen = 7;
                     break;
-                case TagKind.Each:
+                case TagType.Each:
                     start = left ? 7 : 6;
                     maxLen = 9;
                     break;
-                case TagKind.VarDeclare:
+                case TagType.VarDeclare:
 					start = left ? 6 : 5;
                     maxLen = 8;
                     break;
-                case TagKind.VarAssign:
+                case TagType.VarAssign:
 					start = left ? 3 : 2;
                     maxLen = 5;
                     break;
-                case TagKind.With:
+                case TagType.With:
                     start = left ? 7 : 6;
                     maxLen = 9;
                     break;
-                case TagKind.Partial:
+                case TagType.Partial:
                     start = left ? 3 : 2;
                     maxLen = 5;
                     break;
-                case TagKind.Comment:
-                    throw new MergeException($"encountered un-expected TagKind: {kind} ... Comment tags cannot be bound");
+                case TagType.Comment:
+                    throw new MergeException($"encountered un-expected TagType: {type} ... Comment tags cannot be bound");
             }
 
-            if (kind == TagKind.Simple) //simple tags cannot have trim markers...
+            if (type == TagType.Simple) //simple tags cannot have trim markers...
                 len = maxLen;
 
             else if (left && right)

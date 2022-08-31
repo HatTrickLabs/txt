@@ -20,6 +20,16 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
+
+            string template = "throw new InvalidOperationException($\"encountered un-expected key: {{{$.KeyName}}}\")";
+            TemplateEngine ngin = new TemplateEngine(template);
+            var data = new
+            {
+                KeyName = "MyDamnKey"
+            };
+            string result = ngin.Merge(data);
+
+
             SimpleTags();
             BracketEscaping();
             ComplexBindExpressions();
