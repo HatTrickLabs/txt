@@ -36,6 +36,7 @@ namespace HatTrick.Text.Test
             var data = new
             {
                 Name = "Charlie Brown",
+                KeyName = "CB"
             };
 
             //when
@@ -855,6 +856,26 @@ namespace HatTrick.Text.Test
 
             var data = new { Names = "Charlie,Schroeder,Lucy,Snoopy,Woodstock,Marcie,Sally,Linus,Rerun" };
             
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("comments-with-brackets-in.txt", "comments-with-brackets-out.txt")]
+        public void Do_comments_containing_brackets_parse_correctly(string template, string expected)
+        {
+            //given 
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
             //when
             string actual = ngin.Merge(data);
 

@@ -20,16 +20,6 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
-
-            string template = "throw new InvalidOperationException($\"encountered un-expected key: {{{$.KeyName}}}\")";
-            TemplateEngine ngin = new TemplateEngine(template);
-            var data = new
-            {
-                KeyName = "MyDamnKey"
-            };
-            string result = ngin.Merge(data);
-
-
             SimpleTags();
             BracketEscaping();
             ComplexBindExpressions();
@@ -47,6 +37,7 @@ namespace HatTrick.Text.Templating.TestHarness
             WalkingTheScopeChain();
             SimplePartialBlocks();
             SimpleTemplateComments();
+            CommentsWithBrackets();
             MultiLineTemplateComments();
             SimpleLambdaExpressions();
             LambdaNumericLiterals();
@@ -156,6 +147,7 @@ namespace HatTrick.Text.Templating.TestHarness
             var data = new
             {
                 Name = "Charlie Brown",
+                KeyName = "CB"
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
@@ -590,6 +582,29 @@ namespace HatTrick.Text.Templating.TestHarness
         static void SimpleTemplateComments()
         {
             string name = "simple-template-comments";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region comments with brackets x
+        static void CommentsWithBrackets()
+        {
+            string name = "comments-with-brackets";
             string template = ResolveTemplateInput(name);
 
             var data = new

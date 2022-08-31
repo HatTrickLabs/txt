@@ -1,0 +1,15 @@
+Hello {Name.First} {Name.Last},
+This template tests single line and multi line comments that contain brackets...
+{! This is a single line comment with brackets {abc} {{xyz}} }
+...
+{! This comment contains {brackets} }
+...
+{! abc
+   xyz
+   lbc
+   aaa
+   ccc {Test}{Test}{{Test}}
+   {Test}
+   {{Test}}
+   {{{Test}}}
+}

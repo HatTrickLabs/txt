@@ -243,7 +243,7 @@ namespace HatTrick.Text.Templating
                        || (ul = val as ulong?) != null && ul == 0
                        || (sht = val as short?) != null && sht == 0
                        || (usht = val as ushort?) != null && usht == 0
-                       || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: JRod, this will catch string.Empty
+                       || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: this will catch string.Empty
                        || (s = val as string) != null && (s.Length == 1 && s[0] == '\0');
 
             return !isFalse;
@@ -369,18 +369,23 @@ namespace HatTrick.Text.Templating
             {
                 if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
                     value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
+
                 else if (BindHelper.IsNumericLiteral(bindAs))
                     value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
+
                 else if (string.Compare(bindAs, "true", true) == 0)
                     value = true;
+
                 else if (string.Compare(bindAs, "false", true) == 0)
                     value = false;
+
                 else
                     value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
             }
 
             if (isDeclaration)
                 _scopeChain.SetVariable(name, value);
+
             else
                 _scopeChain.UpdateVariable(name, value);
         }
@@ -585,24 +590,25 @@ namespace HatTrick.Text.Templating
                         if (type == beginType)
                             offset += 1;
 
-                        if (type == endType)
+                        else if (type == endType)
                             offset -= 1;
+
+                        /************************************/
 
                         if (offset > 0)
                             output.Append(tag);
 
-                        if (offset == 0)
+                        else if (offset == 0)
                         {
                             //we found the end tag...
                             endTag = new Tag(tag, _trimWhitespace);
                             break;
                         }
+
                         tagBuffer.Clear();
                     }
                     else
-                    {
                         throw new MergeException($"enountered un-closed tag...'{endType}' tag never found");
-                    }
                 }
             }
         }

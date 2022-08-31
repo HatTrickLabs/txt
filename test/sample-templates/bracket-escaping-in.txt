@@ -9,3 +9,6 @@ static void Main(string[] args)
 
 {{ escaped }} {Name}
 {{ escaped {Name} }}
+...
+throw new InvalidOperationException($"encountered un-expected key: {{{$.KeyName}}}");
+...
