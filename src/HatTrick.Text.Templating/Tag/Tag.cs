@@ -217,9 +217,14 @@ namespace HatTrick.Text.Templating
         public static bool IsCommentTag(string tag)
         {
             return tag[0] == '{'
-                && (tag[1] == '!' || (tag[1] == '-' 
-                && tag[2] == '!') || (tag[1] == '+' 
-                && tag[2] == '!'));
+                && 
+                (
+                    tag[1] == '!' 
+                    || 
+                    (tag[1] == '-' && tag[2] == '!') 
+                    || 
+                    (tag[1] == '+' && tag[2] == '!')
+                );
         }
         #endregion
 
@@ -227,9 +232,14 @@ namespace HatTrick.Text.Templating
         public static bool IsPartialTag(string tag)
         {
             return tag[0] == '{'
-                && (tag[1] == '>' || (tag[1] == '-' 
-                && tag[2] == '>') || (tag[1] == '+' 
-                && tag[2] == '>'));
+                && 
+                (
+                    tag[1] == '>' 
+                    || 
+                    (tag[1] == '-' && tag[2] == '>') 
+                    || 
+                    (tag[1] == '+' && tag[2] == '>')
+                );
         }
         #endregion
 

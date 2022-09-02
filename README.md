@@ -302,7 +302,7 @@ var account = new
 
 ##### Notes:
 - Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the *{#with}* tag would have required repeating *Person.Address* 6 times.
-- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
+- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {Line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
 
 
 ### Template Comments
@@ -330,6 +330,8 @@ var person = new
 
 ##### Notes:
 - *{!Comment}* tags can span multiple lines.
+- *{!Comment}* tags can contain single bracket characters *{* and *}* and double bracket character sets *{{* and *}}*.
+- if the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket *}* is the end of the comment tag if there is no matching open bracket *{* within the comment.
 
 
 ### Whitespace Control

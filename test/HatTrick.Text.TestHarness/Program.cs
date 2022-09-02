@@ -20,47 +20,48 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
-            SimpleTags();
-            BracketEscaping();
-            ComplexBindExpressions();
-            BindObjectSupport();
-            ThrowOnNoItemExists();
-            TruthyFalsey();
-            SimpleConditionalBlocks();
-            NegatedConditionalBlocks();
-            SimpleWhitespaceControl();
-            GlobalWhitespaceControl();
-            ComplexWhitespaceControl();
-            SimpleIterationBlocks();
-            ThrowOnNonIEnumerableIterationTarget();
-            ThrowOnOverreachIntoScopeChain();
-            WalkingTheScopeChain();
-            SimplePartialBlocks();
-            SimpleTemplateComments();
-            CommentsWithBrackets();
-            MultiLineTemplateComments();
-            SimpleLambdaExpressions();
-            LambdaNumericLiterals();
-            LambdaCharLiterals();
-            ComplexLambdaExpressions();
-            LambdaExpressionDrivenBlocks();
-            WithTagScopeChangeBlocks();
-            CodeGen();
-            DeclaringAndUsingVariables();
-            LiteralVariableDeclarations();
-            ReAssigningVariableValues();
-            ComplexReAssignmingVariableValues();
-            SingleLinkScopeChainReference();
-            TwoLinkScopeChainReference();
-            ThreeLinkScopeChainReference();
-            EightLinkScopeChainReference();
-            PushEightPopFourLinksScopeChainReference();
-            ScopeChainVariableReference();
-            VariableScopeMarkerOnNullStack();
-            VariableScopeMarkerOnNonNullStack();
-            VariableReAssignment();
-            OuterScopeVariableReAssignment();
-            LargeScopeChainAndVariableStacks();
+            //SimpleTags();
+            //BracketEscaping();
+            //ComplexBindExpressions();
+            //BindObjectSupport();
+            //ThrowOnNoItemExists();
+            //TruthyFalsey();
+            //SimpleConditionalBlocks();
+            //NegatedConditionalBlocks();
+            //SimpleWhitespaceControl();
+            //GlobalWhitespaceControl();
+            //ComplexWhitespaceControl();
+            //SimpleIterationBlocks();
+            //ThrowOnNonIEnumerableIterationTarget();
+            //ThrowOnOverreachIntoScopeChain();
+            //WalkingTheScopeChain();
+            //SimplePartialBlocks();
+            //SimpleTemplateComments();
+            //CommentsWithBrackets();
+            //MultiLineTemplateComments();
+            //SimpleLambdaExpressions();
+            //LambdaNumericLiterals();
+            //LambdaCharLiterals();
+            //ComplexLambdaExpressions();
+            //LambdaExpressionDrivenBlocks();
+            //WithTagScopeChangeBlocks();
+            //CodeGen();
+            //DeclaringAndUsingVariables();
+            //LiteralVariableDeclarations();
+            MergeExceptionContext();
+            //ReAssigningVariableValues();
+            //ComplexReAssignmingVariableValues();
+            //SingleLinkScopeChainReference();
+            //TwoLinkScopeChainReference();
+            //ThreeLinkScopeChainReference();
+            //EightLinkScopeChainReference();
+            //PushEightPopFourLinksScopeChainReference();
+            //ScopeChainVariableReference();
+            //VariableScopeMarkerOnNullStack();
+            //VariableScopeMarkerOnNonNullStack();
+            //VariableReAssignment();
+            //OuterScopeVariableReAssignment();
+            //LargeScopeChainAndVariableStacks();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -1090,7 +1091,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region literal variable declarations
+        #region literal variable declarations x
         static void LiteralVariableDeclarations()
         {
             string name = "literal-variable-declarations";
@@ -1107,6 +1108,45 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(concat), concat);
 
             string result = ngin.Merge(null);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region merge exception context
+        static void MergeExceptionContext()
+        {
+            string name = "merge-exception-context";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                First = "Charlie",
+                Last = "Brown",
+                LoremIpsum = "lorem ipsum"
+            };
+
+
+            Func<string> getSubContent1 = () => "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.\r\n"
+                                              + "The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here,\r\n"
+                                              + "content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their\r\n"
+                                              + "{>()=>getSubContent2}\r\n"
+                                              + "sometimes by accident, sometimes on purpose(injected humour and the like).";
+
+            Func<string> getSubContent2 = () => "default model text, {>()=>getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
+            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+            ngin.LambdaRepo.Register(nameof(getSubContent1), getSubContent1);
+            ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
+            ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
+
+            string result = ngin.Merge(data);
 
             string expected = ResolveTemplateOutput(name);
 

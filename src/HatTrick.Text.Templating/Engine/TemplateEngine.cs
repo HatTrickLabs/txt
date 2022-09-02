@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace HatTrick.Text.Templating
@@ -8,18 +7,13 @@ namespace HatTrick.Text.Templating
     {
         #region internals
         private int _index;
-
+        private int _lineNum;
         private string _template;
-
         private ScopeChain _scopeChain;
-
         private LambdaRepository _lambdaRepo;
-
         private StringBuilder _result;
-
         private StringBuilder _tag;
-
-        private int _maxStack = 25;
+        private int _maxStack = 32;
         private bool _trimWhitespace;
         #endregion
 
@@ -40,49 +34,23 @@ namespace HatTrick.Text.Templating
         #region constructors
         public TemplateEngine(string template)
         {
+            _template = template ?? throw new ArgumentNullException(nameof(template));
             _index = 0;
-            _template = template;
             _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
             _scopeChain = new ScopeChain();
         }
-        #endregion
 
-        #region with scope chain
-        private TemplateEngine WithScopeChain(ScopeChain scopeChain)
+        private TemplateEngine(string template, ScopeChain scopeChain, LambdaRepository lambdaRepo, int maxStack, bool trimWhiteSpace)
         {
+            _template = template ?? throw new ArgumentNullException(nameof(template));
             _scopeChain = scopeChain;
-            return this;
-        }
-        #endregion
-
-        #region with lambda repository
-        private TemplateEngine WithLambdaRepository(LambdaRepository repo)
-        {
-            _lambdaRepo = repo;
-            return this;
-        }
-        #endregion
-
-        #region with max stack depth
-        private TemplateEngine WithMaxStack(int depth)
-        {
-            if (depth < 0)
-            {
-                //partial templates decrement the stack depth by 1 for each nested partial...
-                //If we get below zero the max depth has been consumed...
-                throw new MergeException($"stack depth overflow.  partial (sub template) stack depth cannot exceed {_maxStack}");
-            }
-            _maxStack = depth;
-            return this;
-        }
-        #endregion
-
-        #region with white space suppression
-        private TemplateEngine WithWhitespaceSuppression(bool suppress)
-        {
-            _trimWhitespace = suppress;
-            return this;
+            _lambdaRepo = lambdaRepo;
+            _maxStack = maxStack > 0 ? maxStack : throw new MergeException($"Stack depth overflow...stack depth cannot exceed {_maxStack}"); ;
+            _trimWhitespace = trimWhiteSpace;
+            _index = 0;
+            _tag = new StringBuilder(60);
+            _result = new StringBuilder((int)(template.Length * 1.3));
         }
         #endregion
 
@@ -100,7 +68,30 @@ namespace HatTrick.Text.Templating
             _result.Clear();
             _tag.Clear();
             _index = 0;
+            _lineNum = 1;
 
+            try
+            {
+                this.Scan();
+                return _result.ToString();
+            }
+            catch (MergeException mex)
+            {
+                mex.Context.Insert(0, this.ResolveExceptionContext());
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var mex = new MergeException("Exception encountered, see inner exception for details.", ex);
+                mex.Context.Add(this.ResolveExceptionContext());
+                throw mex;
+            }
+        }
+        #endregion
+
+        #region scan
+        private void Scan()
+        {
             char eot = (char)3; //end of text....
 
             while (this.Peek() != eot)
@@ -115,8 +106,18 @@ namespace HatTrick.Text.Templating
                 }
                 _tag.Clear();
             }
+        }
+        #endregion
 
-            return _result.ToString();
+        #region resolve exception context
+        private MergeExceptionContext ResolveExceptionContext()
+        {
+            int start = _index > 30 ? _index - 30 : 0;
+            int end = _template.Length > _index + 30 ? _index + 30 : _template.Length;
+
+            string surroundings = new string(_template.ToCharArray(start, (end - start)));
+
+            return new MergeExceptionContext(_lineNum, surroundings);
         }
         #endregion
 
@@ -199,15 +200,10 @@ namespace HatTrick.Text.Templating
             if (render)
             {
                 _scopeChain.ApplyVariableScopeMarker();
-
-                TemplateEngine subEngine = new TemplateEngine(block.ToString())
-                    .WithWhitespaceSuppression(_trimWhitespace)
-                    .WithScopeChain(_scopeChain)
-                    .WithMaxStack(_maxStack)
-                    .WithLambdaRepository(_lambdaRepo);
-
-                _result.Append(subEngine.Merge());
-
+                string template = block.ToString();
+                TemplateEngine subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                string result = subEngine.Merge();
+                _result.Append(result);
                 _scopeChain.DereferenceVariableScope();
             }
         }
@@ -272,18 +268,14 @@ namespace HatTrick.Text.Templating
             {
                 //if target is not enumerable, should not be bound to an #each tag
                 if (!(target is System.Collections.IEnumerable))
-                { throw new MergeException($"#each tag bound to non-enumerable object: {bindAs}"); }
+                    throw new MergeException($"#each tag bound to non-enumerable object: {bindAs}");
 
                 //cast to enumerable
                 var items = (System.Collections.IEnumerable)target;
                 string itemContent;
-
                 TemplateEngine subEngine;
-                subEngine = new TemplateEngine(block.ToString())
-                    .WithWhitespaceSuppression(_trimWhitespace)
-                    .WithScopeChain(_scopeChain)
-                    .WithMaxStack(_maxStack)
-                    .WithLambdaRepository(_lambdaRepo);
+                string template = block.ToString();
+                subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
 
                 foreach (var item in items)
                 {
@@ -304,8 +296,6 @@ namespace HatTrick.Text.Templating
 
             StringBuilder block = new StringBuilder();
 
-            Action<char> emitEnclosedTo = (s) => { block.Append(s); };
-
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             Tag endTag;
             this.MunchBlock(ref block, TagType.With, out endTag);
@@ -318,15 +308,9 @@ namespace HatTrick.Text.Templating
 
             string itemContent;
             TemplateEngine subEngine;
-
             _scopeChain.ApplyVariableScopeMarker();
-
-            subEngine = new TemplateEngine(block.ToString())
-                .WithWhitespaceSuppression(_trimWhitespace)
-                .WithScopeChain(_scopeChain)
-                .WithMaxStack(_maxStack)
-                .WithLambdaRepository(_lambdaRepo);
-
+            string template = block.ToString();
+            subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
             itemContent = subEngine.Merge(target);
             _result.Append(itemContent);
 
@@ -414,22 +398,12 @@ namespace HatTrick.Text.Templating
             string bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            string tgt = (target as string);
-            if (tgt == null)
-            { throw new MergeException($"#sub template tag: {tag} reflected value is not typeof string: {target}"); }
+            string template = (target as string) ?? throw new MergeException($"Sub template tag: {tag} reflected value is not typeof string: {target}");
 
             _scopeChain.ApplyVariableScopeMarker();
-
-            TemplateEngine subEngine = new TemplateEngine(tgt)
-                .WithWhitespaceSuppression(_trimWhitespace)
-                .WithScopeChain(_scopeChain)
-                .WithMaxStack(_maxStack - 1) //decrement 1 unit for sub template...
-                .WithLambdaRepository(_lambdaRepo);
-
+            TemplateEngine subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
             string result = subEngine.Merge();
-
             _result.Append(result);
-
             _scopeChain.DereferenceVariableScope();
         }
         #endregion       
@@ -464,6 +438,9 @@ namespace HatTrick.Text.Templating
                  ? _template[_index++]
                  : (char)3; //eot (end of text)
 
+            if (c == '\n')
+                _lineNum += 1;
+
             return c;
         }
         #endregion
@@ -481,7 +458,7 @@ namespace HatTrick.Text.Templating
                     if (isSubBlock) //if parsing blocked template content, maintain the escape char
                         output.Append(c).Append(this.Read());
 
-                    else //throw away the first one(the escape char) and write the second one
+                    else //discard the first one(the escape char) and write the second one
                         output.Append(this.Read());
                     
                     continue;
@@ -500,7 +477,7 @@ namespace HatTrick.Text.Templating
                         if (isSubBlock) //if parsing blocked template content, maintain the escape char
                             output.Append(c).Append(this.Read());
 
-                        else //throw away the first one(the escape char) and write the second one
+                        else //discard the first one(the escape char) and write the second one
                             output.Append(this.Read());
 
                         continue;
@@ -582,33 +559,32 @@ namespace HatTrick.Text.Templating
             {
                 if (this.MunchContent(ref output, true))
                 {
-                    if (this.MunchTag(ref tagBuffer))
-                    {
-                        string tag = tagBuffer.ToString();
-                        TagType type = Tag.ResolveType(tag);
-
-                        if (type == beginType)
-                            offset += 1;
-
-                        else if (type == endType)
-                            offset -= 1;
-
-                        /************************************/
-
-                        if (offset > 0)
-                            output.Append(tag);
-
-                        else if (offset == 0)
-                        {
-                            //we found the end tag...
-                            endTag = new Tag(tag, _trimWhitespace);
-                            break;
-                        }
-
-                        tagBuffer.Clear();
-                    }
-                    else
+                    if (!this.MunchTag(ref tagBuffer))
                         throw new MergeException($"enountered un-closed tag...'{endType}' tag never found");
+
+                    string tag = tagBuffer.ToString();
+                    TagType type = Tag.ResolveType(tag);
+
+                    if (type == beginType)
+                        offset += 1;
+
+                    else if (type == endType)
+                        offset -= 1;
+
+                    /**********************************************/
+
+                    if (offset > 0)
+                    {
+                        output.Append(tag);
+                    }
+                    else if (offset == 0)
+                    {
+                        //we found the end tag...
+                        endTag = new Tag(tag, _trimWhitespace);
+                        break;
+                    }
+
+                    tagBuffer.Clear();
                 }
             }
         }
@@ -641,10 +617,10 @@ namespace HatTrick.Text.Templating
                     return c == ' ' || c == '\t';
                 };
 
-                //dispose of read until we encounter something other than <space> or <tab>
+                //dispose of read char until we encounter something other than <space> or <tab>
                 while (isWhitespace(this.Peek()))
                 {
-                    _ = this.Read(); //throw away the whitespace...
+                    _ = this.Read(); //discard whitespace...
                 }
 
                 //must account for the removal of the 1 newline for both unix and windows based systems...could be 1 or two chars needing disposed

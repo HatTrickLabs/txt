@@ -13,7 +13,7 @@ namespace HatTrick.Text.Templating
             object target = null;
             object localScope = scopeChain.Peek(scopeLinkDepth);
 
-            if (bindAs.Length == 1 && bindAs[0] == '$')//append bindto obj
+            if (bindAs.Length == 1 && bindAs[0] == '$')//bindto is localscope (this)
                 target = localScope;
 
             else if (bindAs[0] == '$' && bindAs[1] == '.')//reflect from bindto object
