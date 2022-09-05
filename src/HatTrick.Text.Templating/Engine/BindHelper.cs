@@ -77,8 +77,11 @@ namespace HatTrick.Text.Templating
 		#region resolve lamba expression bind target
 		private static object ResolveLambdaExpressionBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
-            Func<object> lambda = lambdaRepo.Resolve(bindAs, scopeChain);
+            Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain) 
+                ?? throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
+
             object target = lambda();
+
             return target;
         }
 		#endregion
@@ -184,7 +187,7 @@ namespace HatTrick.Text.Templating
         {
             Func<TypeCode, string, string> exceptionMsg = (tc, lit) =>
             {
-                return $"attempted to parse numeric literal: {lit} as: {tc} failed";
+                return $"Cannot parse numeric literal: {lit} as: {tc}";
             };
 
             TypeCode typeCode = BindHelper.GetNumericLiteralType(literal);
@@ -193,37 +196,37 @@ namespace HatTrick.Text.Templating
             {
                 case TypeCode.Decimal:
                     if (!decimal.TryParse(literal.TrimEnd('m', 'M'), out decimal dec))
-                        throw new MergeException(exceptionMsg(TypeCode.Decimal, literal));
+                        throw new FormatException(exceptionMsg(TypeCode.Decimal, literal));
 
                     value = dec;
                     break;
                 case TypeCode.Double:
                     if (!double.TryParse(literal.TrimEnd('d', 'D'), out double dbl))
-                        throw new MergeException(exceptionMsg(TypeCode.Double, literal));
+                        throw new FormatException(exceptionMsg(TypeCode.Double, literal));
 
                     value = dbl;
                     break;
                 case TypeCode.Int32:
                     if (!int.TryParse(literal.TrimEnd('i', 'I'), out int i))
-                        throw new MergeException(exceptionMsg(TypeCode.Int32, literal));
+                        throw new FormatException(exceptionMsg(TypeCode.Int32, literal));
 
                     value = i;
                     break;
                 case TypeCode.Int64:
                     if (!long.TryParse(literal.TrimEnd('l', 'L'), out long l))
-                        throw new MergeException(exceptionMsg(TypeCode.Int64, literal));
+                        throw new FormatException(exceptionMsg(TypeCode.Int64, literal));
 
                     value = l;
                     break;
                 case TypeCode.Single:
                     if (!Single.TryParse(literal.TrimEnd('f', 'F'), out Single s))
-                        throw new MergeException(exceptionMsg(TypeCode.Single, literal));
+                        throw new FormatException(exceptionMsg(TypeCode.Single, literal));
 
                     value = s;
                     break;
                 case TypeCode.Empty:
                 default:
-                    throw new MergeException($"attempted to parse numeric literal: {literal} type could not be determined. valid type postfix values: m,d,i,l,f");
+                    throw new ArgumentException($"Cannot parse numeric literal: {literal} ... type could not be determined. valid type suffix values: m,d,i,l,f", nameof(literal));
             }
 
             return value;

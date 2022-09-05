@@ -150,7 +150,7 @@ namespace HatTrick.Text.Test
         }
 
         [Theory]
-        [Templates("throw-on-no-item-exists-in.txt", typeof(NoItemExistsException))]
+        [Templates("throw-on-no-item-exists-in.txt", typeof(MergeException))]
         public void Does_rendering_throw_exception_when_object_does_not_contain_a_property_for_a_template_tag(string template, Type expected)
         {
             //given

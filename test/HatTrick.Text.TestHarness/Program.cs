@@ -20,48 +20,56 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
-            //SimpleTags();
-            //BracketEscaping();
-            //ComplexBindExpressions();
-            //BindObjectSupport();
-            //ThrowOnNoItemExists();
-            //TruthyFalsey();
-            //SimpleConditionalBlocks();
-            //NegatedConditionalBlocks();
-            //SimpleWhitespaceControl();
-            //GlobalWhitespaceControl();
-            //ComplexWhitespaceControl();
-            //SimpleIterationBlocks();
-            //ThrowOnNonIEnumerableIterationTarget();
-            //ThrowOnOverreachIntoScopeChain();
-            //WalkingTheScopeChain();
-            //SimplePartialBlocks();
-            //SimpleTemplateComments();
-            //CommentsWithBrackets();
-            //MultiLineTemplateComments();
-            //SimpleLambdaExpressions();
-            //LambdaNumericLiterals();
-            //LambdaCharLiterals();
-            //ComplexLambdaExpressions();
-            //LambdaExpressionDrivenBlocks();
-            //WithTagScopeChangeBlocks();
-            //CodeGen();
-            //DeclaringAndUsingVariables();
-            //LiteralVariableDeclarations();
-            MergeExceptionContext();
-            //ReAssigningVariableValues();
-            //ComplexReAssignmingVariableValues();
-            //SingleLinkScopeChainReference();
-            //TwoLinkScopeChainReference();
-            //ThreeLinkScopeChainReference();
-            //EightLinkScopeChainReference();
-            //PushEightPopFourLinksScopeChainReference();
-            //ScopeChainVariableReference();
-            //VariableScopeMarkerOnNullStack();
-            //VariableScopeMarkerOnNonNullStack();
-            //VariableReAssignment();
-            //OuterScopeVariableReAssignment();
-            //LargeScopeChainAndVariableStacks();
+            //string template = "...{?var it='hello=>world'}{:it}...";
+            //var ngin = new TemplateEngine(template);
+            //var data = new { FirstName = "x", LastName = "y" };
+            //var result = ngin.Merge(data);
+            //int xxx = 3;
+
+            SimpleTags();
+            BracketEscaping();
+            ComplexBindExpressions();
+            BindObjectSupport();
+            ThrowOnNoItemExists();
+            TruthyFalsey();
+            SimpleConditionalBlocks();
+            NegatedConditionalBlocks();
+            SimpleWhitespaceControl();
+            GlobalWhitespaceControl();
+            ComplexWhitespaceControl();
+            SimpleIterationBlocks();
+            ThrowOnNonIEnumerableIterationTarget();
+            ThrowOnOverreachIntoScopeChain();
+            WalkingTheScopeChain();
+            SimplePartialBlocks();
+            SimpleTemplateComments();
+            CommentsWithBrackets();
+            MultiLineTemplateComments();
+            SimpleLambdaExpressions();
+            LambdaNumericLiterals();
+            LambdaCharLiterals();
+            ComplexLambdaExpressions();
+            LambdaExpressionDrivenBlocks();
+            WithTagScopeChangeBlocks();
+            CodeGen();
+            DeclaringAndUsingVariables();
+            LiteralVariableDeclarations();
+
+            //MergeExceptionContext();
+
+            ReAssigningVariableValues();
+            ComplexReAssignmingVariableValues();
+            SingleLinkScopeChainReference();
+            TwoLinkScopeChainReference();
+            ThreeLinkScopeChainReference();
+            EightLinkScopeChainReference();
+            PushEightPopFourLinksScopeChainReference();
+            ScopeChainVariableReference();
+            VariableScopeMarkerOnNullStack();
+            VariableScopeMarkerOnNonNullStack();
+            VariableReAssignment();
+            OuterScopeVariableReAssignment();
+            LargeScopeChainAndVariableStacks();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -509,7 +517,7 @@ namespace HatTrick.Text.Templating.TestHarness
             }
             catch (ArgumentException ex)
             {
-                passed = ex.Message == "value must be < ScopeChain.Depth\r\nParameter name: back";
+                passed = ex.Message.StartsWith("Value must be less than ScopeChain.Depth");
             }
 
             RenderOutput(name, passed);
@@ -1138,7 +1146,10 @@ namespace HatTrick.Text.Templating.TestHarness
                                               + "sometimes by accident, sometimes on purpose(injected humour and the like).";
 
             Func<string> getSubContent2 = () => "default model text, {>()=>getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
-            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
+            Func<string> getSubContent3 = () =>
+            {
+                return "and a search for '{LoremIpsumx}'";
+            };
 
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.TrimWhitespace = false;
@@ -1419,9 +1430,9 @@ namespace HatTrick.Text.Templating.TestHarness
 
             result = string.Empty;
             try { var o = chain.AccessVariable("var9"); }
-            catch (MergeException mex) { result = mex.Message; }
-            expected = "Attempted access of unknown variable: var9";
-            passed = passed && (string.Compare(result, expected, false) == 0);
+            catch (ArgumentException ex) { result = ex.Message; }
+            expected = "Attempted access of un-declared variable.";
+            passed = passed && result.StartsWith(expected);
 
             RenderOutput(nameof(ScopeChainVariableReference), passed);
         }

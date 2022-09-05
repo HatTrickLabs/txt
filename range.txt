@@ -1,0 +1,31 @@
+public class Person
+{
+	public Address[] Addresses { get; set; }
+}
+
+public class Address
+{
+	public string Line1 { get; set; }
+	public string Line2 { get; set; }
+	public string City { get; set; }
+	public string State { get; se; }
+	public string PostalCode { get; set; }
+	public AddressType Type { get; set; }
+}
+
+public enum AddressTypeCode : int
+{
+	Unknown = 0,
+	Home = 1,
+	Work = 2,
+	SecondaryHome = 3
+}
+
+
+//context-less range  inclusive of lower bound (excludes upper bound)
+{#range :i in 0..10}{:i}{/range}
+//0123456789
+
+{#range :i in 0..$.Addresses.Length}
+
+{/range}

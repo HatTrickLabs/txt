@@ -34,7 +34,7 @@ namespace HatTrick.Text.Templating
 		public object Pop()
 		{
 			if (_links == null)
-				throw new MergeException("cannot 'Pop' scope link, the chain is empty.");
+				throw new InvalidOperationException("Cannot 'Pop' scope link, the chain is empty.");
 
 			object item = _links.Item;
 			_links = _links.Parent;
@@ -47,7 +47,7 @@ namespace HatTrick.Text.Templating
 		public object Peek()
 		{
 			if (_links == null)
-				throw new MergeException("cannot 'Peek' scope link, the chain is empty.");
+				throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty.");
 
 			return _links.Item;
 		}
@@ -55,13 +55,13 @@ namespace HatTrick.Text.Templating
 		public object Peek(int back)
 		{
 			if (back >= _depth)
-				throw new ArgumentException("value must be < ScopeChain.Depth", nameof(back));
+				throw new ArgumentException("Value must be less than ScopeChain.Depth.", nameof(back));
 
 			if (back < 0)
-				throw new ArgumentException("value cannot be a negative number", nameof(back));
+				throw new ArgumentException("Value cannot be a negative number", nameof(back));
 
 			if (_links == null)
-				throw new MergeException("cannot 'Peek' scope link, the chain is empty");
+				throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty");
 
 			return _links.Peek(back);
 		}
@@ -71,7 +71,7 @@ namespace HatTrick.Text.Templating
 		public void SetVariable(string name, object value)
 		{
 			if (_depth == 0)
-				throw new MergeException("Invalid request - Scope chain has 0 links.");
+				throw new InvalidOperationException("Invalid request - Scope chain has 0 links.");
 
 			_links.SetVariable(name, value);
 		}
@@ -81,7 +81,7 @@ namespace HatTrick.Text.Templating
 		public void UpdateVariable(string name, object value)
 		{
 			if (_depth == 0)
-				throw new MergeException("Invalid request - Scope chain has 0 links");
+				throw new InvalidOperationException("Invalid request - Scope chain has 0 links");
 
 			_links.UpdateVariable(name, value);
 		}
@@ -91,7 +91,7 @@ namespace HatTrick.Text.Templating
 		public object AccessVariable(string name)
 		{
 			if (_depth == 0)
-				throw new MergeException($"Invalid request - Scope chain has 0 links");
+				throw new InvalidOperationException($"Invalid request - Scope chain has 0 links");
 
 			return _links.AccessVariable(name);
 		}

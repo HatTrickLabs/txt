@@ -47,8 +47,9 @@ namespace HatTrick.Text.Templating
 		{
 			if (name == null)
 				throw new ArgumentNullException(nameof(name));
+
 			if (name == string.Empty)
-				throw new ArgumentException("arg must contain a value", nameof(name));
+				throw new ArgumentException("Arg must contain a value", nameof(name));
 
 			if (_stack == null)
 			{
@@ -68,8 +69,9 @@ namespace HatTrick.Text.Templating
 		{
 			if (name == null)
 				throw new ArgumentNullException(nameof(name));
+
 			if (name == string.Empty)
-				throw new ArgumentException("arg must contain a value", nameof(name));
+				throw new ArgumentException("Arg must contain a value", nameof(name));
 
 			return _stack == null ? false : _stack.TryUpdate(name, value);
 		}

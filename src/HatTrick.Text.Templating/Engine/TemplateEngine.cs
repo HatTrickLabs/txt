@@ -8,6 +8,7 @@ namespace HatTrick.Text.Templating
         #region internals
         private int _index;
         private int _lineNum;
+        private int _columnNum;
         private string _template;
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
@@ -46,7 +47,7 @@ namespace HatTrick.Text.Templating
             _template = template ?? throw new ArgumentNullException(nameof(template));
             _scopeChain = scopeChain;
             _lambdaRepo = lambdaRepo;
-            _maxStack = maxStack > 0 ? maxStack : throw new MergeException($"Stack depth overflow...stack depth cannot exceed {_maxStack}"); ;
+            _maxStack = maxStack > 0 ? maxStack : throw new InvalidOperationException($"Stack depth overflow...stack depth cannot exceed {_maxStack}"); ;
             _trimWhitespace = trimWhiteSpace;
             _index = 0;
             _tag = new StringBuilder(60);
@@ -69,6 +70,7 @@ namespace HatTrick.Text.Templating
             _tag.Clear();
             _index = 0;
             _lineNum = 1;
+            _columnNum = 1;
 
             try
             {
@@ -77,13 +79,13 @@ namespace HatTrick.Text.Templating
             }
             catch (MergeException mex)
             {
-                mex.Context.Insert(0, this.ResolveExceptionContext());
+                mex.Context.Push(this.ResolveExceptionContext());
                 throw;
             }
             catch (Exception ex)
             {
-                var mex = new MergeException("Exception encountered, see inner exception for details.", ex);
-                mex.Context.Add(this.ResolveExceptionContext());
+                var mex = new MergeException("An error occurrred while merging the template.  See the inner exception for details.", ex);
+                mex.Context.Push(this.ResolveExceptionContext());
                 throw mex;
             }
         }
@@ -102,7 +104,7 @@ namespace HatTrick.Text.Templating
                         this.HandleTag(new Tag(_tag.ToString(), _trimWhitespace));
 
                     else
-                        throw new MergeException("enountered un-closed tag; '}' never found");
+                        throw new InvalidOperationException("Enountered un-closed tag; '}' (close tag) never found.");
                 }
                 _tag.Clear();
             }
@@ -112,12 +114,8 @@ namespace HatTrick.Text.Templating
         #region resolve exception context
         private MergeExceptionContext ResolveExceptionContext()
         {
-            int start = _index > 30 ? _index - 30 : 0;
-            int end = _template.Length > _index + 30 ? _index + 30 : _template.Length;
-
-            string surroundings = new string(_template.ToCharArray(start, (end - start)));
-
-            return new MergeExceptionContext(_lineNum, surroundings);
+            string lastTag = (_tag.Length > 0) ? _tag.ToString() : null;
+            return new MergeExceptionContext(_lineNum, _columnNum, _index, lastTag);
         }
         #endregion
 
@@ -268,7 +266,7 @@ namespace HatTrick.Text.Templating
             {
                 //if target is not enumerable, should not be bound to an #each tag
                 if (!(target is System.Collections.IEnumerable))
-                    throw new MergeException($"#each tag bound to non-enumerable object: {bindAs}");
+                    throw new InvalidOperationException($"#each tag bound to non-enumerable object: {bindAs}");
 
                 //cast to enumerable
                 var items = (System.Collections.IEnumerable)target;
@@ -398,7 +396,7 @@ namespace HatTrick.Text.Templating
             string bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            string template = (target as string) ?? throw new MergeException($"Sub template tag: {tag} reflected value is not typeof string: {target}");
+            string template = (target as string) ?? throw new InvalidOperationException($"Sub template tag: {tag} reflected value is not typeof string: {target}");
 
             _scopeChain.ApplyVariableScopeMarker();
             TemplateEngine subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
@@ -439,9 +437,30 @@ namespace HatTrick.Text.Templating
                  : (char)3; //eot (end of text)
 
             if (c == '\n')
+            {
                 _lineNum += 1;
+                _columnNum = 0;
+            }
+            else if (c != '\r')
+            {
+                _columnNum += 1;
+            }
 
             return c;
+        }
+        #endregion
+
+        #region step back
+        private void StepBack()
+        {
+            if (_index == 0)
+                throw new InvalidOperationException("Cannot step backward, current template index is at 0.");
+
+            _index -= 1;
+            char c = _template[_index];
+
+            if (c != '\n' && c != '\r')
+                _columnNum -= 1;
         }
         #endregion
 
@@ -466,7 +485,7 @@ namespace HatTrick.Text.Templating
 
                 if (c == '{') //if open bracket that is not escaped, we found a tag
                 {
-                    _index -= 1;//back the index up 1 spot to basically pop the open tag char '{' back into the read queue
+                    this.StepBack();//back the index up 1 spot to basically pop the open tag char '{' back into the read queue
                     return true;
                 }
 
@@ -484,7 +503,7 @@ namespace HatTrick.Text.Templating
                     }
                     else
                     {
-                        throw new MergeException("encountered un-escaped close tag '}' within template content");
+                        throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
                     }
                 }
 
@@ -560,7 +579,7 @@ namespace HatTrick.Text.Templating
                 if (this.MunchContent(ref output, true))
                 {
                     if (!this.MunchTag(ref tagBuffer))
-                        throw new MergeException($"enountered un-closed tag...'{endType}' tag never found");
+                        throw new InvalidOperationException($"Enountered un-closed tag...'{endType}' tag never found");
 
                     string tag = tagBuffer.ToString();
                     TagType type = Tag.ResolveType(tag);

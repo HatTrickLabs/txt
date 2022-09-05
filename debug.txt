@@ -1,0 +1,6 @@
+{#debug ""}
+{#debug $.FirstName}
+{#debug 1}
+{#debug :idx}
+
+System.Diagnostics.Debug.WriteLine(debug-value);

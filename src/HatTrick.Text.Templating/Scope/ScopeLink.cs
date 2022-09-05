@@ -47,7 +47,7 @@ namespace HatTrick.Text.Templating
 			if (_children != null)
 				_children.UpdateVariable(name, value);
 			else
-				throw new MergeException($"attempted variable re-assignment for undeclared variable: {name}");
+				throw new ArgumentException($"Attempted re-assignment of un-declared variable.", nameof(name));
 		}
 		#endregion
 
@@ -60,7 +60,7 @@ namespace HatTrick.Text.Templating
 			if (_children != null)
 				return _children.AccessVariable(name);
 
-			throw new MergeException($"Attempted access of unknown variable: {name}");
+			throw new ArgumentException($"Attempted access of un-declared variable.", nameof(name));
 		}
 		#endregion
 
@@ -82,7 +82,7 @@ namespace HatTrick.Text.Templating
 		public object Peek(int back)
 		{
 			if (back < 0)
-				throw new ArgumentException("value cannot be a negative number", nameof(back));
+				throw new ArgumentException("Value cannot be a negative number", nameof(back));
 
 			if (back == 0)
 				return _item;

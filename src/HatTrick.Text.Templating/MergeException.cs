@@ -10,11 +10,11 @@ namespace HatTrick.Text.Templating
     public class MergeException : Exception
     {
         #region internals
-        private List<MergeExceptionContext> _context;
+        private Stack<MergeExceptionContext> _context;
         #endregion
 
         #region interface
-        public List<MergeExceptionContext> Context => _context;
+        public Stack<MergeExceptionContext> Context => _context;
         #endregion
 
         #region constructors
@@ -24,7 +24,7 @@ namespace HatTrick.Text.Templating
 
         public MergeException(string msg, Exception innerException) : base(msg, innerException)
         {
-            _context = new List<MergeExceptionContext>();
+            _context = new Stack<MergeExceptionContext>();
         }
         #endregion
     }
@@ -34,20 +34,36 @@ namespace HatTrick.Text.Templating
     public class MergeExceptionContext
     {
         #region internals
-        private int _lineNum;
-        private string _surroundings;
+        private int _line;
+        private int _column;
+        private int _index;
+        private string _lastTag;
         #endregion
 
         #region interface
-        public int LineNumber => _lineNum;
-        public string Surroundings => _surroundings;
+        public int Line => _line;
+
+        public int Column => _column;
+
+        public int CharIndex => _index;
+
+        public string LastTag => _lastTag;
         #endregion
 
         #region constructors
-        public MergeExceptionContext(int lineNumber, string surroundings)
+        public MergeExceptionContext(int line, int column, int index, string lastTag)
         {
-            _lineNum = lineNumber;
-            _surroundings = surroundings ?? throw new ArgumentNullException(nameof(surroundings));
+            _line = line;
+            _column = column;
+            _index = index;
+            _lastTag = lastTag ?? string.Empty;
+        }
+        #endregion
+
+        #region to string
+        public override string ToString()
+        {
+            return $"Ln: {_line}  Col: {_column}  Char Index: {_index}  LastTag: {_lastTag}";
         }
         #endregion
     }

@@ -86,16 +86,19 @@ namespace HatTrick.Text.Templating
 
             if (type == TagType.If)
                 return TagType.EndIf;
+
             else if (type == TagType.Each)
                 return TagType.EndEach;
+
             else if (type == TagType.With)
                 return TagType.EndWith;
+
             else
                 throw new ArgumentException($"Encountered un-known TagType: {type}", nameof(type));
         }
         #endregion
 
-        #region is begin block tag
+        #region is block tag
         public static bool IsBlockTag(TagType type, out BlockTagOrientation? orientation)
         {
             orientation = null;
@@ -310,7 +313,8 @@ namespace HatTrick.Text.Templating
                     maxLen = 5;
                     break;
                 case TagType.Comment:
-                    throw new MergeException($"encountered un-expected TagType: {type} ... Comment tags cannot be bound");
+                default:
+                    throw new InvalidOperationException($"Encountered un-expected TagType: {type} ... tag type cannot be bound");
             }
 
             if (type == TagType.Simple) //simple tags cannot have trim markers...

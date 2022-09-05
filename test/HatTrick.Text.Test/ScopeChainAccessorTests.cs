@@ -161,7 +161,7 @@ namespace HatTrick.Text.Test
             Exception ex = Assert.Throws<ArgumentException>(() => chain.Peek(2));
 
             //then
-            Assert.Equal("value must be < ScopeChain.Depth (Parameter 'back')", ex.Message);
+            Assert.StartsWith("Value must be less than ScopeChain.Depth", ex.Message);
         }
 
         [Fact]
