@@ -20,12 +20,6 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
-            //string template = "...{?var it='hello=>world'}{:it}...";
-            //var ngin = new TemplateEngine(template);
-            //var data = new { FirstName = "x", LastName = "y" };
-            //var result = ngin.Merge(data);
-            //int xxx = 3;
-
             SimpleTags();
             BracketEscaping();
             ComplexBindExpressions();
@@ -55,7 +49,7 @@ namespace HatTrick.Text.Templating.TestHarness
             DeclaringAndUsingVariables();
             LiteralVariableDeclarations();
 
-            //MergeExceptionContext();
+            MergeExceptionContext();
 
             ReAssigningVariableValues();
             ComplexReAssignmingVariableValues();
@@ -1142,14 +1136,12 @@ namespace HatTrick.Text.Templating.TestHarness
             Func<string> getSubContent1 = () => "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.\r\n"
                                               + "The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here,\r\n"
                                               + "content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their\r\n"
-                                              + "{>()=>getSubContent2}\r\n"
+                                              + "{>() => getSubContent2}\r\n"
                                               + "sometimes by accident, sometimes on purpose(injected humour and the like).";
 
-            Func<string> getSubContent2 = () => "default model text, {>()=>getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
-            Func<string> getSubContent3 = () =>
-            {
-                return "and a search for '{LoremIpsumx}'";
-            };
+            Func<string> getSubContent2 = () => "default model text, {>() => getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
+
+            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
 
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.TrimWhitespace = false;
@@ -1157,11 +1149,21 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
             ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
 
-            string result = ngin.Merge(data);
+            string result = null;
+            MergeExceptionContextStack ctxStack = null;
+            try
+            {
+                result = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                ctxStack = mex.Context;
+            }
 
-            string expected = ResolveTemplateOutput(name);
-
-            bool passed = string.Compare(result, expected, false) == 0;
+            bool passed = ctxStack.Pop().ToString() == "Ln: 8  Col: 24  Char Index: 503  LastTag: {>()=>getSubContent1}"
+                       && ctxStack.Pop().ToString() == "Ln: 4  Col: 24  Char Index: 415  LastTag: {>()=>getSubContent2}"
+                       && ctxStack.Pop().ToString() == "Ln: 1  Col: 44  Char Index: 43  LastTag: {>()=>getSubContent3}"
+                       && ctxStack.Pop().ToString() == "Ln: 1  Col: 32  Char Index: 31  LastTag: {LoremIpsumx}";
 
             RenderOutput(name, passed);
         }

@@ -1,0 +1,40 @@
+Template Engine
+---------------
+- Max stack depth exceeded
+- Un-closed tag at this depth
+- Each tag bound to non-enumerable object
+- Provided value for partial tag is NOT a string
+- Un-escaped '}' (close tag)
+- un-closed tag in sub block of type {/ tag } type
+
+
+BindHelper
+----------
+- Error resolving func
+- Error Parsing numeric literal
+  - invalid suffix value
+  - numeric literal format error
+
+LambdaRepository
+----------------
+- Func already registered
+- Error resolving func
+- Invalid # of parameters on func invocation
+- Lambda func expression format error
+- Invalid arg provided, value not convertable to expected type
+
+Scope Chain, Scope Link, Variable Bag
+-------------------------------------
+- Cannot pop scope link, chain is empty
+- Attempt to re-assign undeclared variable
+
+
+Tag
+---
+- Un-expected tag type ... cannot bind
+
+
+***************************************************************************
+MergeException always thrown from root Merge... 
+
+LambdaRepository 509

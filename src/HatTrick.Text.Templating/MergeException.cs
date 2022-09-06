@@ -10,11 +10,11 @@ namespace HatTrick.Text.Templating
     public class MergeException : Exception
     {
         #region internals
-        private Stack<MergeExceptionContext> _context;
+        private MergeExceptionContextStack _context;
         #endregion
 
         #region interface
-        public Stack<MergeExceptionContext> Context => _context;
+        public MergeExceptionContextStack Context => _context;
         #endregion
 
         #region constructors
@@ -24,7 +24,7 @@ namespace HatTrick.Text.Templating
 
         public MergeException(string msg, Exception innerException) : base(msg, innerException)
         {
-            _context = new Stack<MergeExceptionContext>();
+            _context = new MergeExceptionContextStack();
         }
         #endregion
     }
@@ -64,6 +64,21 @@ namespace HatTrick.Text.Templating
         public override string ToString()
         {
             return $"Ln: {_line}  Col: {_column}  Char Index: {_index}  LastTag: {_lastTag}";
+        }
+        #endregion
+    }
+    #endregion
+
+    #region merge exception context stack
+    public class MergeExceptionContextStack : Stack<MergeExceptionContext>
+    {
+        #region constructors
+        public MergeExceptionContextStack() : base()
+        {
+        }
+
+        public MergeExceptionContextStack(int capacity) : base(capacity)
+        {
         }
         #endregion
     }

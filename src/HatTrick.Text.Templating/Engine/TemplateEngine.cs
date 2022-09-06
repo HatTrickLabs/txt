@@ -439,7 +439,7 @@ namespace HatTrick.Text.Templating
             if (c == '\n')
             {
                 _lineNum += 1;
-                _columnNum = 0;
+                _columnNum = 1;
             }
             else if (c != '\r')
             {
@@ -485,7 +485,7 @@ namespace HatTrick.Text.Templating
 
                 if (c == '{') //if open bracket that is not escaped, we found a tag
                 {
-                    this.StepBack();//back the index up 1 spot to basically pop the open tag char '{' back into the read queue
+                    this.StepBack();//back the index up 1 spot to basically pop the open tag char '{' back on to the read queue
                     return true;
                 }
 

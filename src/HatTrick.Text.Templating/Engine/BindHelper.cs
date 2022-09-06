@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using HatTrick.Reflection;
 
 namespace HatTrick.Text.Templating

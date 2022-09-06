@@ -150,8 +150,8 @@ namespace HatTrick.Text.Test
         }
 
         [Theory]
-        [Templates("throw-on-no-item-exists-in.txt", typeof(MergeException))]
-        public void Does_rendering_throw_exception_when_object_does_not_contain_a_property_for_a_template_tag(string template, Type expected)
+        [Templates("throw-on-no-item-exists-in.txt", typeof(MergeException), typeof(NoItemExistsException))]
+        public void Does_rendering_throw_exception_when_object_does_not_contain_a_property_for_a_template_tag(string template, Type expected, Type expectedInner)
         {
             //given
             var data = new
@@ -165,7 +165,9 @@ namespace HatTrick.Text.Test
             void merge() => new TemplateEngine(template).Merge(data);
 
             //then
-            Assert.Throws(expected, merge);
+            //TODO: improve test, bad practice on multi assert.  
+            var ex = Assert.Throws(expected, merge);
+            Assert.IsType(expectedInner, ex.InnerException);
         }
 
         [Theory]
