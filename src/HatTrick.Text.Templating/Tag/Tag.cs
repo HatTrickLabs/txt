@@ -25,7 +25,7 @@ namespace HatTrick.Text.Templating
         {
             _tag = tag;
             _tagLength = tag.Length;
-            _type = TagType.Simple;
+            _type = TagType.Unknown;
             _markers = TrimMark.None;
             _forceTrim = forceTrim;
             this.Init();
@@ -72,6 +72,9 @@ namespace HatTrick.Text.Templating
 
             else if (Tag.IsCommentTag(tag))             //comment tag
                 return TagType.Comment;
+
+            else if (Tag.IsDebugTag(tag))               //debug tag
+                return TagType.Debug;
 
             else                                        //simple tag
                 return TagType.Simple;
@@ -269,8 +272,22 @@ namespace HatTrick.Text.Templating
 		}
         #endregion
 
-		#region bind as
-		public string BindAs()
+        #region is debug tag
+        public static bool IsDebugTag(string tag)
+        {
+            return tag.Length > 7
+                && (tag[0] == '{')
+                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '#')
+                && (tag[2] == '#' || tag[2] == 'd')
+                && (tag[3] == 'd' || tag[3] == 'e')
+                && (tag[4] == 'e' || tag[4] == 'b')
+                && (tag[5] == 'b' || tag[5] == 'u')
+                && (tag[6] == 'u' || tag[6] == 'g');
+        }
+        #endregion
+
+        #region bind as
+        public string BindAs()
         {
             string bindAs = null;
             TagType type = _type;
@@ -311,6 +328,10 @@ namespace HatTrick.Text.Templating
                 case TagType.Partial:
                     start = left ? 3 : 2;
                     maxLen = 5;
+                    break;
+                case TagType.Debug:
+                    start = left ? 8 : 7;
+                    maxLen = 10;
                     break;
                 case TagType.Comment:
                 default:

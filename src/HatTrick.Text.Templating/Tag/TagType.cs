@@ -5,6 +5,7 @@ namespace HatTrick.Text.Templating
     #region tag type enum
     public enum TagType
     {
+        Unknown,
         Simple,
         If,
         EndIf,
@@ -16,6 +17,7 @@ namespace HatTrick.Text.Templating
         Comment,
         VarDeclare,
         VarAssign,
+        Debug
     }
     #endregion
 

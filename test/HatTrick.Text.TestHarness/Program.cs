@@ -21,6 +21,15 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
+            System.Diagnostics.Debug.WriteLine(null);
+
+            Func<int[], long> sum = (int[] nums) => nums.Sum();
+            string template = "...{#debug ($) => sum }...";
+            var ngin = new TemplateEngine(template);
+            ngin.LambdaRepo.Register(nameof(sum), sum);
+            ngin.Merge(new int[] { 1, 2, 3, 4, 5, 6, 7 }); //28
+
+            return;
             SimpleTags();
             BracketEscaping();
             ComplexBindExpressions();

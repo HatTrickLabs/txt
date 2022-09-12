@@ -2,5 +2,9 @@
 {#debug $.FirstName}
 {#debug 1}
 {#debug :idx}
+{#debug ''}
+{#debug () => getSomeValue }
+
+{#debug ('', '', 1) => doSomeWork }
 
 System.Diagnostics.Debug.WriteLine(debug-value);

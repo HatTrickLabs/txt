@@ -153,6 +153,9 @@ namespace HatTrick.Text.Templating
                 case TagType.Comment:
                     this.HandleCommentTag(tag);
                     break;
+                case TagType.Debug:
+                    this.HandleDebugTag(tag);
+                    break;
             }
         }
         #endregion
@@ -414,7 +417,30 @@ namespace HatTrick.Text.Templating
 
             this.EnsureRightTrim(tag);
         }
-        #endregion       
+        #endregion
+
+        #region handle debug tag
+        private void HandleDebugTag(Tag tag)
+        {
+            this.EnsureLeftTrim(_result, tag);
+
+            string bindAs = tag.BindAs();
+
+            object output = null;
+            if (BindHelper.IsDoubleQuoted(bindAs) || BindHelper.IsSingleQuoted(bindAs))
+                output = bindAs.Substring(1, bindAs.Length - 2);
+
+            else if (BindHelper.IsNumericLiteral(bindAs))
+                output = bindAs;
+
+            else
+                output = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+
+            System.Diagnostics.Debug.WriteLine(output);
+
+            this.EnsureRightTrim(tag);
+        }
+        #endregion
 
         #region peek
         public char Peek()
@@ -586,7 +612,7 @@ namespace HatTrick.Text.Templating
         {
             char c;
             char eot = (char)3; //(end of text)
-            int offset = 1; // need to ensure we bypass any nested tags
+            int offset = 1; //need to ensure we bypass any nested tags
             var tagBuffer = new StringBuilder(60);
             TagType endType = Tag.ResolveEndTagType(beginType);
             endTag = null;
