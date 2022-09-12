@@ -884,5 +884,73 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(expected, actual);
         }
+
+        [Theory]
+        [Templates("merge-exception-context-in.txt", "merge-exception-context-out.txt")]
+        public void Does_Merge_Exception_Context_Stack_Correctly_Map_Template_Stack_Error_Location(string template, string expected)
+        {
+            //given
+            Func<string> getSubContent1 = () => "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.\r\n"
+                                  + "The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here,\r\n"
+                                  + "content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their\r\n"
+                                  + "{>() => getSubContent2}\r\n"
+                                  + "sometimes by accident, sometimes on purpose(injected humour and the like).";
+
+            Func<string> getSubContent2 = () => "default model text, {>() => getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
+
+            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
+
+            var data = new { First = "Charlie", Last = "Brown", LoremIpsum = "lorem ipsum" };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+            ngin.LambdaRepo.Register(nameof(getSubContent1), getSubContent1);
+            ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
+            ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
+
+            //when
+            MergeExceptionContextStack context = null;
+            try
+            {
+                string output = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                context = mex.Context;
+            }
+
+            //then
+            Assert.Equal(context.ToString(), expected);
+        }
+
+        [Theory]
+        [Templates("merge-exception-context-iteration-loop-in.txt", "merge-exception-context-iteration-loop-out.txt")]
+        public void Does_Merge_Exception_Context_Stack_Correctly_Map_Template_Stack_Error_Location_On_Iteration_Sub_Block(string template, string expected)
+        {
+            //given
+            Func<string, string> toLower = (value) => value.ToLower();
+
+            var data = new
+            {
+                First = "Charlie", Last = "Brown",
+                FavoriteColors = new[] { "Blue", "Green", "Yellow", "Orange", "Red", null }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            //when
+            MergeExceptionContextStack context = null;
+            try
+            {
+                string output = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                context = mex.Context;
+            }
+
+            //then
+            Assert.Equal(context.ToString(), expected);
+        }
     }
 }

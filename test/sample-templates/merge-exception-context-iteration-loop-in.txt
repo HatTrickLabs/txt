@@ -1,0 +1,10 @@
+Hello {First} {Last},
+
+I have a list of your favorite colors:
+{#each FavoriteColors}
+ - { ($) => toLower }
+{/each}  
+
+Sincerely,
+
+Somebody

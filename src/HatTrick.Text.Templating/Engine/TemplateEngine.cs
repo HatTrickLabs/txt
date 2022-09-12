@@ -5,6 +5,10 @@ namespace HatTrick.Text.Templating
 {
     public class TemplateEngine
     {
+        #region constants
+        public const int MaxStack = 64;
+        #endregion
+
         #region internals
         private int _index;
         private int _lineNum;
@@ -14,7 +18,7 @@ namespace HatTrick.Text.Templating
         private LambdaRepository _lambdaRepo;
         private StringBuilder _result;
         private StringBuilder _tag;
-        private int _maxStack = 32;
+        private int _maxStack;
         private bool _trimWhitespace;
         #endregion
 
@@ -36,6 +40,7 @@ namespace HatTrick.Text.Templating
         public TemplateEngine(string template)
         {
             _template = template ?? throw new ArgumentNullException(nameof(template));
+            _maxStack = TemplateEngine.MaxStack;
             _index = 0;
             _tag = new StringBuilder(60);
             _result = new StringBuilder((int)(template.Length * 1.3));
@@ -100,7 +105,7 @@ namespace HatTrick.Text.Templating
             {
                 if (this.MunchContent(ref _result, false))
                 {
-                    if (this.MunchTag(ref _tag))
+                    if (this.MunchTag(ref _tag, false))
                         this.HandleTag(new Tag(_tag.ToString(), _trimWhitespace));
 
                     else
@@ -183,7 +188,6 @@ namespace HatTrick.Text.Templating
             this.MunchBlock(ref block, TagType.If, out endTag);
 
             this.EnsureLeftTrim(block, endTag);
-            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
@@ -204,6 +208,8 @@ namespace HatTrick.Text.Templating
                 _result.Append(result);
                 _scopeChain.DereferenceVariableScope();
             }
+
+            this.EnsureRightTrim(endTag);
         }
         #endregion
 
@@ -256,7 +262,6 @@ namespace HatTrick.Text.Templating
             Tag endTag;
             this.MunchBlock(ref block, TagType.Each, out endTag);
             this.EnsureLeftTrim(block, endTag);
-            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
 
@@ -283,6 +288,8 @@ namespace HatTrick.Text.Templating
                     _scopeChain.DereferenceVariableScope();
                 }
             }
+
+            this.EnsureRightTrim(endTag);
         }
         #endregion
 
@@ -298,7 +305,6 @@ namespace HatTrick.Text.Templating
             Tag endTag;
             this.MunchBlock(ref block, TagType.With, out endTag);
             this.EnsureLeftTrim(block, endTag);
-            this.EnsureRightTrim(endTag);
 
             string bindAs = tag.BindAs();
 
@@ -313,6 +319,8 @@ namespace HatTrick.Text.Templating
             _result.Append(itemContent);
 
             _scopeChain.DereferenceVariableScope();
+
+            this.EnsureRightTrim(endTag);
         }
         #endregion
 
@@ -320,7 +328,6 @@ namespace HatTrick.Text.Templating
         private void HandleVariableTag(Tag tag, bool isDeclaration)
         {
             this.EnsureLeftTrim(_result, tag);
-            this.EnsureRightTrim(tag);
 
             string expression = tag.BindAs(); //example:  :name=$.Name, or with no assign example:  :name
 
@@ -370,11 +377,13 @@ namespace HatTrick.Text.Templating
 
             else
                 _scopeChain.UpdateVariable(name, value);
-        }
-		#endregion
 
-		#region handle variable declare tag
-		private void HandleVariableDeclareTag(Tag tag)
+            this.EnsureRightTrim(tag);
+        }
+        #endregion
+
+        #region handle variable declare tag
+        private void HandleVariableDeclareTag(Tag tag)
         {
             this.HandleVariableTag(tag, true);
         }
@@ -391,7 +400,6 @@ namespace HatTrick.Text.Templating
 		private void HandlePartialTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
-            this.EnsureRightTrim(tag);
 
             string bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
@@ -403,6 +411,8 @@ namespace HatTrick.Text.Templating
             string result = subEngine.Merge();
             _result.Append(result);
             _scopeChain.DereferenceVariableScope();
+
+            this.EnsureRightTrim(tag);
         }
         #endregion       
 
@@ -459,8 +469,15 @@ namespace HatTrick.Text.Templating
             _index -= 1;
             char c = _template[_index];
 
-            if (c != '\n' && c != '\r')
-                _columnNum -= 1;
+            if (c != '\n')
+            {
+                if (c != '\r')
+                    _columnNum -= 1;
+            }
+            else
+            {
+                _lineNum -= 1;
+            }
         }
         #endregion
 
@@ -512,7 +529,7 @@ namespace HatTrick.Text.Templating
             return false;
         }
 
-        private bool MunchTag(ref StringBuilder tag)
+        private bool MunchTag(ref StringBuilder tag, bool preserveWhiteSpace)
         {
             bool inSingleQuote = false;
             bool inDoubleQuote = false;
@@ -554,7 +571,7 @@ namespace HatTrick.Text.Templating
                 bool inQuotes = (inDoubleQuote || inSingleQuote);
                 bool isWhiteSpace = c == space || c == tab || c == nl || c == cr;
 
-                if (!isWhiteSpace || inQuotes)
+                if (!isWhiteSpace || preserveWhiteSpace || inQuotes)
                     tag.Append(c);
 
                 if (c == '}' && (!inQuotes || isCommentTag(tag)) && !(offset > 0 && isCommentTag(tag)))
@@ -578,7 +595,7 @@ namespace HatTrick.Text.Templating
             {
                 if (this.MunchContent(ref output, true))
                 {
-                    if (!this.MunchTag(ref tagBuffer))
+                    if (!this.MunchTag(ref tagBuffer, true))
                         throw new InvalidOperationException($"Enountered un-closed tag...'{endType}' tag never found");
 
                     string tag = tagBuffer.ToString();

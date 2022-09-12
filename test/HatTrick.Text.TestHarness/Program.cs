@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.IO;
 using HatTrick.Text;
 using System.Linq;
+using System.Globalization;
 
 namespace HatTrick.Text.Templating.TestHarness
 {
@@ -50,6 +51,7 @@ namespace HatTrick.Text.Templating.TestHarness
             LiteralVariableDeclarations();
 
             MergeExceptionContext();
+            MergeExceptionContextOnIterationLoop();
 
             ReAssigningVariableValues();
             ComplexReAssignmingVariableValues();
@@ -1119,7 +1121,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region merge exception context
+        #region merge exception context x
         static void MergeExceptionContext()
         {
             string name = "merge-exception-context";
@@ -1149,21 +1151,57 @@ namespace HatTrick.Text.Templating.TestHarness
             ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
             ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
 
-            string result = null;
             MergeExceptionContextStack ctxStack = null;
             try
             {
-                result = ngin.Merge(data);
+                _ = ngin.Merge(data);
             }
             catch (MergeException mex)
             {
                 ctxStack = mex.Context;
             }
 
-            bool passed = ctxStack.Pop().ToString() == "Ln: 8  Col: 24  Char Index: 503  LastTag: {>()=>getSubContent1}"
-                       && ctxStack.Pop().ToString() == "Ln: 4  Col: 24  Char Index: 415  LastTag: {>()=>getSubContent2}"
-                       && ctxStack.Pop().ToString() == "Ln: 1  Col: 44  Char Index: 43  LastTag: {>()=>getSubContent3}"
-                       && ctxStack.Pop().ToString() == "Ln: 1  Col: 32  Char Index: 31  LastTag: {LoremIpsumx}";
+            string actual = ctxStack.ToString();
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = actual == expected;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region merge exception context on iteration loop x
+        static void MergeExceptionContextOnIterationLoop()
+        {
+            string name = "merge-exception-context-iteration-loop";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, string> toLower = (value) => value.ToLower();
+
+            var data = new
+            {
+                First = "Charlie",
+                Last = "Brown",
+                FavoriteColors = new[] { "Blue", "Green", "Yellow", "Orange", "Red", null }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+
+            MergeExceptionContextStack ctxStack = null;
+            try
+            {
+                _ = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                ctxStack = mex.Context;
+            }
+
+            string actual = ctxStack.ToString();
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = actual == expected;
 
             RenderOutput(name, passed);
         }
