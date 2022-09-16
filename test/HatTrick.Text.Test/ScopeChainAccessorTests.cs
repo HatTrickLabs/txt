@@ -1,9 +1,7 @@
-﻿using HatTrick.Reflection;
+﻿using System;
+using HatTrick.Reflection;
 using HatTrick.Text.Templating;
 using HatTrick.Text.Test.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace HatTrick.Text.Test

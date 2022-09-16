@@ -24,6 +24,7 @@ namespace HatTrick.Text.Templating
     #region block tag type
     public enum BlockTagOrientation
     {
+        Unknown,
         Begin,
         End
     }

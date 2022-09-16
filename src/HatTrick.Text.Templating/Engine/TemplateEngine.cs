@@ -105,11 +105,8 @@ namespace HatTrick.Text.Templating
             {
                 if (this.MunchContent(ref _result, false))
                 {
-                    if (this.MunchTag(ref _tag, false))
-                        this.HandleTag(new Tag(_tag.ToString(), _trimWhitespace));
-
-                    else
-                        throw new InvalidOperationException("Enountered un-closed tag; '}' (close tag) never found.");
+                    this.MunchTag(ref _tag, false);
+                    this.HandleTag(new Tag(_tag, _trimWhitespace));
                 }
                 _tag.Clear();
             }
@@ -188,7 +185,7 @@ namespace HatTrick.Text.Templating
 
             //roll and emit until proper #/if tag found (allowing nested #if #/if tags
             Tag endTag;
-            this.MunchBlock(ref block, TagType.If, out endTag);
+            this.MunchBlockContent(ref block, TagType.If, out endTag);
 
             this.EnsureLeftTrim(block, endTag);
 
@@ -197,7 +194,7 @@ namespace HatTrick.Text.Templating
 
             object target = BindHelper.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _lambdaRepo, _scopeChain);
 
-            bool render = this.IsTrue(target);
+            bool render = BindHelper.IsTrue(target);
 
             if (negate)
             { render = !render; }
@@ -216,43 +213,6 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region is true
-        public bool IsTrue(object val)
-        {
-            bool? bit;
-            int? i;
-            uint? ui;
-            long? l;
-            ulong? ul;
-            double? dbl;
-            float? flt;
-            decimal? dec;
-            short? sht;
-            ushort? usht;
-            char? c;
-            string s;
-            System.Collections.IEnumerable col;
-
-            bool isFalse = (val == null)
-                       || (bit = val as bool?) != null && bit == false
-                       || (i = val as int?) != null && i == 0
-                       || (dbl = val as double?) != null && dbl == 0
-                       || (l = val as long?) != null && l == 0
-                       || (flt = val as float?) != null && flt == 0
-                       || (dec = val as decimal?) != null && dec == 0
-                       || (c = val as char?) != null && c == '\0'
-                       || val == DBNull.Value 
-                       || (ui = val as uint?) != null && ui == 0
-                       || (ul = val as ulong?) != null && ul == 0
-                       || (sht = val as short?) != null && sht == 0
-                       || (usht = val as ushort?) != null && usht == 0
-                       || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: this will catch string.Empty
-                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0');
-
-            return !isFalse;
-        }
-        #endregion
-
         #region handle each tag
         private void HandleEachTag(Tag tag)
         {
@@ -263,7 +223,7 @@ namespace HatTrick.Text.Templating
 
             //roll and emit until proper #/each tag found (allowing nested #each #/each tags
             Tag endTag;
-            this.MunchBlock(ref block, TagType.Each, out endTag);
+            this.MunchBlockContent(ref block, TagType.Each, out endTag);
             this.EnsureLeftTrim(block, endTag);
 
             string bindAs = tag.BindAs();
@@ -306,7 +266,7 @@ namespace HatTrick.Text.Templating
 
             //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
             Tag endTag;
-            this.MunchBlock(ref block, TagType.With, out endTag);
+            this.MunchBlockContent(ref block, TagType.With, out endTag);
             this.EnsureLeftTrim(block, endTag);
 
             string bindAs = tag.BindAs();
@@ -360,7 +320,7 @@ namespace HatTrick.Text.Templating
             if (assignment)
             {
                 if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
-                    value = bindAs.Substring(1, (bindAs.Length - 2));   //string literal
+                    value = BindHelper.UnQuote(bindAs);                 //string literal
 
                 else if (BindHelper.IsNumericLiteral(bindAs))
                     value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
@@ -428,7 +388,7 @@ namespace HatTrick.Text.Templating
 
             object output = null;
             if (BindHelper.IsDoubleQuoted(bindAs) || BindHelper.IsSingleQuoted(bindAs))
-                output = bindAs.Substring(1, bindAs.Length - 2);
+                output = BindHelper.Strip('\\', BindHelper.UnQuote(bindAs));
 
             else if (BindHelper.IsNumericLiteral(bindAs))
                 output = bindAs;
@@ -436,7 +396,7 @@ namespace HatTrick.Text.Templating
             else
                 output = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            System.Diagnostics.Debug.WriteLine(output);
+            System.Diagnostics.Trace.WriteLine(output);
 
             this.EnsureRightTrim(tag);
         }
@@ -451,9 +411,7 @@ namespace HatTrick.Text.Templating
 
             return c;
         }
-        #endregion
 
-        #region peek at
         public char Peek(int forward)
         {
             int at = _index + forward;
@@ -463,25 +421,42 @@ namespace HatTrick.Text.Templating
 
             return c;
         }
+
+        private char Peek(Predicate<char> till)
+        {
+            char c;
+            int i = _index;
+            while (i < _template.Length)
+            {
+                c = _template[i++];
+                if (till(c))
+                    return c;
+            }
+
+            return (char)3; //eot (end of text)
+        }
         #endregion
 
         #region read
         private char Read()
         {
+            char eot = (char)3;
             char c = (_template.Length > _index)
                  ? _template[_index++]
-                 : (char)3; //eot (end of text)
+                 : eot; //eot (end of text)
 
-            if (c == '\n')
+            if (c != eot)
             {
-                _lineNum += 1;
-                _columnNum = 1;
+                if (c == '\n')
+                {
+                    _lineNum += 1;
+                    _columnNum = 1;
+                }
+                else if (c != '\r')
+                {
+                    _columnNum += 1;
+                }
             }
-            else if (c != '\r')
-            {
-                _columnNum += 1;
-            }
-
             return c;
         }
         #endregion
@@ -508,26 +483,25 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region munch
-        private bool MunchContent(ref StringBuilder output, bool isSubBlock)
+        private bool MunchContent(ref StringBuilder output, bool verbatim)
         {
             char c;
             char eot = (char)3; //eot (end of text)
             while ((c = this.Read()) != eot)
             {
-                if (c == '{' && this.Peek() == '{')
+                if (c == '{')
                 {
-                    
-                    if (isSubBlock) //if parsing blocked template content, maintain the escape char
-                        output.Append(c).Append(this.Read());
+                    if (this.Peek() == '{')
+                    {
+                        if (verbatim) //if parsing blocked template content, maintain the escape char
+                            output.Append(c).Append(this.Read());
 
-                    else //discard the first one(the escape char) and write the second one
-                        output.Append(this.Read());
-                    
-                    continue;
-                }
+                        else //discard the first one(the escape char) and write the second one
+                            output.Append(this.Read());
 
-                if (c == '{') //if open bracket that is not escaped, we found a tag
-                {
+                        continue;
+                    }
+                    //if the open bracket is not escaped, we found a tag
                     this.StepBack();//back the index up 1 spot to basically pop the open tag char '{' back on to the read queue
                     return true;
                 }
@@ -536,7 +510,7 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.Peek() == '}')
                     {
-                        if (isSubBlock) //if parsing blocked template content, maintain the escape char
+                        if (verbatim) //if parsing blocked template content, maintain the escape char
                             output.Append(c).Append(this.Read());
 
                         else //discard the first one(the escape char) and write the second one
@@ -555,7 +529,37 @@ namespace HatTrick.Text.Templating
             return false;
         }
 
-        private bool MunchTag(ref StringBuilder tag, bool preserveWhiteSpace)
+        private void MunchTag(ref StringBuilder tag, bool verbatim)
+        {
+            Predicate<char> isTagDesignator = (c) => !(c == '{' || c == '-' || c == '+' || c == ' ' || c == '\t' || c == '\n' || c == '\r');
+            char designator = this.Peek(isTagDesignator);
+            switch (designator)
+            {
+                case '#':
+                    this.MunchBlockTag(ref tag, verbatim);
+                    break;
+                case '/':
+                    this.MunchEndBlockTag(ref tag, verbatim);
+                    break;
+                case '?':
+                    this.MunchVariableTag(ref tag, verbatim);
+                    break;
+                case '>':
+                    this.MunchParialTag(ref tag, verbatim);
+                    break;
+                case '@':
+                    this.MunchDebugTag(ref tag, verbatim);
+                    break;
+                case '!':
+                    this.MunchCommentTag(ref tag);
+                    break;
+                default:
+                    this.MunchSimpleTag(ref tag, verbatim);
+                    break;
+            }
+        }
+
+        private void MunchTagDefault(ref StringBuilder tag, bool verbatim, out bool closed)
         {
             bool inSingleQuote = false;
             bool inDoubleQuote = false;
@@ -570,21 +574,9 @@ namespace HatTrick.Text.Templating
             char c = '\0';
             char eot = (char)3; //(end of text)
 
-            int offset = 0;
-            bool isComment = false;
-            Func<StringBuilder, bool> isCommentTag = (StringBuilder sb) =>
-            {
-                return isComment ? isComment : (isComment = Tag.IsCommentTag(sb.ToString()));
-            };
-
+            bool inQuotes = false;
             while ((c = this.Read()) != eot)
             {
-                if (c == '{')
-                    offset += 1;
-
-                else if (c == '}')
-                    offset -= 1;
-
                 //if double quote & not escaped & not already inside single quotes...
                 if (c == doubleQuote && previous != escape && !inSingleQuote)
                     inDoubleQuote = !inDoubleQuote;
@@ -594,26 +586,113 @@ namespace HatTrick.Text.Templating
                     inSingleQuote = !inSingleQuote;
 
                 //only append white space if inside double or single quotes...
-                bool inQuotes = (inDoubleQuote || inSingleQuote);
+                inQuotes = (inDoubleQuote || inSingleQuote);
                 bool isWhiteSpace = c == space || c == tab || c == nl || c == cr;
 
-                if (!isWhiteSpace || preserveWhiteSpace || inQuotes)
+                if (!isWhiteSpace || verbatim || inQuotes)
                     tag.Append(c);
 
-                if (c == '}' && (!inQuotes || isCommentTag(tag)) && !(offset > 0 && isCommentTag(tag)))
-                    return true;
+                if (c == '}' && !inQuotes)
+                {
+                    closed = true;
+                    return;
+                }
 
                 previous = c;
             }
-            return false;
+            closed = false;
         }
 
-        public void MunchBlock(ref StringBuilder output, TagType beginType, out Tag endTag)
+        private void MunchBlockTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+                throw new InvalidOperationException($"Enountered un-closed {Tag.ResolveType(tag)} tag...'}}' never found.");
+        }
+
+        private void MunchEndBlockTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+            {
+                TagType type = TagType.Unknown;
+                if (_tag.Length > 0)
+                {
+                    TagType t = Tag.ResolveType(_tag);
+                    if (Tag.IsBlockTag(t, out BlockTagOrientation orientation) && orientation == BlockTagOrientation.Begin)
+                    {
+                        type = Tag.ResolveEndTagType(t);
+                    }
+                }
+                string desc = type == TagType.Unknown ? "end block" : type.ToString();
+                throw new InvalidOperationException($"Enountered un-closed {desc} tag...'}}' never found.");
+            }
+        }
+
+        private void MunchVariableTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+            {
+                TagType t = Tag.ResolveType(tag);
+                string desc = t == TagType.VarAssign || t == TagType.VarDeclare ? t.ToString() : "Variable";
+                throw new InvalidOperationException($"Enountered un-closed {desc}...'}}' never found.");
+            }
+        }
+
+        private void MunchParialTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+                throw new InvalidOperationException($"Enountered un-closed {TagType.Partial} tag...'}}' never found.");
+        }
+
+        private void MunchDebugTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+                throw new InvalidOperationException($"Enountered un-closed {TagType.Debug} tag...'}}' never found.");
+        }
+
+        private void MunchCommentTag(ref StringBuilder tag)
+        {
+            char escape = '\\';
+            char previous = '\0';
+            char c = '\0';
+            char eot = (char)3; //(end of text)
+
+            int offset = 0;
+            while ((c = this.Read()) != eot)
+            {
+                offset += (c == '{') ? 1 : (c == '}' && previous != escape) ? -1 : 0;
+
+                tag.Append(c);
+
+                if (c == '}')
+                {
+                    if (offset == 0 && previous != escape)
+                        return;
+                }
+
+                previous = c;
+            }
+
+            throw new InvalidOperationException($"Enountered un-closed {TagType.Comment} tag...'}}' never found.");
+        }
+
+        private void MunchSimpleTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+                throw new InvalidOperationException($"Enountered un-closed {TagType.Simple} tag...'}}' never found.");
+        }
+
+        private void MunchBlockContent(ref StringBuilder output, TagType beginType, out Tag endTag)
         {
             char c;
             char eot = (char)3; //(end of text)
             int offset = 1; //need to ensure we bypass any nested tags
-            var tagBuffer = new StringBuilder(60);
+            var tag = new StringBuilder(60);
             TagType endType = Tag.ResolveEndTagType(beginType);
             endTag = null;
 
@@ -621,10 +700,8 @@ namespace HatTrick.Text.Templating
             {
                 if (this.MunchContent(ref output, true))
                 {
-                    if (!this.MunchTag(ref tagBuffer, true))
-                        throw new InvalidOperationException($"Enountered un-closed tag...'{endType}' tag never found");
+                    this.MunchTag(ref tag, true);
 
-                    string tag = tagBuffer.ToString();
                     TagType type = Tag.ResolveType(tag);
 
                     if (type == beginType)
@@ -646,7 +723,7 @@ namespace HatTrick.Text.Templating
                         break;
                     }
 
-                    tagBuffer.Clear();
+                    tag.Clear();
                 }
             }
         }

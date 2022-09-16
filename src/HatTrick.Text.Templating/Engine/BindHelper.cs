@@ -124,6 +124,44 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
+        #region un quote
+        public static string UnQuote(string value)
+        {
+            if (value == null)
+                return null;
+
+            if (value == string.Empty)
+                return value;
+
+            return value.Substring(1, value.Length - 2);
+        }
+        #endregion
+
+        #region strip
+        public static string Strip(char character, string from)
+        {
+            if (from == null)
+                return null;
+
+            if (from == string.Empty)
+                return from;
+
+            char c;
+            char[] result = new char[from.Length];
+            int at = 0;
+            for (int i = 0; i < from.Length; i++)
+            {
+                c = from[i];
+                if (c == character)
+                    continue;
+
+                result[at++] = c;
+            }
+
+            return new string(result, 0, at);
+        }
+        #endregion
+
         #region is numeric literal
         public static bool IsNumericLiteral(string value)
         {
@@ -229,6 +267,43 @@ namespace HatTrick.Text.Templating
 
             return value;
         }
-		#endregion
-	}
+        #endregion
+
+        #region is true
+        public static bool IsTrue(object val)
+        {
+            bool? bit;
+            int? i;
+            uint? ui;
+            long? l;
+            ulong? ul;
+            double? dbl;
+            float? flt;
+            decimal? dec;
+            short? sht;
+            ushort? usht;
+            char? c;
+            string s;
+            System.Collections.IEnumerable col;
+
+            bool isFalse = (val == null)
+                       || (bit = val as bool?) != null && bit == false
+                       || (i = val as int?) != null && i == 0
+                       || (dbl = val as double?) != null && dbl == 0
+                       || (l = val as long?) != null && l == 0
+                       || (flt = val as float?) != null && flt == 0
+                       || (dec = val as decimal?) != null && dec == 0
+                       || (c = val as char?) != null && c == '\0'
+                       || val == DBNull.Value
+                       || (ui = val as uint?) != null && ui == 0
+                       || (ul = val as ulong?) != null && ul == 0
+                       || (sht = val as short?) != null && sht == 0
+                       || (usht = val as ushort?) != null && usht == 0
+                       || (col = val as System.Collections.IEnumerable) != null && !col.GetEnumerator().MoveNext() //NOTE: this will catch string.Empty
+                       || (s = val as string) != null && (s.Length == 1 && s[0] == '\0');
+
+            return !isFalse;
+        }
+        #endregion
+    }
 }

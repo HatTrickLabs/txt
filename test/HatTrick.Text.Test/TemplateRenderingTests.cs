@@ -572,26 +572,26 @@ namespace HatTrick.Text.Test
             ngin.LambdaRepo.Register(nameof(ResetIndex), ResetIndex);
 
             bool[] data = new bool[20];
-            data[0] = ngin.IsTrue(null);           //false;
-            data[1] = ngin.IsTrue(1.00F);          //true;
-            data[2] = ngin.IsTrue(1U);             //true;
-            data[3] = ngin.IsTrue(0.00F);          //false;
-            data[4] = ngin.IsTrue(0);              //false;
-            data[5] = ngin.IsTrue(string.Empty);   //false;
-            data[6] = ngin.IsTrue(new object[0]);  //false;
-            data[7] = ngin.IsTrue(new object[1]);  //true;
-            data[8] = ngin.IsTrue(true);           //true;
-            data[9] = ngin.IsTrue(false);          //false;
-            data[10] = ngin.IsTrue('\0');          //false;
-            data[11] = ngin.IsTrue('t');           //true;
-            data[12] = ngin.IsTrue('f');           //true;
-            data[13] = ngin.IsTrue((decimal)1.111);//true;
-            data[14] = ngin.IsTrue((decimal)0.000);//false;
-            data[15] = ngin.IsTrue("\0");          //false;
-            data[16] = ngin.IsTrue("f");           //true;
-            data[17] = ngin.IsTrue("t");           //true;
-            data[18] = ngin.IsTrue("false");       //true;
-            data[19] = ngin.IsTrue("hello");       //true;
+            data[0] = BindHelper.IsTrue(null);           //false;
+            data[1] = BindHelper.IsTrue(1.00F);          //true;
+            data[2] = BindHelper.IsTrue(1U);             //true;
+            data[3] = BindHelper.IsTrue(0.00F);          //false;
+            data[4] = BindHelper.IsTrue(0);              //false;
+            data[5] = BindHelper.IsTrue(string.Empty);   //false;
+            data[6] = BindHelper.IsTrue(new object[0]);  //false;
+            data[7] = BindHelper.IsTrue(new object[1]);  //true;
+            data[8] = BindHelper.IsTrue(true);           //true;
+            data[9] = BindHelper.IsTrue(false);          //false;
+            data[10] = BindHelper.IsTrue('\0');          //false;
+            data[11] = BindHelper.IsTrue('t');           //true;
+            data[12] = BindHelper.IsTrue('f');           //true;
+            data[13] = BindHelper.IsTrue((decimal)1.111);//true;
+            data[14] = BindHelper.IsTrue((decimal)0.000);//false;
+            data[15] = BindHelper.IsTrue("\0");          //false;
+            data[16] = BindHelper.IsTrue("f");           //true;
+            data[17] = BindHelper.IsTrue("t");           //true;
+            data[18] = BindHelper.IsTrue("false");       //true;
+            data[19] = BindHelper.IsTrue("hello");       //true;
 
             //when
             string actual = ngin.Merge(data);

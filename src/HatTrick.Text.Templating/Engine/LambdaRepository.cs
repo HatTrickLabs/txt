@@ -53,11 +53,11 @@ namespace HatTrick.Text.Templating
             ParameterInfo[] pInfos = mi.GetParameters();
 
             string[] argVals = new string[pInfos.Length];
-            this.ParseLambdaArgs(arguments, ref argVals);
+            int count = this.ParseLambdaArgs(arguments, ref argVals);
 
-            if (pInfos.Length != argVals.Length)
+            if (pInfos.Length != count)
             {
-                string msg = $"Attempted function invocation with invalid number of parameters...lambda name: {name} expected: {pInfos.Length} provided: {argVals.Length}";
+                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {name} expected aruments: {pInfos.Length} provided argument: {count}";
                 throw new InvalidOperationException(msg);
             }
 
@@ -93,13 +93,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region parse lambda args
-        private void ParseLambdaArgs(string argsExpr, ref string[] args)
+        private int ParseLambdaArgs(string argsExpr, ref string[] args)
         {
-            if (args.Length == 0)
-                return;
-
             char c;
-            int at = -1;
+            int at = 0;
             char singleQuote    = '\'';
             char doubleQuote    = '"';
             char escape         = '\\';
@@ -115,10 +112,12 @@ namespace HatTrick.Text.Templating
                 c = argsExpr[i];
                 if (c == openParen || c == closeParen)
                     continue;
+
                 else if (c == doubleQuote)
                 {
                     if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
+
                     else if (!singleQuoted)
                         doubleQuoted = !doubleQuoted;
                 }
@@ -126,14 +125,17 @@ namespace HatTrick.Text.Templating
                 {
                     if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
+
                     else if (!doubleQuoted)
                         singleQuoted = !singleQuoted;
                 }
                 else if (c == comma)
                 {
                     if (!(singleQuoted || doubleQuoted))
-                    {
-                        args[++at] = sb.ToString();
+                    {   
+                        if (at < args.Length)
+                            args[at++] = sb.ToString();
+
                         sb.Clear();
                         continue;
                     }
@@ -141,7 +143,13 @@ namespace HatTrick.Text.Templating
                 sb.Append(c);
             }
 
-            args[++at] = sb.ToString(); //final...
+            if (sb.Length > 0)
+            {
+                if (at < args.Length)
+                    args[at++] = sb.ToString(); //final...
+            }
+
+            return at;
         }
         #endregion
 
@@ -503,7 +511,7 @@ namespace HatTrick.Text.Templating
             if (Type.GetTypeCode(value.GetType()) != typeCode)
             {
                 string msg = "Attempted function invocation with invalid argument type..."
-                           + $"lambda name: {lambdaName}...expected argument of type: '{typeCode}'...."
+                           + $"Func name: {lambdaName}...expected argument of type: '{typeCode}'...."
                            + $"argument value provided: {arg}...at parameter position: {index}";
 
                 throw new ArgumentException(msg);
@@ -515,7 +523,7 @@ namespace HatTrick.Text.Templating
         private string FormatExceptionMessageBuilder(string lambdaName, string arg, int index, TypeCode expectedType)
         {
             string msg = "Attempted function invocation with invalid parameter..."
-                           + $"lambda name: {lambdaName}  expected: a properly formated {expectedType} literal. "
+                           + $"Func name: {lambdaName}  expected: a properly formated {expectedType} literal. "
                            + $"value provided: {arg} at parameter position: {index}";
 
             return msg;

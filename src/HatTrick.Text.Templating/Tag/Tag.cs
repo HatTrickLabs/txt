@@ -10,7 +10,7 @@ namespace HatTrick.Text.Templating
     {
         #region internals
         private TagType _type;
-        private string _tag;
+        private StringBuilder _tag;
         private int _tagLength;
         private TrimMark _markers;
         private bool _forceTrim;
@@ -21,7 +21,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region constructors
-        public Tag(string tag, bool forceTrim)
+        public Tag(StringBuilder tag, bool forceTrim)
         {
             _tag = tag;
             _tagLength = tag.Length;
@@ -41,7 +41,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region resolve type
-        public static TagType ResolveType(string tag)
+        public static TagType ResolveType(StringBuilder tag)
         {
             if (Tag.IsIfTag(tag))                       //# if logic tag (boolean switch)
                 return TagType.If;
@@ -84,7 +84,7 @@ namespace HatTrick.Text.Templating
         #region resolve end tag type
         public static TagType ResolveEndTagType(TagType type)
         {
-            if (!Tag.IsBlockTag(type, out BlockTagOrientation? orientation) || orientation.Value != BlockTagOrientation.Begin)
+            if (!Tag.IsBlockTag(type, out BlockTagOrientation orientation) || orientation != BlockTagOrientation.Begin)
                 throw new ArgumentException($"Arg is not a valid begin block tag type: {type}... valid block begin tags are (If, Each, With)", nameof(type));
 
             if (type == TagType.If)
@@ -102,9 +102,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is block tag
-        public static bool IsBlockTag(TagType type, out BlockTagOrientation? orientation)
+        public static bool IsBlockTag(TagType type, out BlockTagOrientation orientation)
         {
-            orientation = null;
+            orientation = BlockTagOrientation.Unknown;
 
             bool isBlock = type == TagType.If 
                         || type == TagType.Each 
@@ -146,7 +146,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is if tag
-        public static bool IsIfTag(string tag)
+        public static bool IsIfTag(StringBuilder tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -157,7 +157,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end if tag
-        public static bool IsEndIfTag(string tag)
+        public static bool IsEndIfTag(StringBuilder tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -168,7 +168,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is each tag
-        public static bool IsEachTag(string tag)
+        public static bool IsEachTag(StringBuilder tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -181,7 +181,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end each tag
-        public static bool IsEndEachTag(string tag)
+        public static bool IsEndEachTag(StringBuilder tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -194,7 +194,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is with tag
-        public static bool IsWithTag(string tag)
+        public static bool IsWithTag(StringBuilder tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -207,7 +207,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end with tag
-        public static bool IsEndWithTag(string tag)
+        public static bool IsEndWithTag(StringBuilder tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -220,9 +220,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is comment tag
-        public static bool IsCommentTag(string tag)
+        public static bool IsCommentTag(StringBuilder tag)
         {
-            return tag[0] == '{'
+            return tag.Length > 2 
+                && tag[0] == '{'
                 && 
                 (
                     tag[1] == '!' 
@@ -235,7 +236,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is partial tag
-        public static bool IsPartialTag(string tag)
+        public static bool IsPartialTag(StringBuilder tag)
         {
             return tag[0] == '{'
                 && 
@@ -250,7 +251,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is variable declare tag
-        private static bool IsVariableDeclareTag(string tag)
+        private static bool IsVariableDeclareTag(StringBuilder tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -263,7 +264,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is variable declare tag
-        private static bool IsVariableAssignTag(string tag)
+        private static bool IsVariableAssignTag(StringBuilder tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -273,23 +274,24 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is debug tag
-        public static bool IsDebugTag(string tag)
+        public static bool IsDebugTag(StringBuilder tag)
         {
-            return tag.Length > 7
-                && (tag[0] == '{')
-                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '#')
-                && (tag[2] == '#' || tag[2] == 'd')
-                && (tag[3] == 'd' || tag[3] == 'e')
-                && (tag[4] == 'e' || tag[4] == 'b')
-                && (tag[5] == 'b' || tag[5] == 'u')
-                && (tag[6] == 'u' || tag[6] == 'g');
+            return tag.Length > 2
+                && tag[0] == '{'
+                &&
+                (
+                    tag[1] == '@'
+                    ||
+                    (tag[1] == '-' && tag[2] == '!')
+                    ||
+                    (tag[1] == '+' && tag[2] == '!')
+                );
         }
         #endregion
 
         #region bind as
         public string BindAs()
         {
-            string bindAs = null;
             TagType type = _type;
 
             int start = 0;
@@ -330,8 +332,8 @@ namespace HatTrick.Text.Templating
                     maxLen = 5;
                     break;
                 case TagType.Debug:
-                    start = left ? 8 : 7;
-                    maxLen = 10;
+                    start = left ? 3 : 2;
+                    maxLen = 5;
                     break;
                 case TagType.Comment:
                 default:
@@ -350,10 +352,14 @@ namespace HatTrick.Text.Templating
             else
                 len = _tagLength - (maxLen - 2);
 
+            if (len > 0)
+            {
+                char[] tag = new char[len];
+                _tag.CopyTo(start, tag, 0, len);
+                return new string(tag);
+            }
 
-			bindAs = (len > 0) ? new string(_tag.ToCharArray(), start, len) : null;
-
-            return bindAs;
+            return null;
         }
         #endregion
 
@@ -382,7 +388,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region to string
-        public override string ToString() => _tag;
+        public override string ToString() => _tag.ToString();
         #endregion
     }
 }
