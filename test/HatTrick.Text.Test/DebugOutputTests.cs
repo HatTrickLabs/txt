@@ -127,5 +127,24 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal("The King's \"Castle\"", sb.ToString());
         }
+
+        [Fact]
+        public void Does_debug_trace_output_propogate_value_provided_via_template_variable()
+        {
+            //given
+            var listen = new DebugTraceListener();
+            System.Diagnostics.Trace.Listeners.Add(listen);
+
+            StringBuilder sb = new StringBuilder();
+            listen.Push += (msg) => sb.Append(msg);
+
+            var ngin = new TemplateEngine("{?var:x}{?:x='Jerrod'}{@ :x}");
+
+            //when
+            ngin.Merge(null);
+
+            //then
+            Assert.Equal("Jerrod", sb.ToString());
+        }
     }
 }

@@ -294,9 +294,7 @@ namespace HatTrick.Text.Templating
         {
             TagType type = _type;
 
-            int start = 0;
-            int len = 0;
-            int maxLen = 0;
+            int start, len, maxLen;
 
             bool left = this.HasTrimMark(TrimMark.DiscardLeft) || this.HasTrimMark(TrimMark.RetainLeft);
             bool right = this.HasTrimMark(TrimMark.DiscardRight) || this.HasTrimMark(TrimMark.RetainRight);

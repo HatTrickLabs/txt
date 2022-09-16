@@ -616,7 +616,7 @@ namespace HatTrick.Text.Templating
             if (!closed)
             {
                 TagType type = TagType.Unknown;
-                if (_tag.Length > 0)
+                if (_tag.Length > 0) //last parsed tag, SHOULD be an open block tag...
                 {
                     TagType t = Tag.ResolveType(_tag);
                     if (Tag.IsBlockTag(t, out BlockTagOrientation orientation) && orientation == BlockTagOrientation.Begin)

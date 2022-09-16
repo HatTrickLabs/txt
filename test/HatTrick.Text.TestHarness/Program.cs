@@ -21,17 +21,6 @@ namespace HatTrick.Text.Templating.TestHarness
             _sw = new System.Diagnostics.Stopwatch();
             _sw.Start();
 
-            Person p = new Person() { Name = new Name() { First = "Jerrod" } };
-
-            string nm = p.GetType().ToString();
-
-            Func<string, string, string> roundTrip = (val1, val2) => $"{ val1} | {val2}";
-           
-            string template = "{@ \"The King's \\\"Castle\\\"\"}";
-            var ngin = new TemplateEngine(template);
-            ngin.LambdaRepo.Register(nameof(roundTrip), roundTrip);
-            string result = ngin.Merge(new { Name = "Jerrod" });
-
             SimpleTags();
             BracketEscaping();
             ComplexBindExpressions();
@@ -49,9 +38,7 @@ namespace HatTrick.Text.Templating.TestHarness
             WalkingTheScopeChain();
             SimplePartialBlocks();
             SimpleTemplateComments();
-
             CommentsWithBrackets();
-
             MultiLineTemplateComments();
             SimpleLambdaExpressions();
             LambdaNumericLiterals();
@@ -62,10 +49,8 @@ namespace HatTrick.Text.Templating.TestHarness
             CodeGen();
             DeclaringAndUsingVariables();
             LiteralVariableDeclarations();
-
             MergeExceptionContext();
             MergeExceptionContextOnIterationLoop();
-
             ReAssigningVariableValues();
             ComplexReAssignmingVariableValues();
             SingleLinkScopeChainReference();
@@ -79,11 +64,9 @@ namespace HatTrick.Text.Templating.TestHarness
             VariableReAssignment();
             OuterScopeVariableReAssignment();
             LargeScopeChainAndVariableStacks();
-
             DebugOutputOne();
             DebugOutputTwo();
             DebugOutputThree();
-
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
