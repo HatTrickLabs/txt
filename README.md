@@ -31,7 +31,12 @@ Hello John Doe, this is just a test.
 
 ##### Notes:
 - The engine uses single brackets for tags.
-- If a template contains any non-tag brackets, they can be escaped by doubling them up. {{ abc }} will render { abc } into the output.
+- If a template contains any non-tag brackets, they can be escaped by doubling them up. {{abc}} will render {abc} into the output.
+- The $ character is reserved by the template engine.
+- $ can be used to reference local scope within any tag anywhere within a template.
+- ```Hello {$.FirstName}``` and ```Hello {FirstName}``` are functionally equivalent templates.
+- Usage of $ is optional and only needed when iterating value types via an ```{#each}``` loop described further down.
+- Unquoted Whitespace within tags is ALWAYS insignificant.
 
 
 ### Simple Tags with Compound Expressions
@@ -148,12 +153,15 @@ We see you currently hold  the following certs:
 ##### Notes:
 - An each block bound to a *falsy* value (null or empty) will result in no block content rendered.
 - *{#each}* tags work on any object that implements the *System.Collections.IEnumerable* interface.
-- The $ reserved varible always references the root value of local scope (*this*).  The value of $ changes every time scope changes
-  and can be used within any template tag..
-- the ..\ operator can be used to walk the scope chain.
+- The $ reserved varible always references the root value of local scope (*this*).  
+- The value of $ changes every time scope changes and can be used within any template tag.
+- The ..\ operator can be used to walk backwards through scope chain.
+- Whithin the *{#each}* block from the example in this section, a tag can reference the outer each block scope
+  by walking back one level *{..\Employeee}*.  Declaring variables is a better way of accessing outer scope and 
+  is described in detail within the next section.
 
 
-### Variable Declaration, Assignment/Reassignment and Usage
+### Variable Declaration, Assignment/Re-assignment and Usage
 The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
@@ -209,7 +217,7 @@ Fields:
 	* Numeric Literal: *{?var:someNum = 3.0d}*
 	* Bound Expression: *{?var:someVal = $.SomeProperty}*
 	* Lambda: *{?var:someVal = () => GetSomeValue}*
-	* Boolean: *{var:isValid = true}*
+	* Boolean: *{?var:isValid = true}*
 - String literal values can be wrapped in double quotes or single quotes.
 - Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
 	* d - double
@@ -240,7 +248,7 @@ var attendees = new
 ```
 <ul>
 	{#each People}	
-	{>RsvpFormat}
+	{>$.RsvpFormat}
 	{/each}
 </ul>
 ```
