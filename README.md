@@ -1,4 +1,4 @@
-### Basic Usage:
+## Basic Usage:
 ```c#
 var fullName = new { FirstName = "John", LastName = "Doe"};
 
@@ -12,7 +12,8 @@ string result = ngin.Merge(fullName);
 ```
 
 
-### Simple Tags
+
+## Simple Tags
 In its simplest form, the template engine can be used to inject data into text templates via *{tag}* replacement.
 
 ##### Data:
@@ -39,7 +40,8 @@ Hello John Doe, this is just a test.
 - Unquoted Whitespace within tags is ALWAYS insignificant.
 
 
-### Simple Tags with Compound Expressions
+
+## Simple Tags with Compound Expressions
 Simple *{tag}s* can contain compound bind expressions to reference data from nested object structures.
 
 ##### Data:
@@ -69,7 +71,8 @@ Hello John, we see you currently live in Dallas, TX.
 ```
 
 
-### Conditional Blocks:
+
+## Conditional Blocks:
 The *{#if}* tag allows for conditionally rendering template blocks based on evaluation of *truthy/falsy* conditions.
 
 ##### Data:
@@ -111,7 +114,8 @@ We see you are currently employed at Hat Trick Labs.
 - Missing values are not considered *Falsey*.  An expression that attempts to bind a non-existant property|field|dictionary entry from the bound object will throw an exception.
 
 
-### Iteration Blocks
+
+## Iteration Blocks
 The *{#each}* tag allows for conditional rendering based on collection types.  *{#each}* tags iterate over items in the provided
 collection and render the contained text block.  The contained text block operates within the scope context of the iterated item.
 
@@ -161,7 +165,8 @@ We see you currently hold  the following certs:
   is described in detail within the next section.
 
 
-### Variable Declaration, Assignment/Re-assignment and Usage
+
+## Variable Declaration, Assignment/Re-assignment and Usage
 The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
@@ -227,7 +232,8 @@ Fields:
 	* l - long
 
 
-### Partial Template Blocks
+
+## Partial Template Blocks
 The partial template *{>tag}* is used to inject sub template content.  
 
 ##### Data:
@@ -263,7 +269,8 @@ var attendees = new
 ```
 
 
-### With Blocks
+
+## With Blocks
 The *{#with}* template tag allows for a shift of local scope to a different position in the bound object.
 
 ##### Data:
@@ -313,7 +320,8 @@ var account = new
 - Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {Line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
 
 
-### Template Comments
+
+## Template Comments
 The template engine supports *{! comment }* tags.  
 
 ##### Data:
@@ -342,7 +350,8 @@ var person = new
 - if the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket *}* is the end of the comment tag if there is no matching open bracket *{* within the comment.
 
 
-### Whitespace Control
+
+## Whitespace Control
 By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}, {?}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
@@ -428,7 +437,9 @@ We see you don't have any certs.
 - If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
 - The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
 
-### Lambda Expressions (Helper Functions)
+
+
+## Lambda Expressions (Helper Functions)
 Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.
 
 ##### Lambda Usage
