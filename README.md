@@ -41,7 +41,7 @@ Hello John Doe, this is just a test.
 
 
 
-## Simple Tags with Compound Expressions
+## Tags with Compound Bind Expressions
 Simple *{tag}s* can contain compound bind expressions to reference data from nested object structures.
 
 ##### Data:
@@ -161,13 +161,13 @@ We see you currently hold  the following certs:
 - The value of $ changes every time scope changes and can be used within any template tag.
 - The ..\ operator can be used to walk backwards through scope chain.
 - Whithin the *{#each}* block from the example in this section, a tag can reference the outer each block scope
-  by walking back one level *{..\Employeee}*.  Declaring variables is a better way of accessing outer scope and 
+  by walking back one level *{..\Employee}*.  Declaring variables is a better way of accessing outer scope and 
   is described in detail within the next section.
 
 
 
-## Variable Declaration, Assignment/Re-assignment and Usage
-The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
+## Variable Declaration
+The variable declaration tag is used to declare and store a local template variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
 ```c#
@@ -212,7 +212,7 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
+- Declaring, assigning and referencing a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
 	* Usage: *{:myVar}*
 	* Reassignment *{?:myVar = "hello"}*
@@ -317,7 +317,7 @@ var account = new
 
 ##### Notes:
 - Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the *{#with}* tag would have required repeating *Person.Address* 6 times.
-- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {Line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
+- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple *{Line1} {Line2} {City} {State}* and *{Zip}* properties and not be concerned with the context of the parent template.
 
 
 
