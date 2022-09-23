@@ -1,4 +1,4 @@
-### Basic Usage:
+## Basic Usage:
 ```c#
 var fullName = new { FirstName = "John", LastName = "Doe"};
 
@@ -12,7 +12,8 @@ string result = ngin.Merge(fullName);
 ```
 
 
-### Simple Tags
+
+## Simple Tags
 In its simplest form, the template engine can be used to inject data into text templates via *{tag}* replacement.
 
 ##### Data:
@@ -31,10 +32,16 @@ Hello John Doe, this is just a test.
 
 ##### Notes:
 - The engine uses single brackets for tags.
-- If a template contains any non-tag brackets, they can be escaped by doubling them up. {{ abc }} will render { abc } into the output.
+- If a template contains any non-tag brackets, they can be escaped by doubling them up. {{abc}} will render {abc} into the output.
+- The $ character is reserved by the template engine.
+- $ can be used to reference local scope within any tag anywhere within a template.
+- ```Hello {$.FirstName}``` and ```Hello {FirstName}``` are functionally equivalent templates.
+- Usage of $ is optional and only needed when iterating value types via an ```{#each}``` loop described further down.
+- Unquoted Whitespace within tags is ALWAYS insignificant.
 
 
-### Simple Tags with Compound Expressions
+
+## Tags with Compound Bind Expressions
 Simple *{tag}s* can contain compound bind expressions to reference data from nested object structures.
 
 ##### Data:
@@ -64,7 +71,8 @@ Hello John, we see you currently live in Dallas, TX.
 ```
 
 
-### Conditional Blocks:
+
+## Conditional Blocks:
 The *{#if}* tag allows for conditionally rendering template blocks based on evaluation of *truthy/falsy* conditions.
 
 ##### Data:
@@ -106,7 +114,8 @@ We see you are currently employed at Hat Trick Labs.
 - Missing values are not considered *Falsey*.  An expression that attempts to bind a non-existant property|field|dictionary entry from the bound object will throw an exception.
 
 
-### Iteration Blocks
+
+## Iteration Blocks
 The *{#each}* tag allows for conditional rendering based on collection types.  *{#each}* tags iterate over items in the provided
 collection and render the contained text block.  The contained text block operates within the scope context of the iterated item.
 
@@ -148,13 +157,17 @@ We see you currently hold  the following certs:
 ##### Notes:
 - An each block bound to a *falsy* value (null or empty) will result in no block content rendered.
 - *{#each}* tags work on any object that implements the *System.Collections.IEnumerable* interface.
-- The $ reserved varible always references the root value of local scope (*this*).  The value of $ changes every time scope changes
-  and can be used within any template tag..
-- the ..\ operator can be used to walk the scope chain.
+- The $ reserved varible always references the root value of local scope (*this*).  
+- The value of $ changes every time scope changes and can be used within any template tag.
+- The ..\ operator can be used to walk backwards through scope chain.
+- Whithin the *{#each}* block from the example in this section, a tag can reference the outer each block scope
+  by walking back one level *{..\Employee}*.  Declaring variables is a better way of accessing outer scope and 
+  is described in detail within the next section.
 
 
-### Variable Declaration, Assignment/Reassignment and Usage
-The variable declaration tag is used to declare and store a local variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
+
+## Variable Declaration
+The variable declaration tag is used to declare and store a local template variable.  *{?var:xyz=$.Name}* declares a local variable named xyz and sets it's value to $.Name *(this.Name)*.  The assignment portion of the variable declaration tag is optional.  The variable declaration tag *{?var:abc}* simply declares a variable and leaves the value equal to null.  Once a variable has been declared it can be reassigned via the variable reassignment tag *{?:xyz = "hello"}*.  The *var* keyword is left out when reassigning.
 
 ##### Data:
 ```c#
@@ -199,7 +212,7 @@ Fields:
 [dbo].[Person].[Birthdate] date
 ```
 ##### Notes:
-- Declaring, referencing and assignment of a variable requires the variable name be proceeded by a colon:
+- Declaring, assigning and referencing a variable requires the variable name be proceeded by a colon:
 	* Declaration: *{?var:myVar = $ }*
 	* Usage: *{:myVar}*
 	* Reassignment *{?:myVar = "hello"}*
@@ -209,7 +222,7 @@ Fields:
 	* Numeric Literal: *{?var:someNum = 3.0d}*
 	* Bound Expression: *{?var:someVal = $.SomeProperty}*
 	* Lambda: *{?var:someVal = () => GetSomeValue}*
-	* Boolean: *{var:isValid = true}*
+	* Boolean: *{?var:isValid = true}*
 - String literal values can be wrapped in double quotes or single quotes.
 - Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
 	* d - double
@@ -219,7 +232,8 @@ Fields:
 	* l - long
 
 
-### Partial Template Blocks
+
+## Partial Template Blocks
 The partial template *{>tag}* is used to inject sub template content.  
 
 ##### Data:
@@ -240,7 +254,7 @@ var attendees = new
 ```
 <ul>
 	{#each People}	
-	{>RsvpFormat}
+	{>$.RsvpFormat}
 	{/each}
 </ul>
 ```
@@ -255,7 +269,8 @@ var attendees = new
 ```
 
 
-### With Blocks
+
+## With Blocks
 The *{#with}* template tag allows for a shift of local scope to a different position in the bound object.
 
 ##### Data:
@@ -302,10 +317,11 @@ var account = new
 
 ##### Notes:
 - Utilizing *{#with}* tags can help decrease template noise.  Rendering the address portion of the above example WITHOUT the *{#with}* tag would have required repeating *Person.Address* 6 times.
-- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple {Line1} {City} {State} ...... properties and not be concerned with the context of the parent template.
+- Shifting of scope via *{#with}* tags allows template builders to assemble extremely re-usable sub-templates. i.e. an Address template can be composed that only needs to know the simple *{Line1} {Line2} {City} {State}* and *{Zip}* properties and not be concerned with the context of the parent template.
 
 
-### Template Comments
+
+## Template Comments
 The template engine supports *{! comment }* tags.  
 
 ##### Data:
@@ -331,10 +347,13 @@ var person = new
 ##### Notes:
 - *{!Comment}* tags can span multiple lines.
 - *{!Comment}* tags can contain single bracket characters *{* and *}* and double bracket character sets *{{* and *}}*.
-- if the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket *}* is the end of the comment tag if there is no matching open bracket *{* within the comment.
+- If the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket is the end of the comment tag if there is no corresponding open bracket.
+- If the comment must contain a close bracket with no corresponding open bracket, the close bracket must be escaped with a backslash as follows:
+```{! test comment with escaped close bracket \} }```
 
 
-### Whitespace Control
+
+## Whitespace Control
 By default, all text that resides outside of a *{tag}* is emitted verbatim to output.  Cleanly formatting template blocks can result in un-wanted whitespace copied to output.  When using any non-simple tags ( *{#if}, {#each}, {>}, {!}, {#with}, {?var}, {?}* ), the white space trim marker(s) can be applied to the tag for whitespace control. A whitespace trim marker is a single *-* immediately after the open tag delimiter *{-tag}* or immediately before the close tag delimiter *{tag-}* or both *{-tag-}*.
 
 ##### Data:
@@ -420,8 +439,10 @@ We see you don't have any certs.
 - If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
 - The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
 
-### Lambda Expressions (Helper Functions)
-Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.
+
+
+## Lambda Expressions (Helper Functions)
+Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.  THe funcion call syntax is argument list enclosed in parenthesis followed by the lambda operator then the function name ```{ (arg1, arg2, arg3) => funcName }```.
 
 ##### Lambda Usage
 ```c#
