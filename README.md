@@ -442,7 +442,7 @@ We see you don't have any certs.
 
 
 ## Lambda Expressions (Helper Functions)
-Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.
+Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.  THe funcion call syntax is argument list enclosed in parenthesis followed by the lambda operator then the function name ```{ (arg1, arg2, arg3) => funcName }```.
 
 ##### Lambda Usage
 ```c#
