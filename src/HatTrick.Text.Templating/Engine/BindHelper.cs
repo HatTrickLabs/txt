@@ -177,8 +177,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region get numeric literal suffix
-        public static char GetNumericLiteralSuffix(string literal)
+        public static char GetNumericLiteralSuffix(string literal, out string number)
         {
+            number = literal;
             if (!BindHelper.IsNumericLiteral(literal))
                 return '\0';
 
@@ -186,14 +187,15 @@ namespace HatTrick.Text.Templating
             if (char.IsDigit(literal[lastIndex]) || literal[lastIndex] == '.')
                 return '\0';
 
+            number = literal.Remove(lastIndex);
             return literal[lastIndex];
         }
 		#endregion
 
 		#region get numeric literal type
-		public static TypeCode GetNumericLiteralType(string literal)
+		public static TypeCode GetNumericLiteralType(string literal, out string number)
         {
-            char suffix = BindHelper.GetNumericLiteralSuffix(literal);
+            char suffix = BindHelper.GetNumericLiteralSuffix(literal, out number);
             switch (suffix)
             {
                 case 'F':
@@ -226,43 +228,43 @@ namespace HatTrick.Text.Templating
                 return $"Cannot parse numeric literal: {lit} as: {tc}";
             };
 
-            TypeCode typeCode = BindHelper.GetNumericLiteralType(literal);
+            TypeCode typeCode = BindHelper.GetNumericLiteralType(literal, out string number);
             object value = null;
             switch (typeCode)
             {
                 case TypeCode.Decimal:
-                    if (!decimal.TryParse(literal.TrimEnd('m', 'M'), out decimal dec))
-                        throw new FormatException(exceptionMsg(TypeCode.Decimal, literal));
+                    if (!decimal.TryParse(number, out decimal dec))
+                        throw new FormatException(exceptionMsg(TypeCode.Decimal, number));
 
                     value = dec;
                     break;
                 case TypeCode.Double:
-                    if (!double.TryParse(literal.TrimEnd('d', 'D'), out double dbl))
-                        throw new FormatException(exceptionMsg(TypeCode.Double, literal));
+                    if (!double.TryParse(number, out double dbl))
+                        throw new FormatException(exceptionMsg(TypeCode.Double, number));
 
                     value = dbl;
                     break;
                 case TypeCode.Int32:
-                    if (!int.TryParse(literal.TrimEnd('i', 'I'), out int i))
-                        throw new FormatException(exceptionMsg(TypeCode.Int32, literal));
+                    if (!int.TryParse(number, out int i))
+                        throw new FormatException(exceptionMsg(TypeCode.Int32, number));
 
                     value = i;
                     break;
                 case TypeCode.Int64:
-                    if (!long.TryParse(literal.TrimEnd('l', 'L'), out long l))
-                        throw new FormatException(exceptionMsg(TypeCode.Int64, literal));
+                    if (!long.TryParse(number, out long l))
+                        throw new FormatException(exceptionMsg(TypeCode.Int64, number));
 
                     value = l;
                     break;
                 case TypeCode.Single:
-                    if (!Single.TryParse(literal.TrimEnd('f', 'F'), out Single s))
-                        throw new FormatException(exceptionMsg(TypeCode.Single, literal));
+                    if (!Single.TryParse(number, out Single s))
+                        throw new FormatException(exceptionMsg(TypeCode.Single, number));
 
                     value = s;
                     break;
                 case TypeCode.Empty:
                 default:
-                    throw new ArgumentException($"Cannot parse numeric literal: {literal} ... type could not be determined. valid type suffix values: m,d,i,l,f", nameof(literal));
+                    throw new InvalidOperationException($"Cannot parse numeric literal: {literal} ... type could not be determined. valid type suffix values: m,d,i,l,f");
             }
 
             return value;
