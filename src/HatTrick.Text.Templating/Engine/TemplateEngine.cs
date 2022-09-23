@@ -393,6 +393,12 @@ namespace HatTrick.Text.Templating
             else if (BindHelper.IsNumericLiteral(bindAs))
                 output = bindAs;
 
+            else if (string.Compare(bindAs, "true", true) == 0)
+                output = true;
+
+            else if (string.Compare(bindAs, "false", true) == 0)
+                output = false;
+
             else
                 output = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
@@ -654,6 +660,13 @@ namespace HatTrick.Text.Templating
                 throw new InvalidOperationException($"Enountered un-closed {TagType.Debug} tag...'}}' never found.");
         }
 
+        private void MunchSimpleTag(ref StringBuilder tag, bool verbatim)
+        {
+            this.MunchTagDefault(ref tag, verbatim, out bool closed);
+            if (!closed)
+                throw new InvalidOperationException($"Enountered un-closed {TagType.Simple} tag...'}}' never found.");
+        }
+
         private void MunchCommentTag(ref StringBuilder tag)
         {
             char escape = '\\';
@@ -678,13 +691,6 @@ namespace HatTrick.Text.Templating
             }
 
             throw new InvalidOperationException($"Enountered un-closed {TagType.Comment} tag...'}}' never found.");
-        }
-
-        private void MunchSimpleTag(ref StringBuilder tag, bool verbatim)
-        {
-            this.MunchTagDefault(ref tag, verbatim, out bool closed);
-            if (!closed)
-                throw new InvalidOperationException($"Enountered un-closed {TagType.Simple} tag...'}}' never found.");
         }
 
         private void MunchBlockContent(ref StringBuilder output, TagType beginType, out Tag endTag)
