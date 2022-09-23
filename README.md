@@ -347,7 +347,9 @@ var person = new
 ##### Notes:
 - *{!Comment}* tags can span multiple lines.
 - *{!Comment}* tags can contain single bracket characters *{* and *}* and double bracket character sets *{{* and *}}*.
-- if the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket *}* is the end of the comment tag if there is no matching open bracket *{* within the comment.
+- If the *{!Comment}* tag does contain any bracket characters, they must have matching open and close sets.  The parser assumes a close bracket is the end of the comment tag if there is no corresponding open bracket.
+- If the comment must contain a close bracket with no corresponding open bracket, the close bracket must be escaped with a backslash as follows:
+```{! test comment with escaped close bracket \} }```
 
 
 
