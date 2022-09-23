@@ -266,11 +266,12 @@ namespace HatTrick.Text.Templating
         #region is variable declare tag
         private static bool IsVariableAssignTag(StringBuilder tag)
         {
+            //{- :x -} This is NOT a var assign tag...this is a simple tag with un-allowed trim markers...
             return tag.Length > 4
                 && tag[0] == '{'
-                && (tag[1] == '-' || tag[1] == '+' || tag[1] == '?')
-                && (tag[2] == '?' || tag[2] == ':');
-		}
+                && ((tag[1] == '-' || tag[1] == '+') && tag[2] == '?' && tag[3] == ':')
+                    || (tag[1] == '?' && tag[2] == ':');
+        }
         #endregion
 
         #region is debug tag
