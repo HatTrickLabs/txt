@@ -2,123 +2,123 @@
 
 namespace HatTrick.Text.Templating
 {
-	public class ScopeChain
-	{
-		#region internals
-		private ScopeLink _links;
-		private int _depth;
-		#endregion
+    public class ScopeChain
+    {
+        #region internals
+        private ScopeLink _links;
+        private int _depth;
+        #endregion
 
-		#region interface
-		public int Depth => _depth;
-		#endregion
+        #region interface
+        public int Depth => _depth;
+        #endregion
 
-		#region constructors
-		public ScopeChain()
-		{
-			_depth = 0;
-		}
-		#endregion
+        #region constructors
+        public ScopeChain()
+        {
+            _depth = 0;
+        }
+        #endregion
 
-		#region push
-		public void Push(object item)
-		{
-			ScopeLink link;
-			link = (_links == null) ? new ScopeLink(item) : new ScopeLink(item, _links);
-			_depth += 1;
-			_links = link;
-		}
-		#endregion
+        #region push
+        public void Push(object item)
+        {
+            ScopeLink link;
+            link = (_links == null) ? new ScopeLink(item) : new ScopeLink(item, _links);
+            _depth += 1;
+            _links = link;
+        }
+        #endregion
 
-		#region pop
-		public object Pop()
-		{
-			if (_links == null)
-				throw new InvalidOperationException("Cannot 'Pop' scope link, the chain is empty.");
+        #region pop
+        public object Pop()
+        {
+            if (_links == null)
+                throw new InvalidOperationException("Cannot 'Pop' scope link, the chain is empty.");
 
-			object item = _links.Item;
-			_links = _links.Parent;
-			_depth -= 1;
-			return item;
-		}
-		#endregion
+            object item = _links.Item;
+            _links = _links.Parent;
+            _depth -= 1;
+            return item;
+        }
+        #endregion
 
-		#region peek
-		public object Peek()
-		{
-			if (_links == null)
-				throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty.");
+        #region peek
+        public object Peek()
+        {
+            if (_links == null)
+                throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty.");
 
-			return _links.Item;
-		}
+            return _links.Item;
+        }
 
-		public object Peek(int back)
-		{
-			if (back >= _depth)
-				throw new ArgumentException("Value must be less than ScopeChain.Depth.", nameof(back));
+        public object Peek(int back)
+        {
+            if (back >= _depth)
+                throw new ArgumentException("Value must be less than ScopeChain.Depth.", nameof(back));
 
-			if (back < 0)
-				throw new ArgumentException("Value cannot be a negative number", nameof(back));
+            if (back < 0)
+                throw new ArgumentException("Value cannot be a negative number", nameof(back));
 
-			if (_links == null)
-				throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty");
+            if (_links == null)
+                throw new InvalidOperationException("Cannot 'Peek' scope link, the chain is empty");
 
-			return _links.Peek(back);
-		}
-		#endregion
+            return _links.Peek(back);
+        }
+        #endregion
 
-		#region set variable
-		public void SetVariable(string name, object value)
-		{
-			if (_depth == 0)
-				throw new InvalidOperationException("Invalid request - Scope chain has 0 links.");
+        #region set variable
+        public void SetVariable(string name, object value)
+        {
+            if (_depth == 0)
+                throw new InvalidOperationException("Invalid request - Scope chain has 0 links.");
 
-			_links.SetVariable(name, value);
-		}
-		#endregion
+            _links.SetVariable(name, value);
+        }
+        #endregion
 
-		#region update variable
-		public void UpdateVariable(string name, object value)
-		{
-			if (_depth == 0)
-				throw new InvalidOperationException("Invalid request - Scope chain has 0 links");
+        #region update variable
+        public void UpdateVariable(string name, object value)
+        {
+            if (_depth == 0)
+                throw new InvalidOperationException("Invalid request - Scope chain has 0 links");
 
-			_links.UpdateVariable(name, value);
-		}
-		#endregion
+            _links.UpdateVariable(name, value);
+        }
+        #endregion
 
-		#region access variable
-		public object AccessVariable(string name)
-		{
-			if (_depth == 0)
-				throw new InvalidOperationException($"Invalid request - Scope chain has 0 links");
+        #region access variable
+        public object AccessVariable(string name)
+        {
+            if (_depth == 0)
+                throw new InvalidOperationException($"Invalid request - Scope chain has 0 links");
 
-			return _links.AccessVariable(name);
-		}
-		#endregion
+            return _links.AccessVariable(name);
+        }
+        #endregion
 
-		#region apply variable scope marker
-		public void ApplyVariableScopeMarker()
-		{
-			if (_depth == 0)
-				return;
+        #region apply variable scope marker
+        public void ApplyVariableScopeMarker()
+        {
+            if (_depth == 0)
+                return;
 
-			_links.ApplyVariableScopeMarker();
-		}
-		#endregion
+            _links.ApplyVariableScopeMarker();
+        }
+        #endregion
 
-		#region dereference variable scope
-		public void DereferenceVariableScope()
-		{
-			_links.DereferenceVariableScope();
-		}
-		#endregion
+        #region dereference variable scope
+        public void DereferenceVariableScope()
+        {
+            _links.DereferenceVariableScope();
+        }
+        #endregion
 
-		#region clear
-		public void Clear()
-		{
-			_links = null;
-		}
-		#endregion
-	}
+        #region clear
+        public void Clear()
+        {
+            _links = null;
+        }
+        #endregion
+    }
 }

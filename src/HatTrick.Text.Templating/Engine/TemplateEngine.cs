@@ -358,10 +358,10 @@ namespace HatTrick.Text.Templating
         {
             this.HandleVariableTag(tag, false);
         }
-		#endregion
+        #endregion
 
-		#region handle partial tag (sub templates)
-		private void HandlePartialTag(Tag tag)
+        #region handle partial tag (sub templates)
+        private void HandlePartialTag(Tag tag)
         {
             this.EnsureLeftTrim(_result, tag);
 

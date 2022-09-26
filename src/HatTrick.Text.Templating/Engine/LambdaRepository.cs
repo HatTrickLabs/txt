@@ -40,8 +40,8 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-		#region resolve
-		public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
+        #region resolve
+        public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
         {
             this.Split(lambdaExpression, out string name, out string arguments);
 

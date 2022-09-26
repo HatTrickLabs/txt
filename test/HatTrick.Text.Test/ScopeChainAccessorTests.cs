@@ -6,8 +6,8 @@ using Xunit;
 
 namespace HatTrick.Text.Test
 {
-	public class ScopeChainAccessorTests
-	{
+    public class ScopeChainAccessorTests
+    {
         [Fact]
         public void Does_multi_link_scope_chain_reflect_correct_context_item()
         {

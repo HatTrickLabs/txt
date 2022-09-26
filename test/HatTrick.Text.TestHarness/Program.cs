@@ -1632,18 +1632,18 @@ namespace HatTrick.Text.Templating.TestHarness
         {
             ScopeChain chain = new ScopeChain();
             
-			for (int i = 0; i < 50; i++)
-			{
+            for (int i = 0; i < 50; i++)
+            {
                 chain.Push(i.ToString());
-				for (int j = 0; j < 50; j++)
-				{
+                for (int j = 0; j < 50; j++)
+                {
                     chain.SetVariable(i.ToString() + j.ToString(), j);
-				}
-			}
+                }
+            }
 
             bool passed = true;
-			for (int i = 49; i > -1; i--)
-			{
+            for (int i = 49; i > -1; i--)
+            {
                 for (int j = 0; j < 50; j++)
                 {
                     int xxx = (int)chain.AccessVariable(i.ToString() + j.ToString());

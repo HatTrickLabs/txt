@@ -3,10 +3,10 @@ using HatTrick.Reflection;
 
 namespace HatTrick.Text.Templating
 {
-	public static class BindHelper
-	{
+    public static class BindHelper
+    {
         #region resolve bind target
-		public static object ResolveBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
+        public static object ResolveBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
         {
             object target = null;
             object localScope = scopeChain.Peek(scopeLinkDepth);
@@ -40,10 +40,10 @@ namespace HatTrick.Text.Templating
             object target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             return target;
         }
-		#endregion
+        #endregion
 
-		#region resolve variable reference bind target
-		private static object ResolveVariableReferenceBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        #region resolve variable reference bind target
+        private static object ResolveVariableReferenceBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
             object target = null;
             int dot = bindAs.IndexOf('.');
@@ -70,10 +70,10 @@ namespace HatTrick.Text.Templating
             object target = BindHelper.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
             return target;
         }
-		#endregion
+        #endregion
 
-		#region resolve lamba expression bind target
-		private static object ResolveLambdaExpressionBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        #region resolve lamba expression bind target
+        private static object ResolveLambdaExpressionBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
             Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain) 
                 ?? throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
@@ -82,10 +82,10 @@ namespace HatTrick.Text.Templating
 
             return target;
         }
-		#endregion
+        #endregion
 
-		#region is lambda expression
-		public static bool IsLambdaExpression(string bindAs)
+        #region is lambda expression
+        public static bool IsLambdaExpression(string bindAs)
         {
             return bindAs.IndexOf("=>") > -1;
         }
@@ -190,10 +190,10 @@ namespace HatTrick.Text.Templating
             number = literal.Remove(lastIndex);
             return literal[lastIndex];
         }
-		#endregion
+        #endregion
 
-		#region get numeric literal type
-		public static TypeCode GetNumericLiteralType(string literal, out string number)
+        #region get numeric literal type
+        public static TypeCode GetNumericLiteralType(string literal, out string number)
         {
             char suffix = BindHelper.GetNumericLiteralSuffix(literal, out number);
             switch (suffix)

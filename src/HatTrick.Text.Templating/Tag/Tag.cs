@@ -260,7 +260,7 @@ namespace HatTrick.Text.Templating
                 && (tag[3] == 'v' || tag[3] == 'a')
                 && (tag[4] == 'a' || tag[4] == 'r')
                 && (tag[5] == 'r' || tag[5] == ':');
-		}
+        }
         #endregion
 
         #region is variable declare tag
@@ -315,11 +315,11 @@ namespace HatTrick.Text.Templating
                     maxLen = 9;
                     break;
                 case TagType.VarDeclare:
-					start = left ? 6 : 5;
+                    start = left ? 6 : 5;
                     maxLen = 8;
                     break;
                 case TagType.VarAssign:
-					start = left ? 3 : 2;
+                    start = left ? 3 : 2;
                     maxLen = 5;
                     break;
                 case TagType.With:
