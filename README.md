@@ -442,7 +442,8 @@ We see you don't have any certs.
 
 
 ## Lambda Expressions
-Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.  The funcion call syntax is argument list enclosed in parenthesis followed by the lambda operator then the function name ```{ (arg1, arg2, arg3) => funcName }```.
+Formatting, trimming, encoding, uppercasing, lowercasing, sorting, grouping, complex flow control, etc...  A registered function can be called from anywhere within a template including within any sub/partial templates.  The funcion call syntax is argument list enclosed in parenthesis followed by the lambda operator then the function name:  
+```{ (arg1, arg2, arg3) => funcName }```
 
 ##### Lambda Usage
 ```c#
@@ -535,7 +536,7 @@ completed #each block for colors
 
 
 ## Exception Handling
-Any excpetion thrown from within the *TemplateEngine.Merge()* function will bubble out to the consumer as a *HatTrick.Text.Templating.MergeException*.  *MergeException* is a wrapper exception and will contain the actual thrown instance within the *InnerException* property.  The *MergeException* class provides valuable troubleshooting information such as the line number, column position and char index from the exact location within a template where an exception is thrown.  This contextual awareness is available via the *MergeException.Context* property. 
+Any excpetion thrown from within the *TemplateEngine.Merge()* function will bubble out to the consumer as a *HatTrick.Text.Templating.MergeException*.  The *MergeException* class is a wrapper exception and will contain the actual thrown instance within the *InnerException* property.  The *MergeException* class provides valuable troubleshooting information such as the line number, column position and char index from the exact location within a template where an exception is thrown.  This contextual awareness is available via the *MergeException.Context* property. 
 
 ##### Notes:
 - The *MergeException.Context* property provides a stack of *MergeExceptionContext* instances that can be used to pinpoint the exact location within a template where an exception is thrown.
