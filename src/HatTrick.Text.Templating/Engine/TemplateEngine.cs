@@ -103,12 +103,13 @@ namespace HatTrick.Text.Templating
 
             while (this.Peek() != eot)
             {
+                //MunchContent returns true if a tag is encountered...
                 if (this.MunchContent(ref _result, false))
                 {
                     this.MunchTag(ref _tag, false);
                     this.HandleTag(new Tag(_tag, _trimWhitespace));
+                    _tag.Clear();
                 }
-                _tag.Clear();
             }
         }
         #endregion
