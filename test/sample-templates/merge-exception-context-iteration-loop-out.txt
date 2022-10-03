@@ -1,0 +1,2 @@
+Ln: 6	Col: 8	Char Index: 119	LastTag: {#eachFavoriteColors}
+Ln: 2	Col: 22	Char Index: 23	LastTag: {($)=>toLower}

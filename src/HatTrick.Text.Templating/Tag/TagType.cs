@@ -2,9 +2,10 @@
 
 namespace HatTrick.Text.Templating
 {
-    #region tag kind enum
-    public enum TagKind
+    #region tag type enum
+    public enum TagType
     {
+        Unknown,
         Simple,
         If,
         EndIf,
@@ -16,6 +17,16 @@ namespace HatTrick.Text.Templating
         Comment,
         VarDeclare,
         VarAssign,
+        Debug
+    }
+    #endregion
+
+    #region block tag type
+    public enum BlockTagOrientation
+    {
+        Unknown,
+        Begin,
+        End
     }
     #endregion
 }

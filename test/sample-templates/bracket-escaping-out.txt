@@ -9,3 +9,6 @@ static void Main(string[] args)
 
 { escaped } Charlie Brown
 { escaped Charlie Brown }
+...
+throw new InvalidOperationException($"encountered un-expected key: {CB}");
+...

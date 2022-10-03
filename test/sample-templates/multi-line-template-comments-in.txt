@@ -18,9 +18,9 @@ namespace Common
 	{!
 		//TODO: Remove
 		public void Scrub(string value)
-		{{
+		{
 		   throw new NotImplementedException();
-		}}
+		}
 	}
 	}}
 	#endregion
@@ -32,5 +32,5 @@ namespace Common
    just
    another
    multi-line
-   comment that contains {{ abc }} escaped brackets
-}	
+   comment.
+}

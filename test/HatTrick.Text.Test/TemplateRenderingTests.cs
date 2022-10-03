@@ -36,6 +36,7 @@ namespace HatTrick.Text.Test
             var data = new
             {
                 Name = "Charlie Brown",
+                KeyName = "CB"
             };
 
             //when
@@ -149,8 +150,8 @@ namespace HatTrick.Text.Test
         }
 
         [Theory]
-        [Templates("throw-on-no-item-exists-in.txt", typeof(NoItemExistsException))]
-        public void Does_rendering_throw_exception_when_object_does_not_contain_a_property_for_a_template_tag(string template, Type expected)
+        [Templates("throw-on-no-item-exists-in.txt", typeof(MergeException), typeof(NoItemExistsException))]
+        public void Does_rendering_throw_exception_when_object_does_not_contain_a_property_for_a_template_tag(string template, Type expected, Type expectedInner)
         {
             //given
             var data = new
@@ -164,7 +165,9 @@ namespace HatTrick.Text.Test
             void merge() => new TemplateEngine(template).Merge(data);
 
             //then
-            Assert.Throws(expected, merge);
+            //TODO: improve test, bad practice on multi assert.  
+            var ex = Assert.Throws(expected, merge);
+            Assert.IsType(expectedInner, ex.InnerException);
         }
 
         [Theory]
@@ -569,26 +572,26 @@ namespace HatTrick.Text.Test
             ngin.LambdaRepo.Register(nameof(ResetIndex), ResetIndex);
 
             bool[] data = new bool[20];
-            data[0] = ngin.IsTrue(null);           //false;
-            data[1] = ngin.IsTrue(1.00F);          //true;
-            data[2] = ngin.IsTrue(1U);             //true;
-            data[3] = ngin.IsTrue(0.00F);          //false;
-            data[4] = ngin.IsTrue(0);              //false;
-            data[5] = ngin.IsTrue(string.Empty);   //false;
-            data[6] = ngin.IsTrue(new object[0]);  //false;
-            data[7] = ngin.IsTrue(new object[1]);  //true;
-            data[8] = ngin.IsTrue(true);           //true;
-            data[9] = ngin.IsTrue(false);          //false;
-            data[10] = ngin.IsTrue('\0');          //false;
-            data[11] = ngin.IsTrue('t');           //true;
-            data[12] = ngin.IsTrue('f');           //true;
-            data[13] = ngin.IsTrue((decimal)1.111);//true;
-            data[14] = ngin.IsTrue((decimal)0.000);//false;
-            data[15] = ngin.IsTrue("\0");          //false;
-            data[16] = ngin.IsTrue("f");           //true;
-            data[17] = ngin.IsTrue("t");           //true;
-            data[18] = ngin.IsTrue("false");       //true;
-            data[19] = ngin.IsTrue("hello");       //true;
+            data[0] = BindHelper.IsTrue(null);           //false;
+            data[1] = BindHelper.IsTrue(1.00F);          //true;
+            data[2] = BindHelper.IsTrue(1U);             //true;
+            data[3] = BindHelper.IsTrue(0.00F);          //false;
+            data[4] = BindHelper.IsTrue(0);              //false;
+            data[5] = BindHelper.IsTrue(string.Empty);   //false;
+            data[6] = BindHelper.IsTrue(new object[0]);  //false;
+            data[7] = BindHelper.IsTrue(new object[1]);  //true;
+            data[8] = BindHelper.IsTrue(true);           //true;
+            data[9] = BindHelper.IsTrue(false);          //false;
+            data[10] = BindHelper.IsTrue('\0');          //false;
+            data[11] = BindHelper.IsTrue('t');           //true;
+            data[12] = BindHelper.IsTrue('f');           //true;
+            data[13] = BindHelper.IsTrue((decimal)1.111);//true;
+            data[14] = BindHelper.IsTrue((decimal)0.000);//false;
+            data[15] = BindHelper.IsTrue("\0");          //false;
+            data[16] = BindHelper.IsTrue("f");           //true;
+            data[17] = BindHelper.IsTrue("t");           //true;
+            data[18] = BindHelper.IsTrue("false");       //true;
+            data[19] = BindHelper.IsTrue("hello");       //true;
 
             //when
             string actual = ngin.Merge(data);
@@ -840,6 +843,114 @@ namespace HatTrick.Text.Test
 
             //then
             Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("lambda-char-literals-in.txt", "lambda-char-literals-out.txt")]
+        public void Do_lambda_char_literals_get_typed_correctly(string template, string expected)
+        {
+            //given 
+            Func<string, char, string[]> splitString = (items, delim) => items.Split(delim);
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(splitString), splitString);
+
+            var data = new { Names = "Charlie,Schroeder,Lucy,Snoopy,Woodstock,Marcie,Sally,Linus,Rerun" };
+            
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("comments-with-brackets-in.txt", "comments-with-brackets-out.txt")]
+        public void Do_comments_containing_brackets_parse_correctly(string template, string expected)
+        {
+            //given 
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
+            //when
+            string actual = ngin.Merge(data);
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [Templates("merge-exception-context-in.txt", "merge-exception-context-out.txt")]
+        public void Does_Merge_Exception_Context_Stack_Correctly_Map_Template_Stack_Error_Location(string template, string expected)
+        {
+            //given
+            Func<string> getSubContent1 = () => "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.\r\n"
+                                  + "The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here,\r\n"
+                                  + "content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their\r\n"
+                                  + "{>() => getSubContent2}\r\n"
+                                  + "sometimes by accident, sometimes on purpose(injected humour and the like).";
+
+            Func<string> getSubContent2 = () => "default model text, {>() => getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
+
+            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
+
+            var data = new { First = "Charlie", Last = "Brown", LoremIpsum = "lorem ipsum" };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+            ngin.LambdaRepo.Register(nameof(getSubContent1), getSubContent1);
+            ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
+            ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
+
+            //when
+            MergeExceptionContextStack context = null;
+            try
+            {
+                string output = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                context = mex.Context;
+            }
+
+            //then
+            Assert.Equal(context.ToString(), expected);
+        }
+
+        [Theory]
+        [Templates("merge-exception-context-iteration-loop-in.txt", "merge-exception-context-iteration-loop-out.txt")]
+        public void Does_Merge_Exception_Context_Stack_Correctly_Map_Template_Stack_Error_Location_On_Iteration_Sub_Block(string template, string expected)
+        {
+            //given
+            Func<string, string> toLower = (value) => value.ToLower();
+
+            var data = new
+            {
+                First = "Charlie", Last = "Brown",
+                FavoriteColors = new[] { "Blue", "Green", "Yellow", "Orange", "Red", null }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+
+            //when
+            MergeExceptionContextStack context = null;
+            try
+            {
+                string output = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                context = mex.Context;
+            }
+
+            //then
+            Assert.Equal(context.ToString(), expected);
         }
     }
 }

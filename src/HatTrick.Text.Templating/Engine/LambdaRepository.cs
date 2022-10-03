@@ -24,9 +24,8 @@ namespace HatTrick.Text.Templating
         public void Register(string name, Delegate function)
         {
             if (_lambdas.ContainsKey(name))
-            {
                 throw new ArgumentException($"A function with the provided name: {name} has already been added");
-            }
+
             _lambdas.Add(name, function);
         }
         #endregion
@@ -35,39 +34,37 @@ namespace HatTrick.Text.Templating
         public void Deregister(string name)
         {
             if (!_lambdas.ContainsKey(name))
-            {
                 throw new ArgumentException($"No lambda exists for the provided name: {name}");
-            }
+
             _lambdas.Remove(name);
         }
         #endregion
 
-		#region resolve
-		public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
+        #region resolve
+        public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
         {
-            this.Split(lambdaExpression, out string name, out string paramList);
+            this.Split(lambdaExpression, out string name, out string arguments);
 
             if (!_lambdas.ContainsKey(name))
-            { throw new MergeException($"encountered function that does not exist in lambda repo: {name}"); }
+                throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {name}");
 
             Delegate expr = _lambdas[name];
             MethodInfo mi = expr.Method;
             ParameterInfo[] pInfos = mi.GetParameters();
 
-            string[] argLiterals = new string[pInfos.Length];
-            this.ParseLambdaArgs(paramList, ref argLiterals);
+            string[] argVals = new string[pInfos.Length];
+            int count = this.ParseLambdaArgs(arguments, ref argVals);
 
-            if (pInfos.Length != argLiterals.Length)
+            if (pInfos.Length != count)
             {
-                string msg = "attempted function invocation with invalid number of parameters. "
-                           + $"lambda name: {name}  expected count: {pInfos.Length} provided count: {argLiterals.Length}";
-                throw new MergeException(msg);
+                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {name} expected aruments: {pInfos.Length} provided argument: {count}";
+                throw new InvalidOperationException(msg);
             }
 
             object[] args = new object[pInfos.Length];
             for (int i = 0; i < pInfos.Length; i++)
             {
-                args[i] = this.CaptureLambdaArgument(argLiterals[i], scopeChain, pInfos[i], name, i);
+                args[i] = this.CaptureLambdaArgument(argVals[i], scopeChain, pInfos[i], name, i);
             }
 
             return () => expr.DynamicInvoke(args);
@@ -85,7 +82,7 @@ namespace HatTrick.Text.Templating
             int opIndex = expression.IndexOf(op);
 
             if (opIndex < 0)
-            { throw new ArgumentException("provided value is not a valid lambda", nameof(expression)); }
+                throw new ArgumentException("Expression is not a properly formatted lambda function", nameof(expression));
 
             //right side of expression
             name = expression.Substring(opIndex + 2);
@@ -96,13 +93,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region parse lambda args
-        private void ParseLambdaArgs(string argsExpr, ref string[] args)
+        private int ParseLambdaArgs(string argsExpr, ref string[] args)
         {
-            if (args.Length == 0)
-                return;
-
             char c;
-            int at = -1;
+            int at = 0;
             char singleQuote    = '\'';
             char doubleQuote    = '"';
             char escape         = '\\';
@@ -118,10 +112,12 @@ namespace HatTrick.Text.Templating
                 c = argsExpr[i];
                 if (c == openParen || c == closeParen)
                     continue;
+
                 else if (c == doubleQuote)
                 {
                     if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
+
                     else if (!singleQuoted)
                         doubleQuoted = !doubleQuoted;
                 }
@@ -129,14 +125,17 @@ namespace HatTrick.Text.Templating
                 {
                     if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
+
                     else if (!doubleQuoted)
                         singleQuoted = !singleQuoted;
                 }
                 else if (c == comma)
                 {
                     if (!(singleQuoted || doubleQuoted))
-                    {
-                        args[++at] = sb.ToString();
+                    {   
+                        if (at < args.Length)
+                            args[at++] = sb.ToString();
+
                         sb.Clear();
                         continue;
                     }
@@ -144,7 +143,13 @@ namespace HatTrick.Text.Templating
                 sb.Append(c);
             }
 
-            args[++at] = sb.ToString(); //final...
+            if (sb.Length > 0)
+            {
+                if (at < args.Length)
+                    args[at++] = sb.ToString(); //final...
+            }
+
+            return at;
         }
         #endregion
 
@@ -208,7 +213,7 @@ namespace HatTrick.Text.Templating
                 //case TypeCode.DBNull:
                 //    break;
                 default:
-                    throw new MergeException($"encountered un-expected Type.TypeCode: {tCode}");
+                    throw new InvalidOperationException($"Encountered un-expected Type.TypeCode: {tCode}");
             }
 
             return obj;
@@ -239,7 +244,7 @@ namespace HatTrick.Text.Templating
                 arg = arg.Substring(1, (arg.Length - 2));
                 if (!DateTime.TryParse(arg, out DateTime dt))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
                 }
                 return dt;
             }
@@ -275,7 +280,12 @@ namespace HatTrick.Text.Templating
             object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                target = arg.Substring(1, (arg.Length - 2));
+                string val = arg.Substring(1, (arg.Length - 2));
+                if (!char.TryParse(val, out char c))
+                {
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Char));
+                }
+                target = c;
             }
             else
             {
@@ -292,7 +302,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!byte.TryParse(arg, out byte b))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Byte));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Byte));
                 }
                 target = b;
             }
@@ -311,7 +321,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!decimal.TryParse(arg, out decimal d))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Decimal));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Decimal));
                 }
                 target = d;
             }
@@ -330,7 +340,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!double.TryParse(arg, out double d))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Double));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Double));
                 }
                 target = d;
             }
@@ -349,7 +359,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!Int16.TryParse(arg, out Int16 i))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int16));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int16));
                 }
                 target = i;
             }
@@ -368,7 +378,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!int.TryParse(arg, out int i))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int32));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int32));
                 }
                 target = i;
             }
@@ -387,7 +397,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!long.TryParse(arg, out long l))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int64));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int64));
                 }
                 target = l;
             }
@@ -406,7 +416,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!sbyte.TryParse(arg, out sbyte s))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.SByte));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.SByte));
                 }
                 target = s;
             }
@@ -425,7 +435,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!Single.TryParse(arg, out Single s))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Single));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Single));
                 }
                 target = s;
             }
@@ -444,7 +454,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!UInt16.TryParse(arg, out UInt16 u))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt16));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt16));
                 }
                 target = u;
             }
@@ -463,7 +473,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!UInt32.TryParse(arg, out UInt32 u))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt32));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt32));
                 }
                 target = u;
             }
@@ -482,7 +492,7 @@ namespace HatTrick.Text.Templating
             {
                 if (!UInt64.TryParse(arg, out UInt64 u))
                 {
-                    throw new MergeException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt64));
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt64));
                 }
                 target = u;
             }
@@ -500,11 +510,11 @@ namespace HatTrick.Text.Templating
         {
             if (Type.GetTypeCode(value.GetType()) != typeCode)
             {
-                string msg = "attempted function invocation with invalid parameter. "
-                           + $"lambda name: {lambdaName}  expected: argument of type '{typeCode}'. "
-                           + $"value provided: {arg} at parameter position: {index}";
+                string msg = "Attempted function invocation with invalid argument type..."
+                           + $"Func name: {lambdaName}...expected argument of type: '{typeCode}'...."
+                           + $"argument value provided: {arg}...at parameter position: {index}";
 
-                throw new MergeException(msg);
+                throw new ArgumentException(msg);
             }
         }
         #endregion
@@ -512,8 +522,8 @@ namespace HatTrick.Text.Templating
         #region format exception message builder
         private string FormatExceptionMessageBuilder(string lambdaName, string arg, int index, TypeCode expectedType)
         {
-            string msg = "attempted function invocation with invalid parameter. "
-                           + $"lambda name: {lambdaName}  expected: a properly formated {expectedType} literal. "
+            string msg = "Attempted function invocation with invalid parameter..."
+                           + $"Func name: {lambdaName}  expected: a properly formated {expectedType} literal. "
                            + $"value provided: {arg} at parameter position: {index}";
 
             return msg;

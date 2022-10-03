@@ -1,15 +1,13 @@
-﻿using HatTrick.Reflection;
+﻿using System;
+using HatTrick.Reflection;
 using HatTrick.Text.Templating;
 using HatTrick.Text.Test.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace HatTrick.Text.Test
 {
-	public class ScopeChainAccessorTests
-	{
+    public class ScopeChainAccessorTests
+    {
         [Fact]
         public void Does_multi_link_scope_chain_reflect_correct_context_item()
         {
@@ -161,7 +159,7 @@ namespace HatTrick.Text.Test
             Exception ex = Assert.Throws<ArgumentException>(() => chain.Peek(2));
 
             //then
-            Assert.Equal("value must be < ScopeChain.Depth (Parameter 'back')", ex.Message);
+            Assert.StartsWith("Value must be less than ScopeChain.Depth", ex.Message);
         }
 
         [Fact]

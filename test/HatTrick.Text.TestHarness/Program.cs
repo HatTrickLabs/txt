@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.IO;
 using HatTrick.Text;
 using System.Linq;
+using System.Globalization;
 
 namespace HatTrick.Text.Templating.TestHarness
 {
@@ -37,15 +38,19 @@ namespace HatTrick.Text.Templating.TestHarness
             WalkingTheScopeChain();
             SimplePartialBlocks();
             SimpleTemplateComments();
+            CommentsWithBrackets();
             MultiLineTemplateComments();
             SimpleLambdaExpressions();
             LambdaNumericLiterals();
+            LambdaCharLiterals();
             ComplexLambdaExpressions();
             LambdaExpressionDrivenBlocks();
             WithTagScopeChangeBlocks();
             CodeGen();
             DeclaringAndUsingVariables();
             LiteralVariableDeclarations();
+            MergeExceptionContext();
+            MergeExceptionContextOnIterationLoop();
             ReAssigningVariableValues();
             ComplexReAssignmingVariableValues();
             SingleLinkScopeChainReference();
@@ -59,6 +64,9 @@ namespace HatTrick.Text.Templating.TestHarness
             VariableReAssignment();
             OuterScopeVariableReAssignment();
             LargeScopeChainAndVariableStacks();
+            DebugOutputOne();
+            DebugOutputTwo();
+            DebugOutputThree();
 
             _sw.Stop();
             Console.WriteLine($"processing completed @ {_sw.ElapsedMilliseconds} milliseconds, press [Enter] to exit");
@@ -145,6 +153,7 @@ namespace HatTrick.Text.Templating.TestHarness
             var data = new
             {
                 Name = "Charlie Brown",
+                KeyName = "CB"
             };
 
             TemplateEngine ngin = new TemplateEngine(template);
@@ -415,7 +424,7 @@ namespace HatTrick.Text.Templating.TestHarness
                 Certifications = new string[] { },//empty array is falsey
                 PreviousEmployers = new[] { "Microsoft", "Cisco", "FB" }
             };
-
+            
             TemplateEngine ngin = new TemplateEngine(template);
             ngin.TrimWhitespace = true;
             string result = ngin.Merge(data);
@@ -505,7 +514,7 @@ namespace HatTrick.Text.Templating.TestHarness
             }
             catch (ArgumentException ex)
             {
-                passed = ex.Message == "value must be < ScopeChain.Depth\r\nParameter name: back";
+                passed = ex.Message.StartsWith("Value must be less than ScopeChain.Depth");
             }
 
             RenderOutput(name, passed);
@@ -579,6 +588,29 @@ namespace HatTrick.Text.Templating.TestHarness
         static void SimpleTemplateComments()
         {
             string name = "simple-template-comments";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                Name = new { First = "Charlie", Last = "Brown" },
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true; //global flag for whitespace control...
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region comments with brackets x
+        static void CommentsWithBrackets()
+        {
+            string name = "comments-with-brackets";
             string template = ResolveTemplateInput(name);
 
             var data = new
@@ -715,6 +747,30 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
+        #region lambda char literals x
+        static void LambdaCharLiterals()
+        {
+            string name = "lambda-char-literals";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, char, string[]> splitString = (items, delim) => items.Split(delim);
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = true;//global flag for whitespace control...
+            ngin.LambdaRepo.Register(nameof(splitString), splitString);
+
+            var data = new { Names = "Charlie,Schroeder,Lucy,Snoopy,Woodstock,Marcie,Sally,Linus,Rerun" };
+
+            string result = ngin.Merge(data);
+
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
         #region complex lambda expressions x
         static void ComplexLambdaExpressions()
         {
@@ -764,26 +820,26 @@ namespace HatTrick.Text.Templating.TestHarness
             TemplateEngine ngin = new TemplateEngine(template);
 
             bool[] isTrue = new bool[20];
-            isTrue[0] = ngin.IsTrue(null);           //false;
-            isTrue[1] = ngin.IsTrue(1.00F);          //true;
-            isTrue[2] = ngin.IsTrue(1U);             //true;
-            isTrue[3] = ngin.IsTrue(0.00F);          //false;
-            isTrue[4] = ngin.IsTrue(0);              //false;
-            isTrue[5] = ngin.IsTrue(string.Empty);   //false;
-            isTrue[6] = ngin.IsTrue(new object[0]);  //false;
-            isTrue[7] = ngin.IsTrue(new object[1]);  //true;
-            isTrue[8] = ngin.IsTrue(true);           //true;
-            isTrue[9] = ngin.IsTrue(false);          //false;
-            isTrue[10] = ngin.IsTrue('\0');          //false;
-            isTrue[11] = ngin.IsTrue('t');           //true;
-            isTrue[12] = ngin.IsTrue('f');           //true;
-            isTrue[13] = ngin.IsTrue((decimal)1.111);//true;
-            isTrue[14] = ngin.IsTrue((decimal)0.000);//false;
-            isTrue[15] = ngin.IsTrue("\0");          //false;
-            isTrue[16] = ngin.IsTrue("f");           //true;
-            isTrue[17] = ngin.IsTrue("t");           //true;
-            isTrue[18] = ngin.IsTrue("false");       //true;
-            isTrue[19] = ngin.IsTrue("hello");       //true;
+            isTrue[0] = BindHelper.IsTrue(null);           //false;
+            isTrue[1] = BindHelper.IsTrue(1.00F);          //true;
+            isTrue[2] = BindHelper.IsTrue(1U);             //true;
+            isTrue[3] = BindHelper.IsTrue(0.00F);          //false;
+            isTrue[4] = BindHelper.IsTrue(0);              //false;
+            isTrue[5] = BindHelper.IsTrue(string.Empty);   //false;
+            isTrue[6] = BindHelper.IsTrue(new object[0]);  //false;
+            isTrue[7] = BindHelper.IsTrue(new object[1]);  //true;
+            isTrue[8] = BindHelper.IsTrue(true);           //true;
+            isTrue[9] = BindHelper.IsTrue(false);          //false;
+            isTrue[10] = BindHelper.IsTrue('\0');          //false;
+            isTrue[11] = BindHelper.IsTrue('t');           //true;
+            isTrue[12] = BindHelper.IsTrue('f');           //true;
+            isTrue[13] = BindHelper.IsTrue((decimal)1.111);//true;
+            isTrue[14] = BindHelper.IsTrue((decimal)0.000);//false;
+            isTrue[15] = BindHelper.IsTrue("\0");          //false;
+            isTrue[16] = BindHelper.IsTrue("f");           //true;
+            isTrue[17] = BindHelper.IsTrue("t");           //true;
+            isTrue[18] = BindHelper.IsTrue("false");       //true;
+            isTrue[19] = BindHelper.IsTrue("hello");       //true;
 
             int idx = 0;
             Func<int> GetNextIndex = () => idx++;
@@ -1040,7 +1096,7 @@ namespace HatTrick.Text.Templating.TestHarness
         }
         #endregion
 
-        #region literal variable declarations
+        #region literal variable declarations x
         static void LiteralVariableDeclarations()
         {
             string name = "literal-variable-declarations";
@@ -1061,6 +1117,92 @@ namespace HatTrick.Text.Templating.TestHarness
             string expected = ResolveTemplateOutput(name);
 
             bool passed = string.Compare(result, expected, false) == 0;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region merge exception context x
+        static void MergeExceptionContext()
+        {
+            string name = "merge-exception-context";
+            string template = ResolveTemplateInput(name);
+
+            var data = new
+            {
+                First = "Charlie",
+                Last = "Brown",
+                LoremIpsum = "lorem ipsum"
+            };
+
+
+            Func<string> getSubContent1 = () => "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.\r\n"
+                                              + "The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here,\r\n"
+                                              + "content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their\r\n"
+                                              + "{>() => getSubContent2}\r\n"
+                                              + "sometimes by accident, sometimes on purpose(injected humour and the like).";
+
+            Func<string> getSubContent2 = () => "default model text, {>() => getSubContent3} will uncover many web sites still in their infancy. Various versions have evolved over the years, ";
+
+            Func<string> getSubContent3 = () => "and a search for '{LoremIpsumx}'";
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+            ngin.LambdaRepo.Register(nameof(getSubContent1), getSubContent1);
+            ngin.LambdaRepo.Register(nameof(getSubContent2), getSubContent2);
+            ngin.LambdaRepo.Register(nameof(getSubContent3), getSubContent3);
+
+            MergeExceptionContextStack ctxStack = null;
+            try
+            {
+                _ = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                ctxStack = mex.Context;
+            }
+
+            string actual = ctxStack.ToString();
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = actual == expected;
+
+            RenderOutput(name, passed);
+        }
+        #endregion
+
+        #region merge exception context on iteration loop x
+        static void MergeExceptionContextOnIterationLoop()
+        {
+            string name = "merge-exception-context-iteration-loop";
+            string template = ResolveTemplateInput(name);
+
+            Func<string, string> toLower = (value) => value.ToLower();
+
+            var data = new
+            {
+                First = "Charlie",
+                Last = "Brown",
+                FavoriteColors = new[] { "Blue", "Green", "Yellow", "Orange", "Red", null }
+            };
+
+            TemplateEngine ngin = new TemplateEngine(template);
+            ngin.TrimWhitespace = false;
+
+            MergeExceptionContextStack ctxStack = null;
+            try
+            {
+                _ = ngin.Merge(data);
+            }
+            catch (MergeException mex)
+            {
+                ctxStack = mex.Context;
+            }
+
+            string actual = ctxStack.ToString();
+            string expected = ResolveTemplateOutput(name);
+
+            bool passed = actual == expected;
 
             RenderOutput(name, passed);
         }
@@ -1108,10 +1250,10 @@ namespace HatTrick.Text.Templating.TestHarness
 
             RenderOutput(name, passed);
         }
-		#endregion
+        #endregion
 
-		#region single link scope chain reference
-		static void SingleLinkScopeChainReference()
+        #region single link scope chain reference
+        static void SingleLinkScopeChainReference()
         {
             ScopeChain chain = new ScopeChain();
 
@@ -1329,9 +1471,9 @@ namespace HatTrick.Text.Templating.TestHarness
 
             result = string.Empty;
             try { var o = chain.AccessVariable("var9"); }
-            catch (MergeException mex) { result = mex.Message; }
-            expected = "Attempted access of unknown variable: var9";
-            passed = passed && (string.Compare(result, expected, false) == 0);
+            catch (ArgumentException ex) { result = ex.Message; }
+            expected = "Attempted access of un-declared variable.";
+            passed = passed && result.StartsWith(expected);
 
             RenderOutput(nameof(ScopeChainVariableReference), passed);
         }
@@ -1490,18 +1632,18 @@ namespace HatTrick.Text.Templating.TestHarness
         {
             ScopeChain chain = new ScopeChain();
             
-			for (int i = 0; i < 50; i++)
-			{
+            for (int i = 0; i < 50; i++)
+            {
                 chain.Push(i.ToString());
-				for (int j = 0; j < 50; j++)
-				{
+                for (int j = 0; j < 50; j++)
+                {
                     chain.SetVariable(i.ToString() + j.ToString(), j);
-				}
-			}
+                }
+            }
 
             bool passed = true;
-			for (int i = 49; i > -1; i--)
-			{
+            for (int i = 49; i > -1; i--)
+            {
                 for (int j = 0; j < 50; j++)
                 {
                     int xxx = (int)chain.AccessVariable(i.ToString() + j.ToString());
@@ -1514,11 +1656,113 @@ namespace HatTrick.Text.Templating.TestHarness
 
             RenderOutput(nameof(LargeScopeChainAndVariableStacks), passed);
         }
-		#endregion
-	}
+        #endregion
 
-	#region person class
-	public class Person
+        #region debug output one
+        static void DebugOutputOne()
+        {
+            string template = "...{@ 'hello'}...{@ \"world\"}...{@$}...";
+
+            var data = new { Name = new { First = "Charlie", Last = "Brown" } };
+
+            DebugTraceListener listener = new DebugTraceListener();
+            System.Diagnostics.Trace.Listeners.Add(listener);
+            StringBuilder sb = new StringBuilder();
+            listener.Push += (msg) => sb.Append(msg);
+
+            try
+            {
+                TemplateEngine ngin = new TemplateEngine(template);
+
+                string expectedResult = "............";
+                string expectedOutput = "helloworld{ Name = { First = Charlie, Last = Brown } }";
+                string result = ngin.Merge(data);
+                string output = sb.ToString();
+
+                bool passed = output == expectedOutput && result == expectedResult;
+
+                RenderOutput(nameof(DebugOutputOne), passed);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.Listeners.Remove(listener);
+            }
+        }
+        #endregion
+
+        #region debug output two
+        static void DebugOutputTwo()
+        {
+            string template = "...{@ \r\n $.Name.First}...{@ ' King\\'s Castle'}...{@ \" King's other Castle\"}...";
+
+            var data = new { Name = new { First = "Charlie", Last = "Brown" } };
+
+            DebugTraceListener listener = new DebugTraceListener();
+            System.Diagnostics.Trace.Listeners.Add(listener);
+            StringBuilder sb = new StringBuilder();
+            listener.Push += (msg) => sb.Append(msg);
+
+            try
+            {
+                TemplateEngine ngin = new TemplateEngine(template);
+
+                string expectedResult = "............";
+                string expectedOutput = "Charlie King's Castle King's other Castle";
+                string result = ngin.Merge(data);
+                string output = sb.ToString();
+
+                bool passed = output == expectedOutput && result == expectedResult;
+
+                RenderOutput(nameof(DebugOutputTwo), passed);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.Listeners.Remove(listener);
+            }
+        }
+        #endregion
+
+        #region debug output three
+        static void DebugOutputThree()
+        {
+            string template = "...{@ $.Statement-}\r\n...{@ Price}\r\n...{@Count}...{@ $.IsSale }...";
+
+            var data = new 
+            { 
+                Statement = "'single quoted' \"double quoated\" {} } } } <- some un-matched brackets",
+                Price = 8.99,
+                Count = 3,
+                IsSale = true
+            };
+
+            DebugTraceListener listener = new DebugTraceListener();
+            System.Diagnostics.Trace.Listeners.Add(listener);
+            StringBuilder sb = new StringBuilder();
+            listener.Push += (msg) => sb.Append(msg);
+
+            try
+            {
+                TemplateEngine ngin = new TemplateEngine(template);
+
+                string expectedResult = "......\r\n.........";
+                string expectedOutput = "'single quoted' \"double quoated\" {} } } } <- some un-matched brackets8.993True";
+                string result = ngin.Merge(data);
+                string output = sb.ToString();
+
+                bool passed = output == expectedOutput && result == expectedResult;
+
+                RenderOutput(nameof(DebugOutputThree), passed);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.Listeners.Remove(listener);
+            }
+        }
+        #endregion
+    }
+
+    #region person class
+    public class Person
     {
         public int Age;
 
@@ -1543,6 +1787,23 @@ namespace HatTrick.Text.Templating.TestHarness
         public string City { get; set; }
         public string State { get; set; }
         public string Zip { get; set; }
+    }
+    #endregion
+
+    #region debug trace listener
+    public class DebugTraceListener : System.Diagnostics.TraceListener
+    {
+        public Action<string> Push;
+
+        public override void Write(string message)
+        {
+            this.Push?.Invoke(message);
+        }
+
+        public override void WriteLine(string message)
+        {
+            this.Push?.Invoke(message);
+        }
     }
     #endregion
 }
