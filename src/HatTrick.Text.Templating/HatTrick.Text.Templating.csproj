@@ -13,8 +13,18 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.1.3</Version>
-    <PackageReleaseNotes>fixed:  Issue #54 - parsing of signed numeric literals.  Issue #55 - right trim throws off line count.</PackageReleaseNotes>
+    <Version>2.2.0</Version>
+    <PackageReleaseNotes>Fixes:
+Issue #21 - Content containing escaped brackets immediately surrounding a tag no longer require additional space.  {{{$}}} is now valid.
+Issue #22 - Comments no longer require brackets be {{escaped}}.
+Issue #57 - Lambda functions accepting char arguments can now accept char literals without cast exception.
+
+Enhancements:
+Issue #58 - MergeException.Context property.  Provides a context stack to pinpoint the exact location an exception is thrown.
+Issue #59 - Support for debug tags {@ 'Hello world' } that write to output to System.Diagnostics.Trace.
+Issue #60 - Provide un-ambiguous format exception message when parsing numeric literals.
+
+All nuget package referenced updated to newest versions.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>htl-nuget-logo.png</PackageIcon>
     <PackageIconUrl />
@@ -29,7 +39,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HatTrick.Reflection" Version="1.0.5" />
+    <PackageReference Include="HatTrick.Reflection" Version="1.0.6" />
   </ItemGroup>
 
   <ItemGroup>

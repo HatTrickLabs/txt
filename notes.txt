@@ -1,8 +1,9 @@
 Fixes:
 Issue #21 - Content containing escaped brackets immediately surrounding a tag no longer require additional space.  {{{$}}} is now valid.
-Issue #22 - Comments no longer required brackets be {{escaped}}.
+Issue #22 - Comments no longer require brackets be {{escaped}}.
 Issue #57 - Lambda functions accepting char arguments can now accept char literals without cast exception.
 
 Enhancements:
 Issue #58 - MergeException.Context property.  Provides a context stack to pinpoint the exact location an exception is thrown.
 Issue #59 - Support for debug tags {@ 'Hello world' } that write to output to System.Diagnostics.Trace.
+Issue #60 - Provide un-ambiguous format exception message when parsing numeric literals.
