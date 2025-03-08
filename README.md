@@ -161,7 +161,7 @@ We see you currently hold  the following certs:
 - The value of $ changes every time scope changes and can be used within any template tag.
 - The ..\ operator can be used to walk backwards through scope chain.
 - Whithin the *{#each}* block from the example in this section, a tag can reference the outer each block scope
-  by walking back one level *{..\Employee}*.  Declaring variables is a better way of accessing outer scope and 
+  by walking back one level *{..\Employer}*.  Declaring variables is a better way of accessing outer scope and 
   is described in detail within the next section.
 
 
@@ -536,7 +536,7 @@ completed #each block for colors
 
 
 ## Exception Handling
-Any excpetion thrown from within the *TemplateEngine.Merge()* function will bubble out to the consumer as a *HatTrick.Text.Templating.MergeException*.  The *MergeException* class is a wrapper exception and will contain the actual thrown instance within the *InnerException* property.  The *MergeException* class provides valuable troubleshooting information such as the line number, column position and char index from the exact location within a template where an exception is thrown.  This contextual awareness is available via the *MergeException.Context* property. 
+Any exception thrown from within the *TemplateEngine.Merge()* function will bubble out to the consumer as a *HatTrick.Text.Templating.MergeException*.  The *MergeException* class is a wrapper exception and will contain the actual thrown instance within the *InnerException* property.  The *MergeException* class provides valuable troubleshooting information such as the line number, column position and char index from the exact location within a template where an exception is thrown.  This contextual awareness is available via the *MergeException.Context* property. 
 
 ##### Notes:
 - The *MergeException.Context* property provides a stack of *MergeExceptionContext* instances that can be used to pinpoint the exact location within a template where an exception is thrown.
