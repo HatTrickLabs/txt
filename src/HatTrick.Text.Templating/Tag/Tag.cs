@@ -263,7 +263,7 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region is variable declare tag
+        #region is variable assign tag
         private static bool IsVariableAssignTag(StringBuilder tag)
         {
             //{- :x -} This is NOT a var assign tag...this is a simple tag with un-allowed trim markers...

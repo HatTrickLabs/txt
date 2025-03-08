@@ -171,7 +171,7 @@ namespace HatTrick.Text.Templating
                     char.IsDigit(value[0]) 
                     || value[0] == '+' 
                     || value[0] == '-' 
-                    || (value[0] == '.' && value[1] != '.')// ../ is a scope walk literal...
+                    || (value[0] == '.' && value.Length > 1 && value[1] != '.')// ../ is a scope walk literal...
                 );
         }
         #endregion
