@@ -117,7 +117,7 @@ namespace HatTrick.Text.Templating.TestHarness
         #region output result
         static void RenderOutput(string name, bool passed, string context = null)
         {
-            Console.WriteLine(string.Format("{0,-45} {1,-10} {2,-20}", name, passed ? "Success" : "Failed", context));
+            //Console.WriteLine(string.Format("{0,-45} {1,-10} {2,-20}", name, passed ? "Success" : "Failed", context));
         }
         #endregion
 
@@ -1685,7 +1685,7 @@ namespace HatTrick.Text.Templating.TestHarness
             }
             finally
             {
-                System.Diagnostics.Debug.Listeners.Remove(listener);
+                System.Diagnostics.Trace.Listeners.Remove(listener);
             }
         }
         #endregion
@@ -1717,7 +1717,7 @@ namespace HatTrick.Text.Templating.TestHarness
             }
             finally
             {
-                System.Diagnostics.Debug.Listeners.Remove(listener);
+                System.Diagnostics.Trace.Listeners.Remove(listener);
             }
         }
         #endregion
@@ -1755,7 +1755,7 @@ namespace HatTrick.Text.Templating.TestHarness
             }
             finally
             {
-                System.Diagnostics.Debug.Listeners.Remove(listener);
+                System.Diagnostics.Trace.Listeners.Remove(listener);
             }
         }
         #endregion
