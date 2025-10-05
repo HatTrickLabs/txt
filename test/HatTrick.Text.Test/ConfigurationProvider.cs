@@ -24,7 +24,7 @@ namespace HatTrick.Text.Test
 
         private static string GetCurrentPath()
         {
-            var exePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            var exePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var appPathMatcher = new Regex(@"(?<!fil)[A-Za-z]:\\+[\S\s]*?(?=\\+bin)");
             var appRoot = appPathMatcher.Match(exePath).Value;
             return appRoot;

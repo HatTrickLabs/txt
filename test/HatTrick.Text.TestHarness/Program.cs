@@ -81,7 +81,7 @@ namespace HatTrick.Text.Templating.TestHarness
             using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
                 buffer = new byte[fs.Length];
-                fs.Read(buffer, 0, buffer.Length);
+                fs.ReadExactly(buffer, 0, buffer.Length);
             }
             string content = Encoding.UTF8.GetString(buffer);
 
