@@ -78,7 +78,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region update variable
-        public void UpdateVariable(string name, object value)
+        public void UpdateVariable(ReadOnlySpan<char> name, object value)
         {
             if (_depth == 0)
                 throw new InvalidOperationException("Invalid request - Scope chain has 0 links");
@@ -88,7 +88,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region access variable
-        public object AccessVariable(string name)
+        public object AccessVariable(ReadOnlySpan<char> name)
         {
             if (_depth == 0)
                 throw new InvalidOperationException($"Invalid request - Scope chain has 0 links");

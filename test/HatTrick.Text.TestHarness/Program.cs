@@ -109,15 +109,15 @@ namespace HatTrick.Text.Templating.TestHarness
         static string AssemblePath(string name, string context)
         {
             char dsc = Path.DirectorySeparatorChar;
-            string path = $"..{dsc}..{dsc}..{dsc}sample-templates{dsc}{name}-{context}.txt";
+            string path = $"..{dsc}..{dsc}..{dsc}..{dsc}sample-templates{dsc}{name}-{context}.txt";
             return path;
         }
         #endregion
 
-        #region output result
+        #region render output
         static void RenderOutput(string name, bool passed, string context = null)
         {
-            //Console.WriteLine(string.Format("{0,-45} {1,-10} {2,-20}", name, passed ? "Success" : "Failed", context));
+            Console.WriteLine(string.Format("{0,-45} {1,-10} {2,-20}", name, passed ? "Success" : "Failed", context));
         }
         #endregion
 

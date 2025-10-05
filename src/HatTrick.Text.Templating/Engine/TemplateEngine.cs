@@ -190,10 +190,10 @@ namespace HatTrick.Text.Templating
 
             this.EnsureLeftTrim(block, endTag);
 
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
 
-            object target = BindHelper.ResolveBindTarget(negate ? bindAs.Substring(1) : bindAs, _lambdaRepo, _scopeChain);
+            object target = BindHelper.ResolveBindTarget(negate ? bindAs.Slice(1) : bindAs, _lambdaRepo, _scopeChain);
 
             bool render = BindHelper.IsTrue(target);
 

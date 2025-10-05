@@ -6,7 +6,7 @@ namespace HatTrick.Text.Templating
     public static class BindHelper
     {
         #region resolve bind target
-        public static object ResolveBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
+        public static object ResolveBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain, int scopeLinkDepth = 0)
         {
             object target = null;
             object localScope = scopeChain.Peek(scopeLinkDepth);
@@ -34,24 +34,24 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region resolve rooted bind target
-        private static object ResolveRootedBindTarget(string bindAs, object localScope)
+        private static object ResolveRootedBindTarget(ReadOnlySpan<char> bindAs, object localScope)
         {
-            string expression = bindAs.Substring(2, bindAs.Length - 2);//remove the $.
+            var expression = bindAs.Slice(2, bindAs.Length - 2);//remove the $.
             object target = ReflectionHelper.Expression.ReflectItem(localScope, expression);
             return target;
         }
         #endregion
 
         #region resolve variable reference bind target
-        private static object ResolveVariableReferenceBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        private static object ResolveVariableReferenceBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
             object target = null;
             int dot = bindAs.IndexOf('.');
             if (dot > -1)
             {
-                target = scopeChain.AccessVariable(bindAs.Substring(0, dot));
+                target = scopeChain.AccessVariable(bindAs.Slice(0, dot));
                 scopeChain.Push(target);
-                target = BindHelper.ResolveBindTarget(bindAs.Substring(++dot, bindAs.Length - dot), lambdaRepo, scopeChain);
+                target = BindHelper.ResolveBindTarget(bindAs.Slice(++dot, bindAs.Length - dot), lambdaRepo, scopeChain);
                 scopeChain.Pop();
             }
             else
@@ -63,17 +63,16 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region resolve scope walk bind target
-        private static object ResolveScopeWalkBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        private static object ResolveScopeWalkBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
-            int lastIdxOf;
-            int depth = BindHelper.CountInstancesOfPattern(bindAs, @"..\", out lastIdxOf);
-            object target = BindHelper.ResolveBindTarget(bindAs.Substring(lastIdxOf + 3, bindAs.Length - (depth * 3)), lambdaRepo, scopeChain, depth);
+            BindHelper.WalkScope(bindAs, out int depth, out int endsAt);
+            object target = BindHelper.ResolveBindTarget(bindAs.Slice(endsAt, bindAs.Length - endsAt), lambdaRepo, scopeChain, depth);
             return target;
         }
         #endregion
 
         #region resolve lamba expression bind target
-        private static object ResolveLambdaExpressionBindTarget(string bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
+        private static object ResolveLambdaExpressionBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
             Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain) 
                 ?? throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
@@ -85,31 +84,41 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is lambda expression
-        public static bool IsLambdaExpression(string bindAs)
+        public static bool IsLambdaExpression(ReadOnlySpan<char> bindAs)
         {
             return bindAs.IndexOf("=>") > -1;
         }
         #endregion
 
-        #region count instances of pattern
-        public static int CountInstancesOfPattern(string content, string pattern, out int lastIndexOf)
+        #region walk scope
+        private static void WalkScope(ReadOnlySpan<char> content, out int depth, out int endsAt)
         {
-            lastIndexOf = -1;
-            int cnt = 0;
-            int idx = 0;
+            int i = 0;
+            int pos = 0;
+            depth = 0;
+            endsAt = 0;
 
-            while ((idx = content.IndexOf(pattern, idx)) != -1)
+            const string token = @"..\";
+
+            do
             {
-                lastIndexOf = idx;
-                idx += pattern.Length;
-                cnt += 1;
-            }
-            return cnt;
+                if (content[i++] != token[pos++])
+                    break;
+
+                if (pos == 3)
+                {
+                    depth += 1;
+                    pos = 0;
+                }
+
+            } while (i < content.Length);
+
+            endsAt = depth * token.Length;
         }
         #endregion
 
         #region is single quoted
-        public static bool IsSingleQuoted(string value)
+        public static bool IsSingleQuoted(ReadOnlySpan<char> value)
         {
             char singleQuote = '\'';
             return value[0] == singleQuote && value[value.Length - 1] == singleQuote;
@@ -117,7 +126,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is double quoted
-        public static bool IsDoubleQuoted(string value)
+        public static bool IsDoubleQuoted(ReadOnlySpan<char> value)
         {
             char doubleQuote = '"';
             return value[0] == doubleQuote && value[value.Length - 1] == doubleQuote;

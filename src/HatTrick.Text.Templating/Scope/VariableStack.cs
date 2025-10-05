@@ -46,13 +46,13 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region try get
-        public bool TryGet(string name, out object value)
+        public bool TryGet(ReadOnlySpan<char> name, out object value)
         {
             value = null;
             bool found = false;
-            if (!string.IsNullOrEmpty(name))
+            if (!name.IsEmpty)
             {
-                if (name == _name)
+                if (name.SequenceEqual(_name))
                 {
                     value = _value;
                     found = true;
@@ -67,9 +67,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region try update
-        public bool TryUpdate(string name, object value)
+        public bool TryUpdate(ReadOnlySpan<char> name, object value)
         {
-            if (name == _name)
+            if (name.SequenceEqual(_name))
             {
                 _value = value;
                 return true;

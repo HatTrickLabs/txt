@@ -65,10 +65,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region try update
-        public bool TryUpdate(string name, object value)
+        public bool TryUpdate(ReadOnlySpan<char> name, object value)
         {
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
+            if (name.IsEmpty)
+                throw new ArgumentException("Arg cannot be empty.", nameof(name));
 
             if (name == string.Empty)
                 throw new ArgumentException("Arg must contain a value", nameof(name));
@@ -78,10 +78,10 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region try get
-        public bool TryGet(string name, out object value)
+        public bool TryGet(ReadOnlySpan<char> name, out object value)
         {
             value = null;
-            if (name == null)
+            if (name.IsEmpty)
                 return false;
             if (name == string.Empty)
                 return false;

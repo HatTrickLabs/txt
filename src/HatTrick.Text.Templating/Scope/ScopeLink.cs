@@ -39,7 +39,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region upate variable
-        public void UpdateVariable(string name, object value)
+        public void UpdateVariable(ReadOnlySpan<char> name, object value)
         {
             if (_variables.TryUpdate(name, value))
                 return;
@@ -52,7 +52,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region access variable
-        public object AccessVariable(string name)
+        public object AccessVariable(ReadOnlySpan<char> name)
         {
             if (_variables.TryGet(name, out object value))
                 return value;

@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+using System.Buffers;
 
 namespace HatTrick.Text.Templating
 {
@@ -41,9 +40,13 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region resolve
-        public Func<object> Resolve(string lambdaExpression, ScopeChain scopeChain)
+        public Func<object> Resolve(ReadOnlySpan<char> lambdaExpression, ScopeChain scopeChain)
         {
-            this.Split(lambdaExpression, out string name, out string arguments);
+            this.Split(lambdaExpression, out ReadOnlySpan<char> nameSpan, out ReadOnlySpan<char> argumentsSpan);
+
+            //TODO: are these ToString conversions necessary ???
+            string name = nameSpan.ToString();
+            string arguments = argumentsSpan.ToString();
 
             if (!_lambdas.ContainsKey(name))
                 throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {name}");
@@ -72,7 +75,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region split
-        private void Split(string expression, out string name, out string paramList)
+        private void Split(ReadOnlySpan<char> expression, out ReadOnlySpan<char> name, out ReadOnlySpan<char> paramList)
         {
             //i.e. (arg1, arg2) => LambdaName
             name = null;
@@ -85,10 +88,10 @@ namespace HatTrick.Text.Templating
                 throw new ArgumentException("Expression is not a properly formatted lambda function", nameof(expression));
 
             //right side of expression
-            name = expression.Substring(opIndex + 2);
+            name = expression.Slice(opIndex + 2);
 
             //left side of expression 
-            paramList = expression.Substring(0, opIndex);
+            paramList = expression.Slice(0, opIndex);
         }
         #endregion
 
@@ -154,7 +157,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region capture lambda arguments
-        private object CaptureLambdaArgument(string arg, ScopeChain scopeChain, ParameterInfo paramInfo, string lambda, int index)
+        private object CaptureLambdaArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ParameterInfo paramInfo, string lambda, int index)
         {
             object obj = null;
             TypeCode tCode = Type.GetTypeCode(paramInfo.ParameterType);
@@ -221,12 +224,12 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region ensure argument
-        private object EnsureStringArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureStringArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                target = arg.Substring(1, (arg.Length - 2));
+                target = arg.Slice(1, (arg.Length - 2)).ToString();
             }
             else
             {
@@ -236,12 +239,12 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureDateTimeArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureDateTimeArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                arg = arg.Substring(1, (arg.Length - 2));
+                arg = arg.Slice(1, (arg.Length - 2));
                 if (!DateTime.TryParse(arg, out DateTime dt))
                 {
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
@@ -256,14 +259,14 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        public object EnsureBooleanArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        public object EnsureBooleanArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
-            if (string.Compare(arg, "true", true) == 0)
+            if (this.IsTrue(arg))
             {
                 target = true;
             }
-            else if (string.Compare(arg, "false", true) == 0)
+            else if (this.IsFalse(arg))
             {
                 target = false;
             }
@@ -275,17 +278,34 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureCharArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private bool IsTrue(ReadOnlySpan<char> arg)
+        {
+            return arg.Length == 4
+                && (arg[0] == 'T' || arg[0] == 't')
+                && (arg[1] == 'r' || arg[1] == 'R')
+                && (arg[2] == 'u' || arg[2] == 'u')
+                && (arg[3] == 'e' || arg[3] == 'e');
+        }
+
+        private bool IsFalse(ReadOnlySpan<char> arg)
+        {
+            return arg.Length == 5
+                && (arg[0] == 'F' || arg[0] == 'f')
+                && (arg[1] == 'a' || arg[1] == 'A')
+                && (arg[2] == 'l' || arg[2] == 'L')
+                && (arg[3] == 's' || arg[3] == 'S')
+                && (arg[4] == 'e' || arg[4] == 'E');
+        }
+
+        private object EnsureCharArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                string val = arg.Substring(1, (arg.Length - 2));
-                if (!char.TryParse(val, out char c))
-                {
+                if (arg.Length != 3)
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Char));
-                }
-                target = c;
+
+                target = arg[1];
             }
             else
             {
@@ -295,7 +315,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureByteArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureByteArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0])) //must be numeric literal
@@ -314,7 +334,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureDecimalArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureDecimalArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -333,7 +353,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureDoubleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureDoubleArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -352,7 +372,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureInt16Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureInt16Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -371,7 +391,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureInt32Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureInt32Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -390,7 +410,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureInt64Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureInt64Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -409,7 +429,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureSByteArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureSByteArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -428,7 +448,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureSingleArgument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureSingleArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
@@ -447,7 +467,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureUInt16Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureUInt16Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0])) //must be numeric literal
@@ -466,7 +486,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureUInt32Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureUInt32Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0])) //must be numeric literal
@@ -485,7 +505,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureUInt64Argument(string arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureUInt64Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
             object target = null;
             if (char.IsDigit(arg[0])) //must be numeric literal
@@ -506,7 +526,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region ensure argument type
-        private void EnsureArgumentType(string arg, object value, TypeCode typeCode, string lambdaName, int index)
+        private void EnsureArgumentType(ReadOnlySpan<char> arg, object value, TypeCode typeCode, string lambdaName, int index)
         {
             if (Type.GetTypeCode(value.GetType()) != typeCode)
             {
@@ -520,7 +540,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region format exception message builder
-        private string FormatExceptionMessageBuilder(string lambdaName, string arg, int index, TypeCode expectedType)
+        private string FormatExceptionMessageBuilder(string lambdaName, ReadOnlySpan<char> arg, int index, TypeCode expectedType)
         {
             string msg = "Attempted function invocation with invalid parameter..."
                            + $"Func name: {lambdaName}  expected: a properly formated {expectedType} literal. "
