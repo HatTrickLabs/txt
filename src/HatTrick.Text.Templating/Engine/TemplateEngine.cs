@@ -172,7 +172,7 @@ namespace HatTrick.Text.Templating
             string bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            _result.Append(target ?? string.Empty);
+            _result.Append(target);
         }
         #endregion
 

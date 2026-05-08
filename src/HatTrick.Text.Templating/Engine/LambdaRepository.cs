@@ -528,6 +528,7 @@ namespace HatTrick.Text.Templating
         #region ensure argument type
         private void EnsureArgumentType(ReadOnlySpan<char> arg, object value, TypeCode typeCode, string lambdaName, int index)
         {
+            //TODO: we are not accounting for null values here...
             if (Type.GetTypeCode(value.GetType()) != typeCode)
             {
                 string msg = "Attempted function invocation with invalid argument type..."
