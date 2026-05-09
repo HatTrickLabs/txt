@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Text;
 
 namespace HatTrick.Text.Templating
@@ -13,7 +14,7 @@ namespace HatTrick.Text.Templating
         private int _index;
         private int _lineNum;
         private int _columnNum;
-        private string _template;
+        private ReadOnlyMemory<char> _template;
         private ScopeChain _scopeChain;
         private LambdaRepository _lambdaRepo;
         private StringBuilder _result;
@@ -39,7 +40,8 @@ namespace HatTrick.Text.Templating
         #region constructors
         public TemplateEngine(string template)
         {
-            _template = template ?? throw new ArgumentNullException(nameof(template));
+            if (template == null) throw new ArgumentNullException(nameof(template));
+            _template = template.AsMemory();
             _maxStack = TemplateEngine.MaxStack;
             _index = 0;
             _tag = new StringBuilder(60);
@@ -47,12 +49,12 @@ namespace HatTrick.Text.Templating
             _scopeChain = new ScopeChain();
         }
 
-        private TemplateEngine(string template, ScopeChain scopeChain, LambdaRepository lambdaRepo, int maxStack, bool trimWhiteSpace)
+        private TemplateEngine(ReadOnlyMemory<char> template, ScopeChain scopeChain, LambdaRepository lambdaRepo, int maxStack, bool trimWhiteSpace)
         {
-            _template = template ?? throw new ArgumentNullException(nameof(template));
+            _template = template;
             _scopeChain = scopeChain;
             _lambdaRepo = lambdaRepo;
-            _maxStack = maxStack > 0 ? maxStack : throw new InvalidOperationException($"Stack depth overflow...stack depth cannot exceed {_maxStack}"); ;
+            _maxStack = maxStack > 0 ? maxStack : throw new InvalidOperationException($"Stack depth overflow...stack depth cannot exceed {_maxStack}");
             _trimWhitespace = trimWhiteSpace;
             _index = 0;
             _tag = new StringBuilder(60);
@@ -104,7 +106,7 @@ namespace HatTrick.Text.Templating
             while (this.Peek() != eot)
             {
                 //MunchContent returns true if a tag is encountered...
-                if (this.MunchContent(_result, false))
+                if (this.MunchContent(_result))
                 {
                     this.MunchTag(_tag, false);
                     this.HandleTag(new Tag(_tag, _trimWhitespace));
@@ -203,10 +205,18 @@ namespace HatTrick.Text.Templating
             if (render)
             {
                 _scopeChain.ApplyVariableScopeMarker();
-                string template = block.ToString();
-                TemplateEngine subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                string result = subEngine.Merge();
-                _result.Append(result);
+                int blockLen = block.Length;
+                char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
+                try
+                {
+                    block.CopyTo(0, buffer, 0, blockLen);
+                    TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                    _result.Append(subEngine.Merge());
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
                 _scopeChain.DereferenceVariableScope();
             }
 
@@ -239,17 +249,22 @@ namespace HatTrick.Text.Templating
 
                 //cast to enumerable
                 var items = (System.Collections.IEnumerable)target;
-                string itemContent;
-                TemplateEngine subEngine;
-                string template = block.ToString();
-                subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-
-                foreach (var item in items)
+                int blockLen = block.Length;
+                char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
+                try
                 {
-                    _scopeChain.ApplyVariableScopeMarker();
-                    itemContent = subEngine.Merge(item);
-                    _result.Append(itemContent);
-                    _scopeChain.DereferenceVariableScope();
+                    block.CopyTo(0, buffer, 0, blockLen);
+                    TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                    foreach (var item in items)
+                    {
+                        _scopeChain.ApplyVariableScopeMarker();
+                        _result.Append(subEngine.Merge(item));
+                        _scopeChain.DereferenceVariableScope();
+                    }
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
                 }
             }
 
@@ -274,14 +289,19 @@ namespace HatTrick.Text.Templating
 
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            string itemContent;
-            TemplateEngine subEngine;
             _scopeChain.ApplyVariableScopeMarker();
-            string template = block.ToString();
-            subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-            itemContent = subEngine.Merge(target);
-            _result.Append(itemContent);
-
+            int blockLen = block.Length;
+            char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
+            try
+            {
+                block.CopyTo(0, buffer, 0, blockLen);
+                TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                _result.Append(subEngine.Merge(target));
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(buffer);
+            }
             _scopeChain.DereferenceVariableScope();
 
             this.EnsureRightTrim(endTag);
@@ -293,47 +313,32 @@ namespace HatTrick.Text.Templating
         {
             this.EnsureLeftTrim(_result, tag);
 
-            string expression = tag.BindAs(); //example:  :name=$.Name, or with no assign example:  :name
+            ReadOnlySpan<char> expression = tag.BindAs(); //example:  :name=$.Name, or with no assign example:  :name
 
-            StringBuilder sb = new StringBuilder();
-            string name = null;
-            bool assignment = false;
-            for (int i = 0; i < expression.Length; i++)
-            {
-                if (!assignment && expression[i] == '=')
-                {
-                    name = sb.ToString();
-                    sb.Clear();
-                    assignment = true;
-                    continue;
-                }
-                sb.Append(expression[i]);
-            }
-
-            if (!assignment)
-            {
-                name = sb.ToString();
-            }
-
-            string bindAs = assignment ? sb.ToString() : null;
+            int eqIdx = expression.IndexOf('=');
+            bool assignment = eqIdx >= 0;
+            string name = (assignment ? expression.Slice(0, eqIdx) : expression).ToString();
+            ReadOnlySpan<char> bindAs = assignment ? expression.Slice(eqIdx + 1) : ReadOnlySpan<char>.Empty;
 
             object value = null;
             if (assignment)
             {
                 if (BindHelper.IsSingleQuoted(bindAs) || BindHelper.IsDoubleQuoted(bindAs))
-                    value = BindHelper.UnQuote(bindAs);                 //string literal
+                    value = bindAs.Slice(1, bindAs.Length - 2).ToString();
 
-                else if (BindHelper.IsNumericLiteral(bindAs))
-                    value = BindHelper.ParseNumericLiteral(bindAs);     //numeric literal
-
-                else if (string.Compare(bindAs, "true", true) == 0)
+                else if (MemoryExtensions.Equals(bindAs, "true", StringComparison.OrdinalIgnoreCase))
                     value = true;
 
-                else if (string.Compare(bindAs, "false", true) == 0)
+                else if (MemoryExtensions.Equals(bindAs, "false", StringComparison.OrdinalIgnoreCase))
                     value = false;
 
                 else
-                    value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+                {
+                    string bindAsStr = bindAs.ToString();
+                    value = BindHelper.IsNumericLiteral(bindAsStr)
+                        ? BindHelper.ParseNumericLiteral(bindAsStr)
+                        : BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+                }
             }
 
             if (isDeclaration)
@@ -371,9 +376,8 @@ namespace HatTrick.Text.Templating
             string template = (target as string) ?? throw new InvalidOperationException($"Sub template tag: {tag} reflected value is not typeof string: {target}");
 
             _scopeChain.ApplyVariableScopeMarker();
-            TemplateEngine subEngine = new TemplateEngine(template, _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-            string result = subEngine.Merge();
-            _result.Append(result);
+            TemplateEngine subEngine = new TemplateEngine(template.AsMemory(), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+            _result.Append(subEngine.Merge());
             _scopeChain.DereferenceVariableScope();
 
             this.EnsureRightTrim(tag);
@@ -385,23 +389,25 @@ namespace HatTrick.Text.Templating
         {
             this.EnsureLeftTrim(_result, tag);
 
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
 
-            object output = null;
+            object output;
             if (BindHelper.IsDoubleQuoted(bindAs) || BindHelper.IsSingleQuoted(bindAs))
-                output = BindHelper.Strip('\\', BindHelper.UnQuote(bindAs));
+                output = BindHelper.Strip('\\', bindAs.Slice(1, bindAs.Length - 2).ToString());
 
-            else if (BindHelper.IsNumericLiteral(bindAs))
-                output = bindAs;
-
-            else if (string.Compare(bindAs, "true", true) == 0)
+            else if (MemoryExtensions.Equals(bindAs, "true", StringComparison.OrdinalIgnoreCase))
                 output = true;
 
-            else if (string.Compare(bindAs, "false", true) == 0)
+            else if (MemoryExtensions.Equals(bindAs, "false", StringComparison.OrdinalIgnoreCase))
                 output = false;
 
             else
-                output = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+            {
+                string bindAsStr = bindAs.ToString();
+                output = BindHelper.IsNumericLiteral(bindAsStr)
+                    ? bindAsStr
+                    : BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+            }
 
             System.Diagnostics.Trace.WriteLine(output);
 
@@ -412,35 +418,28 @@ namespace HatTrick.Text.Templating
         #region peek
         public char Peek()
         {
-            char c = (_template.Length > _index) 
-                 ? _template[_index] 
-                 : (char)3; //eot (end of text)
-
-            return c;
+            ReadOnlySpan<char> span = _template.Span;
+            return span.Length > _index ? span[_index] : (char)3;
         }
 
         public char Peek(int forward)
         {
+            ReadOnlySpan<char> span = _template.Span;
             int at = _index + forward;
-            char c = (_template.Length > at)
-                ? _template[at]
-                : (char)3; //eot (end of text)
-
-            return c;
+            return span.Length > at ? span[at] : (char)3;
         }
 
-        private char Peek(Predicate<char> till)
+        private char PeekTagDesignator()
         {
-            char c;
+            ReadOnlySpan<char> span = _template.Span;
             int i = _index;
-            while (i < _template.Length)
+            while (i < span.Length)
             {
-                c = _template[i++];
-                if (till(c))
+                char c = span[i++];
+                if (!(c == '{' || c == '-' || c == '+' || c == ' ' || c == '\t' || c == '\n' || c == '\r'))
                     return c;
             }
-
-            return (char)3; //eot (end of text)
+            return (char)3;
         }
         #endregion
 
@@ -448,9 +447,8 @@ namespace HatTrick.Text.Templating
         private char Read()
         {
             char eot = (char)3;
-            char c = (_template.Length > _index)
-                 ? _template[_index++]
-                 : eot; //eot (end of text)
+            ReadOnlySpan<char> span = _template.Span;
+            char c = span.Length > _index ? span[_index++] : eot;
 
             if (c != eot)
             {
@@ -475,7 +473,7 @@ namespace HatTrick.Text.Templating
                 throw new InvalidOperationException("Cannot step backward, current template index is at 0.");
 
             _index -= 1;
-            char c = _template[_index];
+            char c = _template.Span[_index];
 
             if (c != '\n')
             {
@@ -490,26 +488,20 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region munch
-        private bool MunchContent(StringBuilder output, bool verbatim)
+        private bool MunchContent(StringBuilder output)
         {
             char c;
-            char eot = (char)3; //eot (end of text)
+            char eot = (char)3;
             while ((c = this.Read()) != eot)
             {
                 if (c == '{')
                 {
                     if (this.Peek() == '{')
                     {
-                        if (verbatim) //if parsing blocked template content, maintain the escape char
-                            output.Append(c).Append(this.Read());
-
-                        else //discard the first one(the escape char) and write the second one
-                            output.Append(this.Read());
-
+                        output.Append(this.Read()); //discard escape char, write the literal '{'
                         continue;
                     }
-                    //if the open bracket is not escaped, we found a tag
-                    this.StepBack();//back the index up 1 spot to basically pop the open tag char '{' back on to the read queue
+                    this.StepBack();
                     return true;
                 }
 
@@ -517,18 +509,42 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.Peek() == '}')
                     {
-                        if (verbatim) //if parsing blocked template content, maintain the escape char
-                            output.Append(c).Append(this.Read());
-
-                        else //discard the first one(the escape char) and write the second one
-                            output.Append(this.Read());
-
+                        output.Append(this.Read()); //discard escape char, write the literal '}'
                         continue;
                     }
-                    else
+                    throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
+                }
+
+                output.Append(c);
+            }
+            return false;
+        }
+
+        private bool MunchRawContent(StringBuilder output)
+        {
+            char c;
+            char eot = (char)3;
+            while ((c = this.Read()) != eot)
+            {
+                if (c == '{')
+                {
+                    if (this.Peek() == '{')
                     {
-                        throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
+                        output.Append(c).Append(this.Read()); //preserve both chars for sub-engine processing
+                        continue;
                     }
+                    this.StepBack();
+                    return true;
+                }
+
+                if (c == '}')
+                {
+                    if (this.Peek() == '}')
+                    {
+                        output.Append(c).Append(this.Read()); //preserve both chars for sub-engine processing
+                        continue;
+                    }
+                    throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
                 }
 
                 output.Append(c);
@@ -538,8 +554,7 @@ namespace HatTrick.Text.Templating
 
         private void MunchTag(StringBuilder tag, bool verbatim)
         {
-            Predicate<char> isTagDesignator = (c) => !(c == '{' || c == '-' || c == '+' || c == ' ' || c == '\t' || c == '\n' || c == '\r');
-            char designator = this.Peek(isTagDesignator);
+            char designator = this.PeekTagDesignator();
             switch (designator)
             {
                 case '#':
@@ -705,7 +720,7 @@ namespace HatTrick.Text.Templating
 
             while ((c = this.Peek()) != eot)
             {
-                if (this.MunchContent(output, true))
+                if (this.MunchRawContent(output))
                 {
                     this.MunchTag(tag, true);
 
@@ -756,18 +771,9 @@ namespace HatTrick.Text.Templating
         {
             if (tag.ShouldTrimRight())
             {
-                char lastChar = '\0';
-                Func<char, bool> isWhitespace = (c) =>
-                {
-                    lastChar = c;
-                    return c == ' ' || c == '\t';
-                };
-
-                //dispose of read char until we encounter something other than <space> or <tab>
-                while (isWhitespace(this.Peek()))
-                {
-                    _ = this.Read(); //discard whitespace...
-                }
+                char lastChar;
+                while ((lastChar = this.Peek()) == ' ' || lastChar == '\t')
+                    _ = this.Read();
 
                 //must account for the removal of the 1 newline for both unix and windows based systems...could be 1 or two chars needing disposed
                 if (lastChar == '\r' || lastChar == '\n')

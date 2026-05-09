@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using System.Buffers;
 
 namespace HatTrick.Text.Templating
 {
@@ -22,20 +21,16 @@ namespace HatTrick.Text.Templating
         #region register
         public void Register(string name, Delegate function)
         {
-            if (_lambdas.ContainsKey(name))
+            if (!_lambdas.TryAdd(name, function))
                 throw new ArgumentException($"A function with the provided name: {name} has already been added");
-
-            _lambdas.Add(name, function);
         }
         #endregion
 
         #region deregister
         public void Deregister(string name)
         {
-            if (!_lambdas.ContainsKey(name))
+            if (!_lambdas.Remove(name))
                 throw new ArgumentException($"No lambda exists for the provided name: {name}");
-
-            _lambdas.Remove(name);
         }
         #endregion
 
@@ -44,19 +39,16 @@ namespace HatTrick.Text.Templating
         {
             this.Split(lambdaExpression, out ReadOnlySpan<char> nameSpan, out ReadOnlySpan<char> argumentsSpan);
 
-            //TODO: are these ToString conversions necessary ???
             string name = nameSpan.ToString();
-            string arguments = argumentsSpan.ToString();
 
-            if (!_lambdas.ContainsKey(name))
+            if (!_lambdas.TryGetValue(name, out Delegate expr))
                 throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {name}");
 
-            Delegate expr = _lambdas[name];
             MethodInfo mi = expr.Method;
             ParameterInfo[] pInfos = mi.GetParameters();
 
             string[] argVals = new string[pInfos.Length];
-            int count = this.ParseLambdaArgs(arguments, ref argVals);
+            int count = this.ParseLambdaArgs(argumentsSpan, ref argVals);
 
             if (pInfos.Length != count)
             {
@@ -77,35 +69,27 @@ namespace HatTrick.Text.Templating
         #region split
         private void Split(ReadOnlySpan<char> expression, out ReadOnlySpan<char> name, out ReadOnlySpan<char> paramList)
         {
-            //i.e. (arg1, arg2) => LambdaName
-            name = null;
-            paramList = null;
-
-            string op = "=>";
-            int opIndex = expression.IndexOf(op);
+            int opIndex = expression.IndexOf("=>");
 
             if (opIndex < 0)
                 throw new ArgumentException("Expression is not a properly formatted lambda function", nameof(expression));
 
-            //right side of expression
             name = expression.Slice(opIndex + 2);
-
-            //left side of expression 
             paramList = expression.Slice(0, opIndex);
         }
         #endregion
 
         #region parse lambda args
-        private int ParseLambdaArgs(string argsExpr, ref string[] args)
+        private int ParseLambdaArgs(ReadOnlySpan<char> argsExpr, ref string[] args)
         {
             char c;
             int at = 0;
-            char singleQuote    = '\'';
-            char doubleQuote    = '"';
-            char escape         = '\\';
-            char comma          = ',';
-            char openParen      = '(';
-            char closeParen     = ')';
+            char singleQuote = '\'';
+            char doubleQuote = '"';
+            char escape      = '\\';
+            char comma       = ',';
+            char openParen   = '(';
+            char closeParen  = ')';
 
             StringBuilder sb = new StringBuilder();
             bool singleQuoted = false;
@@ -120,7 +104,6 @@ namespace HatTrick.Text.Templating
                 {
                     if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-
                     else if (!singleQuoted)
                         doubleQuoted = !doubleQuoted;
                 }
@@ -128,17 +111,15 @@ namespace HatTrick.Text.Templating
                 {
                     if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
                         sb.Length -= 1;
-
                     else if (!doubleQuoted)
                         singleQuoted = !singleQuoted;
                 }
                 else if (c == comma)
                 {
                     if (!(singleQuoted || doubleQuoted))
-                    {   
+                    {
                         if (at < args.Length)
                             args[at++] = sb.ToString();
-
                         sb.Clear();
                         continue;
                     }
@@ -146,11 +127,8 @@ namespace HatTrick.Text.Templating
                 sb.Append(c);
             }
 
-            if (sb.Length > 0)
-            {
-                if (at < args.Length)
-                    args[at++] = sb.ToString(); //final...
-            }
+            if (sb.Length > 0 && at < args.Length)
+                args[at++] = sb.ToString();
 
             return at;
         }
@@ -159,368 +137,95 @@ namespace HatTrick.Text.Templating
         #region capture lambda arguments
         private object CaptureLambdaArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ParameterInfo paramInfo, string lambda, int index)
         {
-            object obj = null;
             TypeCode tCode = Type.GetTypeCode(paramInfo.ParameterType);
-            switch (tCode)
+            return tCode switch
             {
-                case TypeCode.Object:
-                    obj = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                    break;
-                case TypeCode.Boolean:
-                    obj = this.EnsureBooleanArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Byte:
-                    obj = this.EnsureByteArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Char:
-                    obj = this.EnsureCharArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.String:
-                    obj = this.EnsureStringArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.DateTime:
-                    obj = this.EnsureDateTimeArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Decimal:
-                    obj = this.EnsureDecimalArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Double:
-                    obj = this.EnsureDoubleArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Int16:
-                    obj = this.EnsureInt16Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Int32:
-                    obj = this.EnsureInt32Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Int64:
-                    obj = this.EnsureInt64Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.UInt16:
-                    obj = this.EnsureUInt16Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.UInt32:
-                    obj = this.EnsureUInt32Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.UInt64:
-                    obj = this.EnsureUInt64Argument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.SByte:
-                    obj = this.EnsureSByteArgument(arg, scopeChain, lambda, index);
-                    break;
-                case TypeCode.Single:
-                    obj = this.EnsureSingleArgument(arg, scopeChain, lambda, index); ;
-                    break;
-                //case TypeCode.Empty:
-                //    break;
-                //case TypeCode.DBNull:
-                //    break;
-                default:
-                    throw new InvalidOperationException($"Encountered un-expected Type.TypeCode: {tCode}");
-            }
-
-            return obj;
+                TypeCode.Object   => BindHelper.ResolveBindTarget(arg, this, scopeChain),
+                TypeCode.Boolean  => this.EnsureBooleanArgument(arg, scopeChain, lambda, index),
+                TypeCode.Byte     => this.EnsureNumericArgument<byte>(arg, scopeChain, lambda, index),
+                TypeCode.Char     => this.EnsureCharArgument(arg, scopeChain, lambda, index),
+                TypeCode.String   => this.EnsureStringArgument(arg, scopeChain, lambda, index),
+                TypeCode.DateTime => this.EnsureDateTimeArgument(arg, scopeChain, lambda, index),
+                TypeCode.Decimal  => this.EnsureNumericArgument<decimal>(arg, scopeChain, lambda, index),
+                TypeCode.Double   => this.EnsureNumericArgument<double>(arg, scopeChain, lambda, index),
+                TypeCode.Int16    => this.EnsureNumericArgument<short>(arg, scopeChain, lambda, index),
+                TypeCode.Int32    => this.EnsureNumericArgument<int>(arg, scopeChain, lambda, index),
+                TypeCode.Int64    => this.EnsureNumericArgument<long>(arg, scopeChain, lambda, index),
+                TypeCode.UInt16   => this.EnsureNumericArgument<ushort>(arg, scopeChain, lambda, index),
+                TypeCode.UInt32   => this.EnsureNumericArgument<uint>(arg, scopeChain, lambda, index),
+                TypeCode.UInt64   => this.EnsureNumericArgument<ulong>(arg, scopeChain, lambda, index),
+                TypeCode.SByte    => this.EnsureNumericArgument<sbyte>(arg, scopeChain, lambda, index),
+                TypeCode.Single   => this.EnsureNumericArgument<float>(arg, scopeChain, lambda, index),
+                _                 => throw new InvalidOperationException($"Encountered un-expected Type.TypeCode: {tCode}")
+            };
         }
         #endregion
 
         #region ensure argument
         private object EnsureStringArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
-            object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
-            {
-                target = arg.Slice(1, (arg.Length - 2)).ToString();
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.String, lambdaName, index);
-            }
+                return arg.Slice(1, arg.Length - 2).ToString();
+
+            object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            this.EnsureArgumentType(arg, target, TypeCode.String, lambdaName, index);
             return target;
         }
 
         private object EnsureDateTimeArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
-            object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
-                arg = arg.Slice(1, (arg.Length - 2));
+                arg = arg.Slice(1, arg.Length - 2);
                 if (!DateTime.TryParse(arg, out DateTime dt))
-                {
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
-                }
                 return dt;
             }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.DateTime, lambdaName, index);
-            }
+
+            object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            this.EnsureArgumentType(arg, target, TypeCode.DateTime, lambdaName, index);
             return target;
         }
 
         public object EnsureBooleanArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
-            object target = null;
             if (this.IsTrue(arg))
-            {
-                target = true;
-            }
-            else if (this.IsFalse(arg))
-            {
-                target = false;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Boolean, lambdaName, index);
-            }
+                return true;
+
+            if (this.IsFalse(arg))
+                return false;
+
+            object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            this.EnsureArgumentType(arg, target, TypeCode.Boolean, lambdaName, index);
             return target;
-        }
-
-        private bool IsTrue(ReadOnlySpan<char> arg)
-        {
-            return arg.Length == 4
-                && (arg[0] == 'T' || arg[0] == 't')
-                && (arg[1] == 'r' || arg[1] == 'R')
-                && (arg[2] == 'u' || arg[2] == 'u')
-                && (arg[3] == 'e' || arg[3] == 'e');
-        }
-
-        private bool IsFalse(ReadOnlySpan<char> arg)
-        {
-            return arg.Length == 5
-                && (arg[0] == 'F' || arg[0] == 'f')
-                && (arg[1] == 'a' || arg[1] == 'A')
-                && (arg[2] == 'l' || arg[2] == 'L')
-                && (arg[3] == 's' || arg[3] == 'S')
-                && (arg[4] == 'e' || arg[4] == 'E');
         }
 
         private object EnsureCharArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
         {
-            object target = null;
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
                 if (arg.Length != 3)
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Char));
+                return arg[1];
+            }
 
-                target = arg[1];
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Char, lambdaName, index);
-            }
+            object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            this.EnsureArgumentType(arg, target, TypeCode.Char, lambdaName, index);
             return target;
         }
 
-        private object EnsureByteArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureNumericArgument<T>(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+            where T : struct, ISpanParsable<T>
         {
-            object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
+            if (arg.Length > 0 && (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+'))
             {
-                if (!byte.TryParse(arg, out byte b))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Byte));
-                }
-                target = b;
+                if (!T.TryParse(arg, null, out T val))
+                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, Type.GetTypeCode(typeof(T))));
+                return val;
             }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Byte, lambdaName, index);
-            }
-            return target;
-        }
 
-        private object EnsureDecimalArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!decimal.TryParse(arg, out decimal d))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Decimal));
-                }
-                target = d;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Decimal, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureDoubleArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!double.TryParse(arg, out double d))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Double));
-                }
-                target = d;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Double, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureInt16Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!Int16.TryParse(arg, out Int16 i))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int16));
-                }
-                target = i;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Int16, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureInt32Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!int.TryParse(arg, out int i))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int32));
-                }
-                target = i;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Int32, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureInt64Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!long.TryParse(arg, out long l))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Int64));
-                }
-                target = l;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Int64, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureSByteArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!sbyte.TryParse(arg, out sbyte s))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.SByte));
-                }
-                target = s;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.SByte, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureSingleArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+') //must be numeric literal
-            {
-                if (!Single.TryParse(arg, out Single s))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Single));
-                }
-                target = s;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.Single, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureUInt16Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
-            {
-                if (!UInt16.TryParse(arg, out UInt16 u))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt16));
-                }
-                target = u;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.UInt16, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureUInt32Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
-            {
-                if (!UInt32.TryParse(arg, out UInt32 u))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt32));
-                }
-                target = u;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.UInt32, lambdaName, index);
-            }
-            return target;
-        }
-
-        private object EnsureUInt64Argument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
-        {
-            object target = null;
-            if (char.IsDigit(arg[0])) //must be numeric literal
-            {
-                if (!UInt64.TryParse(arg, out UInt64 u))
-                {
-                    throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.UInt64));
-                }
-                target = u;
-            }
-            else
-            {
-                target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-                this.EnsureArgumentType(arg, target, TypeCode.UInt64, lambdaName, index);
-            }
+            object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            this.EnsureArgumentType(arg, target, Type.GetTypeCode(typeof(T)), lambdaName, index);
             return target;
         }
         #endregion
@@ -528,16 +233,22 @@ namespace HatTrick.Text.Templating
         #region ensure argument type
         private void EnsureArgumentType(ReadOnlySpan<char> arg, object value, TypeCode typeCode, string lambdaName, int index)
         {
-            //TODO: we are not accounting for null values here...
-            if (Type.GetTypeCode(value.GetType()) != typeCode)
+            if (value is null || Type.GetTypeCode(value.GetType()) != typeCode)
             {
                 string msg = "Attempted function invocation with invalid argument type..."
                            + $"Func name: {lambdaName}...expected argument of type: '{typeCode}'...."
                            + $"argument value provided: {arg}...at parameter position: {index}";
-
                 throw new ArgumentException(msg);
             }
         }
+        #endregion
+
+        #region is true / is false
+        private bool IsTrue(ReadOnlySpan<char> arg) =>
+            MemoryExtensions.Equals(arg, "true", StringComparison.OrdinalIgnoreCase);
+
+        private bool IsFalse(ReadOnlySpan<char> arg) =>
+            MemoryExtensions.Equals(arg, "false", StringComparison.OrdinalIgnoreCase);
         #endregion
 
         #region format exception message builder

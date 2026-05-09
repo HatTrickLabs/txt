@@ -351,14 +351,7 @@ namespace HatTrick.Text.Templating
             else
                 len = _tagLength - (maxLen - 2);
 
-            if (len > 0)
-            {
-                char[] tag = new char[len];
-                _tag.CopyTo(start, tag, 0, len);
-                return new string(tag);
-            }
-
-            return null;
+            return len > 0 ? _tag.ToString(start, len) : null;
         }
         #endregion
 
