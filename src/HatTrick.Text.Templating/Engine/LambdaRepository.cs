@@ -1,7 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace HatTrick.Text.Templating
 {
@@ -14,7 +14,7 @@ namespace HatTrick.Text.Templating
         #region constructors
         public LambdaRepository()
         {
-            _lambdas = new Dictionary<string, Delegate>();
+            _lambdas = new Dictionary<string, Delegate>(StringComparer.Ordinal);
         }
         #endregion
 
@@ -39,27 +39,20 @@ namespace HatTrick.Text.Templating
         {
             this.Split(lambdaExpression, out ReadOnlySpan<char> nameSpan, out ReadOnlySpan<char> argumentsSpan);
 
-            string name = nameSpan.ToString();
-
-            if (!_lambdas.TryGetValue(name, out Delegate expr))
-                throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {name}");
+            var lookup = _lambdas.GetAlternateLookup<ReadOnlySpan<char>>();
+            if (!lookup.TryGetValue(nameSpan, out Delegate expr))
+                throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {nameSpan}");
 
             MethodInfo mi = expr.Method;
             ParameterInfo[] pInfos = mi.GetParameters();
 
-            string[] argVals = new string[pInfos.Length];
-            int count = this.ParseLambdaArgs(argumentsSpan, ref argVals);
+            object[] args = new object[pInfos.Length];
+            int count = this.ParseAndCaptureArgs(argumentsSpan, args, pInfos, scopeChain, nameSpan);
 
             if (pInfos.Length != count)
             {
-                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {name} expected aruments: {pInfos.Length} provided argument: {count}";
+                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {nameSpan} expected arguments: {pInfos.Length} provided argument: {count}";
                 throw new InvalidOperationException(msg);
-            }
-
-            object[] args = new object[pInfos.Length];
-            for (int i = 0; i < pInfos.Length; i++)
-            {
-                args[i] = this.CaptureLambdaArgument(argVals[i], scopeChain, pInfos[i], name, i);
             }
 
             return () => expr.DynamicInvoke(args);
@@ -79,90 +72,117 @@ namespace HatTrick.Text.Templating
         }
         #endregion
 
-        #region parse lambda args
-        private int ParseLambdaArgs(ReadOnlySpan<char> argsExpr, ref string[] args)
+        #region parse and capture args
+        private int ParseAndCaptureArgs(ReadOnlySpan<char> argsExpr, object[] args, ParameterInfo[] pInfos, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName)
         {
-            char c;
+            Span<char> stackBuffer = stackalloc char[256];
+            char[] rentedBuffer = null;
+            Span<char> argBuffer = stackBuffer;
+            int bufLen = 0;
             int at = 0;
-            char singleQuote = '\'';
-            char doubleQuote = '"';
-            char escape      = '\\';
-            char comma       = ',';
-            char openParen   = '(';
-            char closeParen  = ')';
-
-            StringBuilder sb = new StringBuilder();
             bool singleQuoted = false;
             bool doubleQuoted = false;
-            for (int i = 0; i < argsExpr.Length; i++)
-            {
-                c = argsExpr[i];
-                if (c == openParen || c == closeParen)
-                    continue;
 
-                else if (c == doubleQuote)
+            try
+            {
+                for (int i = 0; i < argsExpr.Length; i++)
                 {
-                    if (doubleQuoted && i > 0 && argsExpr[i - 1] == escape)
-                        sb.Length -= 1;
-                    else if (!singleQuoted)
-                        doubleQuoted = !doubleQuoted;
-                }
-                else if (c == singleQuote)
-                {
-                    if (singleQuoted && i > 0 && argsExpr[i - 1] == escape)
-                        sb.Length -= 1;
-                    else if (!doubleQuoted)
-                        singleQuoted = !singleQuoted;
-                }
-                else if (c == comma)
-                {
-                    if (!(singleQuoted || doubleQuoted))
+                    char c = argsExpr[i];
+
+                    if (c == '(' || c == ')')
+                        continue;
+
+                    if (c == '"')
+                    {
+                        if (doubleQuoted && i > 0 && argsExpr[i - 1] == '\\')
+                            bufLen -= 1;
+                        else if (!singleQuoted)
+                            doubleQuoted = !doubleQuoted;
+                    }
+                    else if (c == '\'')
+                    {
+                        if (singleQuoted && i > 0 && argsExpr[i - 1] == '\\')
+                            bufLen -= 1;
+                        else if (!doubleQuoted)
+                            singleQuoted = !singleQuoted;
+                    }
+                    else if (c == ',' && !(singleQuoted || doubleQuoted))
                     {
                         if (at < args.Length)
-                            args[at++] = sb.ToString();
-                        sb.Clear();
+                        {
+                            int idx = at;
+                            args[idx] = this.CaptureLambdaArgument(argBuffer[..bufLen], scopeChain, pInfos[idx], lambdaName, idx);
+                            at++;
+                        }
+                        bufLen = 0;
                         continue;
                     }
+
+                    if (bufLen == argBuffer.Length)
+                        argBuffer = this.GrowArgBuffer(ref rentedBuffer, argBuffer, bufLen);
+
+                    argBuffer[bufLen++] = c;
                 }
-                sb.Append(c);
+
+                if (bufLen > 0 && at < args.Length)
+                {
+                    int idx = at;
+                    args[idx] = this.CaptureLambdaArgument(argBuffer[..bufLen], scopeChain, pInfos[idx], lambdaName, idx);
+                    at++;
+                }
+
+                return at;
             }
+            finally
+            {
+                if (rentedBuffer != null)
+                    ArrayPool<char>.Shared.Return(rentedBuffer);
+            }
+        }
 
-            if (sb.Length > 0 && at < args.Length)
-                args[at++] = sb.ToString();
+        private Span<char> GrowArgBuffer(ref char[] rentedBuffer, Span<char> current, int len)
+        {
+            int newSize = current.Length * 2;
+            char[] newRented = ArrayPool<char>.Shared.Rent(newSize);
+            current[..len].CopyTo(newRented);
 
-            return at;
+            if (rentedBuffer != null)
+                ArrayPool<char>.Shared.Return(rentedBuffer);
+
+            rentedBuffer = newRented;
+            return newRented;
         }
         #endregion
 
         #region capture lambda arguments
-        private object CaptureLambdaArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ParameterInfo paramInfo, string lambda, int index)
+        private object CaptureLambdaArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ParameterInfo paramInfo, ReadOnlySpan<char> lambdaName, int index)
         {
             TypeCode tCode = Type.GetTypeCode(paramInfo.ParameterType);
             return tCode switch
             {
                 TypeCode.Object   => BindHelper.ResolveBindTarget(arg, this, scopeChain),
-                TypeCode.Boolean  => this.EnsureBooleanArgument(arg, scopeChain, lambda, index),
-                TypeCode.Byte     => this.EnsureNumericArgument<byte>(arg, scopeChain, lambda, index),
-                TypeCode.Char     => this.EnsureCharArgument(arg, scopeChain, lambda, index),
-                TypeCode.String   => this.EnsureStringArgument(arg, scopeChain, lambda, index),
-                TypeCode.DateTime => this.EnsureDateTimeArgument(arg, scopeChain, lambda, index),
-                TypeCode.Decimal  => this.EnsureNumericArgument<decimal>(arg, scopeChain, lambda, index),
-                TypeCode.Double   => this.EnsureNumericArgument<double>(arg, scopeChain, lambda, index),
-                TypeCode.Int16    => this.EnsureNumericArgument<short>(arg, scopeChain, lambda, index),
-                TypeCode.Int32    => this.EnsureNumericArgument<int>(arg, scopeChain, lambda, index),
-                TypeCode.Int64    => this.EnsureNumericArgument<long>(arg, scopeChain, lambda, index),
-                TypeCode.UInt16   => this.EnsureNumericArgument<ushort>(arg, scopeChain, lambda, index),
-                TypeCode.UInt32   => this.EnsureNumericArgument<uint>(arg, scopeChain, lambda, index),
-                TypeCode.UInt64   => this.EnsureNumericArgument<ulong>(arg, scopeChain, lambda, index),
-                TypeCode.SByte    => this.EnsureNumericArgument<sbyte>(arg, scopeChain, lambda, index),
-                TypeCode.Single   => this.EnsureNumericArgument<float>(arg, scopeChain, lambda, index),
+                TypeCode.Boolean  => this.EnsureBooleanArgumentCore(arg, scopeChain, lambdaName, index),
+                TypeCode.Byte     => this.EnsureNumericArgument<byte>(arg, scopeChain, lambdaName, index),
+                TypeCode.Char     => this.EnsureCharArgument(arg, scopeChain, lambdaName, index),
+                TypeCode.String   => this.EnsureStringArgument(arg, scopeChain, lambdaName, index),
+                TypeCode.DateTime => this.EnsureDateTimeArgument(arg, scopeChain, lambdaName, index),
+                TypeCode.Decimal  => this.EnsureNumericArgument<decimal>(arg, scopeChain, lambdaName, index),
+                TypeCode.Double   => this.EnsureNumericArgument<double>(arg, scopeChain, lambdaName, index),
+                TypeCode.Int16    => this.EnsureNumericArgument<short>(arg, scopeChain, lambdaName, index),
+                TypeCode.Int32    => this.EnsureNumericArgument<int>(arg, scopeChain, lambdaName, index),
+                TypeCode.Int64    => this.EnsureNumericArgument<long>(arg, scopeChain, lambdaName, index),
+                TypeCode.UInt16   => this.EnsureNumericArgument<ushort>(arg, scopeChain, lambdaName, index),
+                TypeCode.UInt32   => this.EnsureNumericArgument<uint>(arg, scopeChain, lambdaName, index),
+                TypeCode.UInt64   => this.EnsureNumericArgument<ulong>(arg, scopeChain, lambdaName, index),
+                TypeCode.SByte    => this.EnsureNumericArgument<sbyte>(arg, scopeChain, lambdaName, index),
+                TypeCode.Single   => this.EnsureNumericArgument<float>(arg, scopeChain, lambdaName, index),
                 _                 => throw new InvalidOperationException($"Encountered un-expected Type.TypeCode: {tCode}")
             };
         }
         #endregion
 
         #region ensure argument
-        private object EnsureStringArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureStringArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName, int index)
         {
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
                 return arg.Slice(1, arg.Length - 2).ToString();
@@ -172,7 +192,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureDateTimeArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureDateTimeArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName, int index)
         {
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
@@ -188,6 +208,9 @@ namespace HatTrick.Text.Templating
         }
 
         public object EnsureBooleanArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+            => this.EnsureBooleanArgumentCore(arg, scopeChain, lambdaName, index);
+
+        private object EnsureBooleanArgumentCore(ReadOnlySpan<char> arg, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName, int index)
         {
             if (this.IsTrue(arg))
                 return true;
@@ -200,7 +223,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureCharArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureCharArgument(ReadOnlySpan<char> arg, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName, int index)
         {
             if (BindHelper.IsDoubleQuoted(arg) || BindHelper.IsSingleQuoted(arg))
             {
@@ -214,7 +237,7 @@ namespace HatTrick.Text.Templating
             return target;
         }
 
-        private object EnsureNumericArgument<T>(ReadOnlySpan<char> arg, ScopeChain scopeChain, string lambdaName, int index)
+        private object EnsureNumericArgument<T>(ReadOnlySpan<char> arg, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName, int index)
             where T : struct, ISpanParsable<T>
         {
             if (arg.Length > 0 && (char.IsDigit(arg[0]) || arg[0] == '.' || arg[0] == '-' || arg[0] == '+'))
@@ -225,13 +248,15 @@ namespace HatTrick.Text.Templating
             }
 
             object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
+            if (target is string s && T.TryParse(s, null, out T parsed))
+                return parsed;
             this.EnsureArgumentType(arg, target, Type.GetTypeCode(typeof(T)), lambdaName, index);
             return target;
         }
         #endregion
 
         #region ensure argument type
-        private void EnsureArgumentType(ReadOnlySpan<char> arg, object value, TypeCode typeCode, string lambdaName, int index)
+        private void EnsureArgumentType(ReadOnlySpan<char> arg, object value, TypeCode typeCode, ReadOnlySpan<char> lambdaName, int index)
         {
             if (value is null || Type.GetTypeCode(value.GetType()) != typeCode)
             {
@@ -252,13 +277,11 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region format exception message builder
-        private string FormatExceptionMessageBuilder(string lambdaName, ReadOnlySpan<char> arg, int index, TypeCode expectedType)
+        private string FormatExceptionMessageBuilder(ReadOnlySpan<char> lambdaName, ReadOnlySpan<char> arg, int index, TypeCode expectedType)
         {
-            string msg = "Attempted function invocation with invalid parameter..."
-                           + $"Func name: {lambdaName}  expected: a properly formated {expectedType} literal. "
-                           + $"value provided: {arg} at parameter position: {index}";
-
-            return msg;
+            return "Attempted function invocation with invalid parameter..."
+                 + $"Func name: {lambdaName}  expected: a properly formated {expectedType} literal. "
+                 + $"value provided: {arg} at parameter position: {index}";
         }
         #endregion
     }

@@ -291,7 +291,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region bind as
-        public string BindAs()
+        public ReadOnlySpan<char> BindAs()
         {
             TagType type = _type;
 
@@ -351,7 +351,18 @@ namespace HatTrick.Text.Templating
             else
                 len = _tagLength - (maxLen - 2);
 
-            return len > 0 ? _tag.ToString(start, len) : null;
+            if (len <= 0)
+                return ReadOnlySpan<char>.Empty;
+
+            StringBuilder.ChunkEnumerator chunks = _tag.GetChunks();
+            if (chunks.MoveNext())
+            {
+                ReadOnlyMemory<char> first = chunks.Current;
+                if (!chunks.MoveNext())
+                    return first.Span.Slice(start, len);
+            }
+
+            return _tag.ToString(start, len); // multi-chunk fallback (not expected for small tags)
         }
         #endregion
 

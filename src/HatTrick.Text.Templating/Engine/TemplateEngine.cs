@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Text;
 
 namespace HatTrick.Text.Templating
@@ -171,7 +170,7 @@ namespace HatTrick.Text.Templating
         #region handle simple tag
         private void HandleSimpleTag(Tag tag)
         {
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             _result.Append(target);
@@ -184,39 +183,25 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            StringBuilder block = new StringBuilder();
-
-            //roll and emit until proper #/if tag found (allowing nested #if #/if tags
-            Tag endTag;
-            this.MunchBlockContent(block, TagType.If, out endTag);
-
-            this.EnsureLeftTrim(block, endTag);
-
             ReadOnlySpan<char> bindAs = tag.BindAs();
             bool negate = bindAs[0] == '!';
-
             object target = BindHelper.ResolveBindTarget(negate ? bindAs.Slice(1) : bindAs, _lambdaRepo, _scopeChain);
-
             bool render = BindHelper.IsTrue(target);
-
             if (negate)
                 render = !render;
+
+            int blockStart = _index;
+            Tag endTag;
+            int blockEnd = this.MunchBlockContent(TagType.If, out endTag);
+
+            if (endTag.ShouldTrimLeft())
+                blockEnd = this.TrimBlockEnd(blockEnd);
 
             if (render)
             {
                 _scopeChain.ApplyVariableScopeMarker();
-                int blockLen = block.Length;
-                char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
-                try
-                {
-                    block.CopyTo(0, buffer, 0, blockLen);
-                    TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                    _result.Append(subEngine.Merge());
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(buffer);
-                }
+                TemplateEngine subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                _result.Append(subEngine.Merge());
                 _scopeChain.DereferenceVariableScope();
             }
 
@@ -230,41 +215,28 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            StringBuilder block = new StringBuilder();
-
-            //roll and emit until proper #/each tag found (allowing nested #each #/each tags
-            Tag endTag;
-            this.MunchBlockContent(block, TagType.Each, out endTag);
-            this.EnsureLeftTrim(block, endTag);
-
-            string bindAs = tag.BindAs();
-
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            if (!(target == null)) //if null just ignore
+            int blockStart = _index;
+            Tag endTag;
+            int blockEnd = this.MunchBlockContent(TagType.Each, out endTag);
+
+            if (endTag.ShouldTrimLeft())
+                blockEnd = this.TrimBlockEnd(blockEnd);
+
+            if (target != null)
             {
-                //if target is not enumerable, should not be bound to an #each tag
                 if (!(target is System.Collections.IEnumerable))
                     throw new InvalidOperationException($"#each tag bound to non-enumerable object: {bindAs}");
 
-                //cast to enumerable
                 var items = (System.Collections.IEnumerable)target;
-                int blockLen = block.Length;
-                char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
-                try
+                TemplateEngine subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                foreach (var item in items)
                 {
-                    block.CopyTo(0, buffer, 0, blockLen);
-                    TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                    foreach (var item in items)
-                    {
-                        _scopeChain.ApplyVariableScopeMarker();
-                        _result.Append(subEngine.Merge(item));
-                        _scopeChain.DereferenceVariableScope();
-                    }
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(buffer);
+                    _scopeChain.ApplyVariableScopeMarker();
+                    _result.Append(subEngine.Merge(item));
+                    _scopeChain.DereferenceVariableScope();
                 }
             }
 
@@ -278,30 +250,19 @@ namespace HatTrick.Text.Templating
             this.EnsureLeftTrim(_result, tag);
             this.EnsureRightTrim(tag);
 
-            StringBuilder block = new StringBuilder();
-
-            //roll and emit intil proper #/each tag found (allowing nested #each #/each tags
-            Tag endTag;
-            this.MunchBlockContent(block, TagType.With, out endTag);
-            this.EnsureLeftTrim(block, endTag);
-
-            string bindAs = tag.BindAs();
-
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
+            int blockStart = _index;
+            Tag endTag;
+            int blockEnd = this.MunchBlockContent(TagType.With, out endTag);
+
+            if (endTag.ShouldTrimLeft())
+                blockEnd = this.TrimBlockEnd(blockEnd);
+
             _scopeChain.ApplyVariableScopeMarker();
-            int blockLen = block.Length;
-            char[] buffer = ArrayPool<char>.Shared.Rent(blockLen);
-            try
-            {
-                block.CopyTo(0, buffer, 0, blockLen);
-                TemplateEngine subEngine = new TemplateEngine(new ReadOnlyMemory<char>(buffer, 0, blockLen), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                _result.Append(subEngine.Merge(target));
-            }
-            finally
-            {
-                ArrayPool<char>.Shared.Return(buffer);
-            }
+            TemplateEngine subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+            _result.Append(subEngine.Merge(target));
             _scopeChain.DereferenceVariableScope();
 
             this.EnsureRightTrim(endTag);
@@ -334,10 +295,7 @@ namespace HatTrick.Text.Templating
 
                 else
                 {
-                    string bindAsStr = bindAs.ToString();
-                    value = BindHelper.IsNumericLiteral(bindAsStr)
-                        ? BindHelper.ParseNumericLiteral(bindAsStr)
-                        : BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+                    value = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
                 }
             }
 
@@ -370,7 +328,7 @@ namespace HatTrick.Text.Templating
         {
             this.EnsureLeftTrim(_result, tag);
 
-            string bindAs = tag.BindAs();
+            ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
             string template = (target as string) ?? throw new InvalidOperationException($"Sub template tag: {tag} reflected value is not typeof string: {target}");
@@ -393,7 +351,7 @@ namespace HatTrick.Text.Templating
 
             object output;
             if (BindHelper.IsDoubleQuoted(bindAs) || BindHelper.IsSingleQuoted(bindAs))
-                output = BindHelper.Strip('\\', bindAs.Slice(1, bindAs.Length - 2).ToString());
+                output = BindHelper.Strip('\\', bindAs.Slice(1, bindAs.Length - 2));
 
             else if (MemoryExtensions.Equals(bindAs, "true", StringComparison.OrdinalIgnoreCase))
                 output = true;
@@ -403,10 +361,7 @@ namespace HatTrick.Text.Templating
 
             else
             {
-                string bindAsStr = bindAs.ToString();
-                output = BindHelper.IsNumericLiteral(bindAsStr)
-                    ? bindAsStr
-                    : BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+                output = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
             }
 
             System.Diagnostics.Trace.WriteLine(output);
@@ -520,7 +475,7 @@ namespace HatTrick.Text.Templating
             return false;
         }
 
-        private bool MunchRawContent(StringBuilder output)
+        private bool MunchRawContentSkip()
         {
             char c;
             char eot = (char)3;
@@ -530,7 +485,7 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.Peek() == '{')
                     {
-                        output.Append(c).Append(this.Read()); //preserve both chars for sub-engine processing
+                        this.Read(); // skip escaped brace
                         continue;
                     }
                     this.StepBack();
@@ -541,13 +496,11 @@ namespace HatTrick.Text.Templating
                 {
                     if (this.Peek() == '}')
                     {
-                        output.Append(c).Append(this.Read()); //preserve both chars for sub-engine processing
+                        this.Read(); // skip escaped brace
                         continue;
                     }
                     throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
                 }
-
-                output.Append(c);
             }
             return false;
         }
@@ -709,38 +662,31 @@ namespace HatTrick.Text.Templating
             throw new InvalidOperationException($"Enountered un-closed {TagType.Comment} tag...'}}' never found.");
         }
 
-        private void MunchBlockContent(StringBuilder output, TagType beginType, out Tag endTag)
+        private int MunchBlockContent(TagType beginType, out Tag endTag)
         {
-            char c;
-            char eot = (char)3; //(end of text)
-            int offset = 1; //need to ensure we bypass any nested tags
+            char eot = (char)3;
+            int offset = 1;
             var tag = new StringBuilder(60);
             TagType endType = Tag.ResolveEndTagType(beginType);
             endTag = null;
+            int blockEnd = _index;
 
-            while ((c = this.Peek()) != eot)
+            while (this.Peek() != eot)
             {
-                if (this.MunchRawContent(output))
+                if (this.MunchRawContentSkip())
                 {
+                    blockEnd = _index; // _index is at '{' of the discovered tag
                     this.MunchTag(tag, true);
 
                     TagType type = Tag.ResolveType(tag);
 
                     if (type == beginType)
                         offset += 1;
-
                     else if (type == endType)
                         offset -= 1;
 
-                    /**********************************************/
-
-                    if (offset > 0)
+                    if (offset == 0)
                     {
-                        output.Append(tag);
-                    }
-                    else if (offset == 0)
-                    {
-                        //we found the end tag...
                         endTag = new Tag(tag, _trimWhitespace);
                         break;
                     }
@@ -748,6 +694,19 @@ namespace HatTrick.Text.Templating
                     tag.Clear();
                 }
             }
+
+            return blockEnd;
+        }
+        #endregion
+
+        #region trim block end
+        private int TrimBlockEnd(int blockEnd)
+        {
+            ReadOnlySpan<char> span = _template.Span;
+            int idx = blockEnd - 1;
+            while (idx >= 0 && (span[idx] == ' ' || span[idx] == '\t'))
+                idx--;
+            return idx + 1;
         }
         #endregion
 

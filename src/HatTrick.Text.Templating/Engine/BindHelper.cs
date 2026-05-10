@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HatTrick.Reflection;
 
 namespace HatTrick.Text.Templating
@@ -25,6 +25,9 @@ namespace HatTrick.Text.Templating
 
             else if (BindHelper.IsLambdaExpression(bindAs))//lambda expression
                 target = BindHelper.ResolveLambdaExpressionBindTarget(bindAs, lambdaRepo, scopeChain);
+
+            else if (BindHelper.IsNumericLiteral(bindAs))//numeric literal
+                target = bindAs.ToString();
 
             else//simple bind
                 target = ReflectionHelper.Expression.ReflectItem(localScope, bindAs);
@@ -74,7 +77,7 @@ namespace HatTrick.Text.Templating
         #region resolve lamba expression bind target
         private static object ResolveLambdaExpressionBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
-            Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain) 
+            Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain)
                 ?? throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
 
             object target = lambda();
@@ -86,7 +89,7 @@ namespace HatTrick.Text.Templating
         #region is lambda expression
         public static bool IsLambdaExpression(ReadOnlySpan<char> bindAs)
         {
-            return bindAs.IndexOf("=>") > -1;
+            return !bindAs.IsEmpty && bindAs[0] == '(';
         }
         #endregion
 
@@ -120,7 +123,7 @@ namespace HatTrick.Text.Templating
         #region is single quoted
         public static bool IsSingleQuoted(ReadOnlySpan<char> value)
         {
-            char singleQuote = '\'';
+            const char singleQuote = '\'';
             return value[0] == singleQuote && value[value.Length - 1] == singleQuote;
         }
         #endregion
@@ -128,21 +131,18 @@ namespace HatTrick.Text.Templating
         #region is double quoted
         public static bool IsDoubleQuoted(ReadOnlySpan<char> value)
         {
-            char doubleQuote = '"';
+            const char doubleQuote = '"';
             return value[0] == doubleQuote && value[value.Length - 1] == doubleQuote;
         }
         #endregion
 
         #region un quote
-        public static string UnQuote(string value)
+        public static ReadOnlySpan<char> UnQuote(ReadOnlySpan<char> value)
         {
-            if (value == null)
-                return null;
-
-            if (value == string.Empty)
+            if (value.IsEmpty)
                 return value;
 
-            return value.Substring(1, value.Length - 2);
+            return value.Slice(1, value.Length - 2);
         }
         #endregion
 
@@ -169,114 +169,46 @@ namespace HatTrick.Text.Templating
 
             return new string(result, 0, at);
         }
+
+        public static string Strip(char character, ReadOnlySpan<char> from)
+        {
+            if (from.IsEmpty)
+                return string.Empty;
+
+            char[] result = new char[from.Length];
+            int at = 0;
+            for (int i = 0; i < from.Length; i++)
+            {
+                if (from[i] != character)
+                    result[at++] = from[i];
+            }
+
+            return new string(result, 0, at);
+        }
         #endregion
 
         #region is numeric literal
         public static bool IsNumericLiteral(string value)
         {
-            return value != null 
-                && value != string.Empty 
+            return value != null
+                && value != string.Empty
                 && (
-                    char.IsDigit(value[0]) 
-                    || value[0] == '+' 
-                    || value[0] == '-' 
+                    char.IsDigit(value[0])
+                    || value[0] == '+'
+                    || value[0] == '-'
                     || (value[0] == '.' && value.Length > 1 && value[1] != '.')// ../ is a scope walk literal...
                 );
         }
-        #endregion
 
-        #region get numeric literal suffix
-        public static char GetNumericLiteralSuffix(string literal, out string number)
+        public static bool IsNumericLiteral(ReadOnlySpan<char> value)
         {
-            number = literal;
-            if (!BindHelper.IsNumericLiteral(literal))
-                return '\0';
-
-            int lastIndex = literal.Length - 1;
-            if (char.IsDigit(literal[lastIndex]) || literal[lastIndex] == '.')
-                return '\0';
-
-            number = literal.Remove(lastIndex);
-            return literal[lastIndex];
-        }
-        #endregion
-
-        #region get numeric literal type
-        public static TypeCode GetNumericLiteralType(string literal, out string number)
-        {
-            char suffix = BindHelper.GetNumericLiteralSuffix(literal, out number);
-            switch (suffix)
-            {
-                case 'F':
-                case 'f':
-                    return TypeCode.Single;
-                case 'M':
-                case 'm':
-                    return TypeCode.Decimal;
-                case 'D':
-                case 'd':
-                    return TypeCode.Double;
-                case 'L':
-                case 'l':
-                    return TypeCode.Int64;
-                case 'I':
-                case 'i':
-                    return TypeCode.Int32;
-                case '\0':
-                default:
-                    return TypeCode.Empty;
-            }
-        }
-        #endregion
-
-        #region parse numeric literal
-        public static object ParseNumericLiteral(string literal)
-        {
-            Func<TypeCode, string, string> exceptionMsg = (tc, lit) =>
-            {
-                return $"Cannot parse numeric literal: {lit} as: {tc}";
-            };
-
-            TypeCode typeCode = BindHelper.GetNumericLiteralType(literal, out string number);
-            object value = null;
-            switch (typeCode)
-            {
-                case TypeCode.Decimal:
-                    if (!decimal.TryParse(number, out decimal dec))
-                        throw new FormatException(exceptionMsg(TypeCode.Decimal, number));
-
-                    value = dec;
-                    break;
-                case TypeCode.Double:
-                    if (!double.TryParse(number, out double dbl))
-                        throw new FormatException(exceptionMsg(TypeCode.Double, number));
-
-                    value = dbl;
-                    break;
-                case TypeCode.Int32:
-                    if (!int.TryParse(number, out int i))
-                        throw new FormatException(exceptionMsg(TypeCode.Int32, number));
-
-                    value = i;
-                    break;
-                case TypeCode.Int64:
-                    if (!long.TryParse(number, out long l))
-                        throw new FormatException(exceptionMsg(TypeCode.Int64, number));
-
-                    value = l;
-                    break;
-                case TypeCode.Single:
-                    if (!Single.TryParse(number, out Single s))
-                        throw new FormatException(exceptionMsg(TypeCode.Single, number));
-
-                    value = s;
-                    break;
-                case TypeCode.Empty:
-                default:
-                    throw new InvalidOperationException($"Cannot parse numeric literal: {literal} ... type could not be determined. valid type suffix values: m,d,i,l,f");
-            }
-
-            return value;
+            return !value.IsEmpty
+                && (
+                    char.IsDigit(value[0])
+                    || value[0] == '+'
+                    || value[0] == '-'
+                    || (value[0] == '.' && value.Length > 1 && value[1] != '.')
+                );
         }
         #endregion
 

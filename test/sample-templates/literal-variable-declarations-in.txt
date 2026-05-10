@@ -11,17 +11,17 @@ salutation: {:salutation}
 
 
 ******** Declaration and Usage of Positive Numeric Literals ********
-{?var:uno = 1i }		{! int32 }
-{?var:dos = +2.0d }		{! double }
-{?var:tres = 3.000m }	{! decimal }
+{?var:uno = 1 }		{! int32 }
+{?var:dos = +2.0 }		{! double }
+{?var:tres = 3.000 }	{! decimal }
 
 uno + dos + tres = {(:uno, :dos, :tres) => sumIntDoubleDecimal}	{! pass literal declared variables to func +}
 uno + dos + tres = {(1, 2.00, 3.00) => sumIntDoubleDecimal}		{! pass literals directly to func +}
 
 ******** Declaration and Usage of Unsigned Numeric Literals ********
-{?var:negUno = -1i }		{! int32 }
-{?var:negDos = -2.0d }		{! double }
-{?var:negTres = -3.000m }	{! decimal }
+{?var:negUno = -1 }		{! int32 }
+{?var:negDos = -2.0 }		{! double }
+{?var:negTres = -3.000 }	{! decimal }
 
 ******** Declaration and Usage of Signed Numeric Literals ********
 uno + dos + tres = {(:negUno, :negDos, :negTres) => sumIntDoubleDecimal}		{! pass literal declared variables to func +}
@@ -30,7 +30,7 @@ uno + dos + tres = {(+1, +2.00, +3.00) => sumIntDoubleDecimal}					{! pass liter
 uno + dos + tres = {(-1, -.200, -.300) => sumIntDoubleDecimal}					{! pass literals directly to func +}
 
 ******** Sign followed by decimal **********
-{?var: negPercent = -.25m }
+{?var: negPercent = -.25 }
 negative percent: {:negPercent}
 
 

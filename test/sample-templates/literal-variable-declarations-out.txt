@@ -20,7 +20,7 @@ uno + dos + tres = 6.00
 uno + dos + tres = -1.500
 
 ******** Sign followed by decimal **********
-negative percent: -0.25
+negative percent: -.25
 
 
 ******** Declaration and Usage of String Literals Containing Quotes ********

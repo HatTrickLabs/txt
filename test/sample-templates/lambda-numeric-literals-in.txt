@@ -1,7 +1,7 @@
 *****Begin Test Numeric Literals*****
-{?var:someDouble = 1.0d }
-{?var:someDecimal = 1.0m }
-{?var:someInt = 1i }
+{?var:someDouble = 1.0 }
+{?var:someDecimal = 1.0 }
+{?var:someInt = 1 }
 
 {(1, 1) => SumTwoIntegers}
 
