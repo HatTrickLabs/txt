@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace HatTrick.Text.Templating
 {
@@ -10,8 +6,7 @@ namespace HatTrick.Text.Templating
     {
         #region internals
         private TagType _type;
-        private StringBuilder _tag;
-        private int _tagLength;
+        private ReadOnlyMemory<char> _tag;
         private TrimMark _markers;
         private bool _forceTrim;
         #endregion
@@ -21,10 +16,9 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region constructors
-        public Tag(StringBuilder tag, bool forceTrim)
+        public Tag(ReadOnlyMemory<char> tag, bool forceTrim)
         {
             _tag = tag;
-            _tagLength = tag.Length;
             _type = TagType.Unknown;
             _markers = TrimMark.None;
             _forceTrim = forceTrim;
@@ -35,48 +29,48 @@ namespace HatTrick.Text.Templating
         #region init
         private void Init()
         {
-            _type = Tag.ResolveType(_tag);
+            _type = Tag.ResolveType(_tag.Span);
             this.ResolveTrimMarkers();
         }
         #endregion
 
         #region resolve type
-        public static TagType ResolveType(StringBuilder tag)
+        public static TagType ResolveType(ReadOnlySpan<char> tag)
         {
-            if (Tag.IsIfTag(tag))                       //# if logic tag (boolean switch)
+            if (Tag.IsIfTag(tag))
                 return TagType.If;
 
-            else if (Tag.IsEndIfTag(tag))               //end if
+            else if (Tag.IsEndIfTag(tag))
                 return TagType.EndIf;
 
-            else if (Tag.IsEachTag(tag))                //#each enumeration
+            else if (Tag.IsEachTag(tag))
                 return TagType.Each;
 
-            else if (Tag.IsEndEachTag(tag))             //end each
+            else if (Tag.IsEndEachTag(tag))
                 return TagType.EndEach;
 
-            else if (Tag.IsWithTag(tag))                //#with tag
+            else if (Tag.IsWithTag(tag))
                 return TagType.With;
 
-            else if (Tag.IsEndWithTag(tag))             //end with
+            else if (Tag.IsEndWithTag(tag))
                 return TagType.EndWith;
 
-            else if (Tag.IsPartialTag(tag))             //sub template tag
+            else if (Tag.IsPartialTag(tag))
                 return TagType.Partial;
 
-            else if (Tag.IsVariableDeclareTag(tag))     //variable declaratino 
+            else if (Tag.IsVariableDeclareTag(tag))
                 return TagType.VarDeclare;
 
-            else if (Tag.IsVariableAssignTag(tag))      //variable assignment
+            else if (Tag.IsVariableAssignTag(tag))
                 return TagType.VarAssign;
 
-            else if (Tag.IsCommentTag(tag))             //comment tag
+            else if (Tag.IsCommentTag(tag))
                 return TagType.Comment;
 
-            else if (Tag.IsDebugTag(tag))               //debug tag
+            else if (Tag.IsDebugTag(tag))
                 return TagType.Debug;
 
-            else                                        //simple tag
+            else
                 return TagType.Simple;
         }
         #endregion
@@ -106,17 +100,17 @@ namespace HatTrick.Text.Templating
         {
             orientation = BlockTagOrientation.Unknown;
 
-            bool isBlock = type == TagType.If 
-                        || type == TagType.Each 
-                        || type == TagType.With 
-                        || type == TagType.EndIf 
-                        || type == TagType.EndEach 
+            bool isBlock = type == TagType.If
+                        || type == TagType.Each
+                        || type == TagType.With
+                        || type == TagType.EndIf
+                        || type == TagType.EndEach
                         || type == TagType.EndWith;
 
             if (isBlock)
             {
-                orientation = (type == TagType.If || type == TagType.Each || type == TagType.With) 
-                    ? BlockTagOrientation.Begin 
+                orientation = (type == TagType.If || type == TagType.Each || type == TagType.With)
+                    ? BlockTagOrientation.Begin
                     : BlockTagOrientation.End;
             }
 
@@ -130,23 +124,25 @@ namespace HatTrick.Text.Templating
             if (_type == TagType.Simple)
                 return;
 
-            if (_tag[1] == '-')                     //has discard left trim mark...
+            ReadOnlySpan<char> span = _tag.Span;
+
+            if (span[1] == '-')
                 _markers = TrimMark.DiscardLeft;
 
-            else if (_tag[1] == '+')                //has retain left trim mark...
+            else if (span[1] == '+')
                 _markers = TrimMark.RetainLeft;
 
 
-            if (_tag[_tag.Length - 2] == '-')       //has discard right trim mark...
+            if (span[span.Length - 2] == '-')
                 _markers |= TrimMark.DiscardRight;
 
-            else if (_tag[_tag.Length - 2] == '+')   //has retain right trim mark...
+            else if (span[span.Length - 2] == '+')
                 _markers |= TrimMark.RetainRight;
         }
         #endregion
 
         #region is if tag
-        public static bool IsIfTag(StringBuilder tag)
+        public static bool IsIfTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -157,7 +153,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end if tag
-        public static bool IsEndIfTag(StringBuilder tag)
+        public static bool IsEndIfTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 4
                 && tag[0] == '{'
@@ -168,7 +164,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is each tag
-        public static bool IsEachTag(StringBuilder tag)
+        public static bool IsEachTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -181,7 +177,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end each tag
-        public static bool IsEndEachTag(StringBuilder tag)
+        public static bool IsEndEachTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -194,7 +190,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is with tag
-        public static bool IsWithTag(StringBuilder tag)
+        public static bool IsWithTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -207,7 +203,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is end with tag
-        public static bool IsEndWithTag(StringBuilder tag)
+        public static bool IsEndWithTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -220,38 +216,38 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is comment tag
-        public static bool IsCommentTag(StringBuilder tag)
+        public static bool IsCommentTag(ReadOnlySpan<char> tag)
         {
-            return tag.Length > 2 
+            return tag.Length > 2
                 && tag[0] == '{'
-                && 
+                &&
                 (
-                    tag[1] == '!' 
-                    || 
-                    (tag[1] == '-' && tag[2] == '!') 
-                    || 
+                    tag[1] == '!'
+                    ||
+                    (tag[1] == '-' && tag[2] == '!')
+                    ||
                     (tag[1] == '+' && tag[2] == '!')
                 );
         }
         #endregion
 
         #region is partial tag
-        public static bool IsPartialTag(StringBuilder tag)
+        public static bool IsPartialTag(ReadOnlySpan<char> tag)
         {
             return tag[0] == '{'
-                && 
+                &&
                 (
-                    tag[1] == '>' 
-                    || 
-                    (tag[1] == '-' && tag[2] == '>') 
-                    || 
+                    tag[1] == '>'
+                    ||
+                    (tag[1] == '-' && tag[2] == '>')
+                    ||
                     (tag[1] == '+' && tag[2] == '>')
                 );
         }
         #endregion
 
         #region is variable declare tag
-        private static bool IsVariableDeclareTag(StringBuilder tag)
+        private static bool IsVariableDeclareTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 6
                 && tag[0] == '{'
@@ -264,9 +260,8 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is variable assign tag
-        private static bool IsVariableAssignTag(StringBuilder tag)
+        private static bool IsVariableAssignTag(ReadOnlySpan<char> tag)
         {
-            //{- :x -} This is NOT a var assign tag...this is a simple tag with un-allowed trim markers...
             return tag.Length > 4
                 && tag[0] == '{'
                 && ((tag[1] == '-' || tag[1] == '+') && tag[2] == '?' && tag[3] == ':')
@@ -275,7 +270,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is debug tag
-        public static bool IsDebugTag(StringBuilder tag)
+        public static bool IsDebugTag(ReadOnlySpan<char> tag)
         {
             return tag.Length > 2
                 && tag[0] == '{'
@@ -304,7 +299,7 @@ namespace HatTrick.Text.Templating
             {
                 case TagType.Simple:
                     start = 1;
-                    maxLen = _tagLength - 2;
+                    maxLen = _tag.Length - 2;
                     break;
                 case TagType.If:
                     start = left ? 5 : 4;
@@ -339,59 +334,48 @@ namespace HatTrick.Text.Templating
                     throw new InvalidOperationException($"Encountered un-expected TagType: {type} ... tag type cannot be bound");
             }
 
-            if (type == TagType.Simple) //simple tags cannot have trim markers...
+            if (type == TagType.Simple)
                 len = maxLen;
 
             else if (left && right)
-                len = (_tagLength - maxLen);
+                len = (_tag.Length - maxLen);
 
             else if (left || right)
-                len = _tagLength - (maxLen - 1);
+                len = _tag.Length - (maxLen - 1);
 
             else
-                len = _tagLength - (maxLen - 2);
+                len = _tag.Length - (maxLen - 2);
 
-            if (len <= 0)
-                return ReadOnlySpan<char>.Empty;
-
-            StringBuilder.ChunkEnumerator chunks = _tag.GetChunks();
-            if (chunks.MoveNext())
-            {
-                ReadOnlyMemory<char> first = chunks.Current;
-                if (!chunks.MoveNext())
-                    return first.Span.Slice(start, len);
-            }
-
-            return _tag.ToString(start, len); // multi-chunk fallback (not expected for small tags)
+            return len > 0 ? _tag.Span.Slice(start, len) : ReadOnlySpan<char>.Empty;
         }
         #endregion
 
         #region has trim mark
         public bool HasTrimMark(TrimMark marker)
         {
-            bool exists = (_markers & marker) == marker;
-            return exists;
+            return (_markers & marker) == marker;
         }
         #endregion
 
         #region should trim left
         public bool ShouldTrimLeft()
         {
-            bool result = HasTrimMark(TrimMark.DiscardLeft) || (_forceTrim && !HasTrimMark(TrimMark.RetainLeft));
-            return result;
+            return HasTrimMark(TrimMark.DiscardLeft) || (_forceTrim && !HasTrimMark(TrimMark.RetainLeft));
         }
         #endregion
 
         #region should trim right
         public bool ShouldTrimRight()
         {
-            bool result = HasTrimMark(TrimMark.DiscardRight) || (_forceTrim && !HasTrimMark(TrimMark.RetainRight));
-            return result;
+            return HasTrimMark(TrimMark.DiscardRight) || (_forceTrim && !HasTrimMark(TrimMark.RetainRight));
         }
         #endregion
 
         #region to string
-        public override string ToString() => _tag.ToString();
+        public override string ToString()
+        {
+            return new string(_tag.Span);
+        }
         #endregion
     }
 }

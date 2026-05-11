@@ -188,18 +188,6 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is numeric literal
-        public static bool IsNumericLiteral(string value)
-        {
-            return value != null
-                && value != string.Empty
-                && (
-                    char.IsDigit(value[0])
-                    || value[0] == '+'
-                    || value[0] == '-'
-                    || (value[0] == '.' && value.Length > 1 && value[1] != '.')// ../ is a scope walk literal...
-                );
-        }
-
         public static bool IsNumericLiteral(ReadOnlySpan<char> value)
         {
             return !value.IsEmpty

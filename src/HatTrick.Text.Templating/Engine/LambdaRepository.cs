@@ -96,6 +96,7 @@ namespace HatTrick.Text.Templating
                     {
                         if (doubleQuoted && i > 0 && argsExpr[i - 1] == '\\')
                             bufLen -= 1;
+
                         else if (!singleQuoted)
                             doubleQuoted = !doubleQuoted;
                     }
@@ -103,6 +104,7 @@ namespace HatTrick.Text.Templating
                     {
                         if (singleQuoted && i > 0 && argsExpr[i - 1] == '\\')
                             bufLen -= 1;
+
                         else if (!doubleQuoted)
                             singleQuoted = !singleQuoted;
                     }
@@ -199,6 +201,7 @@ namespace HatTrick.Text.Templating
                 arg = arg.Slice(1, arg.Length - 2);
                 if (!DateTime.TryParse(arg, out DateTime dt))
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.DateTime));
+
                 return dt;
             }
 
@@ -229,6 +232,7 @@ namespace HatTrick.Text.Templating
             {
                 if (arg.Length != 3)
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, TypeCode.Char));
+
                 return arg[1];
             }
 
@@ -244,12 +248,14 @@ namespace HatTrick.Text.Templating
             {
                 if (!T.TryParse(arg, null, out T val))
                     throw new FormatException(this.FormatExceptionMessageBuilder(lambdaName, arg, index, Type.GetTypeCode(typeof(T))));
+
                 return val;
             }
 
             object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
             if (target is string s && T.TryParse(s, null, out T parsed))
                 return parsed;
+
             this.EnsureArgumentType(arg, target, Type.GetTypeCode(typeof(T)), lambdaName, index);
             return target;
         }
@@ -269,11 +275,15 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region is true / is false
-        private bool IsTrue(ReadOnlySpan<char> arg) =>
-            MemoryExtensions.Equals(arg, "true", StringComparison.OrdinalIgnoreCase);
+        private bool IsTrue(ReadOnlySpan<char> arg)
+        {
+            return MemoryExtensions.Equals(arg, "true", StringComparison.OrdinalIgnoreCase);
+        }
 
-        private bool IsFalse(ReadOnlySpan<char> arg) =>
-            MemoryExtensions.Equals(arg, "false", StringComparison.OrdinalIgnoreCase);
+        private bool IsFalse(ReadOnlySpan<char> arg)
+        {
+            return MemoryExtensions.Equals(arg, "false", StringComparison.OrdinalIgnoreCase);
+        }
         #endregion
 
         #region format exception message builder
