@@ -2,7 +2,7 @@ using System;
 
 namespace HatTrick.Text.Templating
 {
-    public class Tag
+    public struct Tag
     {
         #region internals
         private TagType _type;
