@@ -480,32 +480,27 @@ namespace HatTrick.Text.Templating
 
             while ((c = this.Read()) != eot)
             {
-                if (c == '{')
+                if (c == '{' || c == '}')
                 {
-                    if (this.Peek() == '{')
+                    if (this.Peek() == c)//is escaped
+                    {//this is part of the self inflicted pain we deal with for my bad decision to make acual tags single brackets
+                     //and force users to escape actual template contant brackets. In hindsight, everything OUTSIDE a tag should be 
+                     //copied verbatime (less white space) into the output. Requiring the removal of the escape char causes us pain.
+                        output.Append(span.Slice(chunkStart, (_index - 1) - chunkStart));
+                        this.Read(); // consume escape, second '{' or '}'
+                        output.Append(c);
+                        chunkStart = _index;
+                    }
+                    else if (c == '{')//is open tag, step back 1 char and return so tag can be munched in whole
                     {
                         output.Append(span.Slice(chunkStart, (_index - 1) - chunkStart));
-                        this.Read(); // consume escape, second '{' is the literal
-                        output.Append('{');
-                        chunkStart = _index;
-                        continue;
+                        this.StepBack();
+                        return true;
                     }
-                    output.Append(span.Slice(chunkStart, (_index - 1) - chunkStart));
-                    this.StepBack();
-                    return true;
-                }
-
-                if (c == '}')
-                {
-                    if (this.Peek() == '}')
+                    else//found a close tag that isn't escaped an is NOT closing an actual tag, template error...
                     {
-                        output.Append(span.Slice(chunkStart, (_index - 1) - chunkStart));
-                        this.Read(); // consume escape, second '}' is the literal
-                        output.Append('}');
-                        chunkStart = _index;
-                        continue;
+                        throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
                     }
-                    throw new InvalidOperationException("Encountered un-escaped close tag '}' within template content");
                 }
             }
 
@@ -600,16 +595,16 @@ namespace HatTrick.Text.Templating
         {
             bool inSingleQuote = false;
             bool inDoubleQuote = false;
-            char escape = '\\';
-            char singleQuote = '\'';
-            char doubleQuote = '"';
-            char tab = '\t';
-            char space = ' ';
-            char nl = '\n';
-            char cr = '\r';
+            const char escape = '\\';
+            const char singleQuote = '\'';
+            const char doubleQuote = '"';
+            const char tab = '\t';
+            const char space = ' ';
+            const char nl = '\n';
+            const char cr = '\r';
+            const char eot = (char)3;
             char previous = '\0';
             char c = '\0';
-            char eot = (char)3;
 
             bool inQuotes = false;
             while ((c = this.Read()) != eot)
@@ -650,7 +645,7 @@ namespace HatTrick.Text.Templating
                 int offset = 0;
                 char prev = '\0';
                 char c;
-                char eot = (char)3;
+                const char eot = (char)3;
                 while ((c = this.Read()) != eot)
                 {
                     offset += c == '{' ? 1 : (c == '}' && prev != '\\') ? -1 : 0;
@@ -667,7 +662,7 @@ namespace HatTrick.Text.Templating
             bool inDoubleQuote = false;
             char previous = '\0';
             char ch;
-            char eot2 = (char)3;
+            const char eot2 = (char)3;
             while ((ch = this.Read()) != eot2)
             {
                 if (ch == '"' && previous != '\\' && !inSingleQuote)
@@ -744,7 +739,7 @@ namespace HatTrick.Text.Templating
             char escape = '\\';
             char previous = '\0';
             char c = '\0';
-            char eot = (char)3;
+            const char eot = (char)3;
 
             int offset = 0;
             while ((c = this.Read()) != eot)
@@ -770,7 +765,7 @@ namespace HatTrick.Text.Templating
 
         private int MunchBlockContent(TagType beginType, out Tag endTag)
         {
-            char eot = (char)3;
+            const char eot = (char)3;
             int offset = 1;
             TagType endType = Tag.ResolveEndTagType(beginType);
             endTag = default;
