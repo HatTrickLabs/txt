@@ -483,8 +483,8 @@ namespace HatTrick.Text.Templating
                 if (c == '{' || c == '}')
                 {
                     if (this.Peek() == c)//is escaped
-                    {//this is part of the self inflicted pain we deal with for my bad decision to make acual tags single brackets
-                     //and force users to escape actual template contant brackets. In hindsight, everything OUTSIDE a tag should be 
+                    {//this is part of the self inflicted pain we deal with for my bad decision to make tags single brackets
+                     //and force users to escape actual template content brackets. In hindsight, everything OUTSIDE a tag should be 
                      //copied verbatime (less white space) into the output. Requiring the removal of the escape char causes us pain.
                         output.Append(span.Slice(chunkStart, (_index - 1) - chunkStart));
                         this.Read(); // consume escape, second '{' or '}'
