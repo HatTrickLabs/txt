@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace HatTrick.Text.Templating
@@ -8,20 +9,27 @@ namespace HatTrick.Text.Templating
     public class LambdaRepository
     {
         #region internals
-        Dictionary<string, Delegate> _lambdas;
+        Dictionary<string, LambdaEntry> _lambdas;
         #endregion
 
         #region constructors
         public LambdaRepository()
         {
-            _lambdas = new Dictionary<string, Delegate>(StringComparer.Ordinal);
+            _lambdas = new Dictionary<string, LambdaEntry>(StringComparer.Ordinal);
         }
         #endregion
 
         #region register
         public void Register(string name, Delegate function)
         {
-            if (!_lambdas.TryAdd(name, function))
+            if (function == null)
+                throw new ArgumentNullException(nameof(function));
+
+            ParameterInfo[] parameters = function.Method.GetParameters();
+            Func<object[], object> invoker = CompileInvoker(function, parameters);
+            var entry = new LambdaEntry(function, invoker, parameters);
+
+            if (!_lambdas.TryAdd(name, entry))
                 throw new ArgumentException($"A function with the provided name: {name} has already been added");
         }
         #endregion
@@ -40,22 +48,98 @@ namespace HatTrick.Text.Templating
             this.Split(lambdaExpression, out ReadOnlySpan<char> nameSpan, out ReadOnlySpan<char> argumentsSpan);
 
             var lookup = _lambdas.GetAlternateLookup<ReadOnlySpan<char>>();
-            if (!lookup.TryGetValue(nameSpan, out Delegate expr))
+            if (!lookup.TryGetValue(nameSpan, out LambdaEntry entry))
                 throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {nameSpan}");
 
-            MethodInfo mi = expr.Method;
-            ParameterInfo[] pInfos = mi.GetParameters();
+            object[] args = new object[entry.Parameters.Length];
+            int count = this.ParseAndCaptureArgs(argumentsSpan, args, entry.Parameters.Length, entry.Parameters, scopeChain, nameSpan);
 
-            object[] args = new object[pInfos.Length];
-            int count = this.ParseAndCaptureArgs(argumentsSpan, args, pInfos, scopeChain, nameSpan);
-
-            if (pInfos.Length != count)
+            if (entry.Parameters.Length != count)
             {
-                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {nameSpan} expected arguments: {pInfos.Length} provided argument: {count}";
+                string msg = $"Attempted function invocation with invalid number of parameters...Func name: {nameSpan} expected arguments: {entry.Parameters.Length} provided argument: {count}";
                 throw new InvalidOperationException(msg);
             }
 
-            return () => expr.DynamicInvoke(args);
+            var invoker = entry.Invoker;
+            return () => invoker(args);
+        }
+        #endregion
+
+        #region invoke
+        public object Invoke(ReadOnlySpan<char> lambdaExpression, ScopeChain scopeChain)
+        {
+            this.Split(lambdaExpression, out ReadOnlySpan<char> nameSpan, out ReadOnlySpan<char> argumentsSpan);
+
+            var lookup = _lambdas.GetAlternateLookup<ReadOnlySpan<char>>();
+            if (!lookup.TryGetValue(nameSpan, out LambdaEntry entry))
+                throw new KeyNotFoundException($"Encountered function that does not exist in lambda repository: {nameSpan}");
+
+            int paramCount = entry.Parameters.Length;
+            object[] args = paramCount == 0 ? Array.Empty<object>() : ArrayPool<object>.Shared.Rent(paramCount);
+            try
+            {
+                int count = this.ParseAndCaptureArgs(argumentsSpan, args, paramCount, entry.Parameters, scopeChain, nameSpan);
+
+                if (paramCount != count)
+                {
+                    string msg = $"Attempted function invocation with invalid number of parameters...Func name: {nameSpan} expected arguments: {paramCount} provided argument: {count}";
+                    throw new InvalidOperationException(msg);
+                }
+
+                return entry.Invoker(args);
+            }
+            finally
+            {
+                if (paramCount != 0)
+                    ArrayPool<object>.Shared.Return(args, clearArray: true);
+            }
+        }
+        #endregion
+
+        #region compile invoker
+        private static Func<object[], object> CompileInvoker(Delegate del, ParameterInfo[] parameters)
+        {
+            MethodInfo method = del.Method;
+
+            ParameterExpression argsParam = Expression.Parameter(typeof(object[]), "args");
+
+            Expression[] callArgs = new Expression[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                Expression index = Expression.ArrayIndex(argsParam, Expression.Constant(i));
+                callArgs[i] = Expression.Convert(index, parameters[i].ParameterType);
+            }
+
+            Expression instance = method.IsStatic ? null : Expression.Constant(del.Target, method.DeclaringType);
+            Expression call = Expression.Call(instance, method, callArgs);
+
+            Expression body;
+            if (method.ReturnType == typeof(void))
+                body = Expression.Block(call, Expression.Constant(null, typeof(object)));
+
+            else if (method.ReturnType == typeof(object))
+                body = call;
+
+            else
+                body = Expression.Convert(call, typeof(object));
+
+            return Expression.Lambda<Func<object[], object>>(body, argsParam).Compile();
+        }
+        #endregion
+
+        #region lambda entry
+        private readonly struct LambdaEntry
+        {
+            public readonly Delegate Delegate;
+            public readonly Func<object[], object> Invoker;
+            public readonly ParameterInfo[] Parameters;
+
+            public LambdaEntry(Delegate del, Func<object[], object> invoker, ParameterInfo[] parameters)
+            {
+                Delegate = del;
+                Invoker = invoker;
+                Parameters = parameters;
+            }
         }
         #endregion
 
@@ -73,7 +157,7 @@ namespace HatTrick.Text.Templating
         #endregion
 
         #region parse and capture args
-        private int ParseAndCaptureArgs(ReadOnlySpan<char> argsExpr, object[] args, ParameterInfo[] pInfos, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName)
+        private int ParseAndCaptureArgs(ReadOnlySpan<char> argsExpr, object[] args, int paramCount, ParameterInfo[] pInfos, ScopeChain scopeChain, ReadOnlySpan<char> lambdaName)
         {
             Span<char> stackBuffer = stackalloc char[256];
             char[] rentedBuffer = null;
@@ -110,7 +194,7 @@ namespace HatTrick.Text.Templating
                     }
                     else if (c == ',' && !(singleQuoted || doubleQuoted))
                     {
-                        if (at < args.Length)
+                        if (at < paramCount)
                         {
                             int idx = at;
                             args[idx] = this.CaptureLambdaArgument(argBuffer[..bufLen], scopeChain, pInfos[idx], lambdaName, idx);
@@ -126,7 +210,7 @@ namespace HatTrick.Text.Templating
                     argBuffer[bufLen++] = c;
                 }
 
-                if (bufLen > 0 && at < args.Length)
+                if (bufLen > 0 && at < paramCount)
                 {
                     int idx = at;
                     args[idx] = this.CaptureLambdaArgument(argBuffer[..bufLen], scopeChain, pInfos[idx], lambdaName, idx);
