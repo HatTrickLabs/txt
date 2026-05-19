@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <Authors>Jerrod Eiman</Authors>
     <Company>HatTrick Labs LLC</Company>
     <Description>Text templating utilities.</Description>
@@ -25,7 +25,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="HatTrick.Reflection" Version="2.0.0" />
+    <PackageReference Include="HatTrick.Reflection" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\build\htl-nuget-logo.png">
