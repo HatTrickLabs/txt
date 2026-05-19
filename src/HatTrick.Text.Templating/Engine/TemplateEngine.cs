@@ -196,7 +196,26 @@ namespace HatTrick.Text.Templating
             ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            _result.Append(target);
+            if (target is null)
+                return;
+
+            if (target is string s)
+            {
+                _result.Append(s);
+                return;
+            }
+
+            if (target is ISpanFormattable formattable)
+            {
+                Span<char> buffer = stackalloc char[128];
+                if (formattable.TryFormat(buffer, out int written, default, null))
+                {
+                    _result.Append(buffer.Slice(0, written));
+                    return;
+                }
+            }
+
+            _result.Append(target.ToString());
         }
         #endregion
 
@@ -310,7 +329,7 @@ namespace HatTrick.Text.Templating
 
             int eqIdx = expression.IndexOf('=');
             bool assignment = eqIdx >= 0;
-            string name = (assignment ? expression.Slice(0, eqIdx) : expression).ToString();
+            ReadOnlySpan<char> nameSpan = assignment ? expression.Slice(0, eqIdx) : expression;
             ReadOnlySpan<char> bindAs = assignment ? expression.Slice(eqIdx + 1) : ReadOnlySpan<char>.Empty;
 
             object value = null;
@@ -330,10 +349,10 @@ namespace HatTrick.Text.Templating
             }
 
             if (isDeclaration)
-                _scopeChain.SetVariable(name, value);
+                _scopeChain.SetVariable(nameSpan.ToString(), value);
 
             else
-                _scopeChain.UpdateVariable(name, value);
+                _scopeChain.UpdateVariable(nameSpan, value);
 
             this.EnsureRightTrim(tag);
         }

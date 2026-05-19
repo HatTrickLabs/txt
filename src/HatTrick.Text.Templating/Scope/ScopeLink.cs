@@ -15,7 +15,7 @@ namespace HatTrick.Text.Templating
 
         public ScopeLink Parent => _children;
 
-        public int VariableCount => _variables.Count;
+        public int VariableCount => _variables?.Count ?? 0;
         #endregion
 
         #region constructors
@@ -27,21 +27,20 @@ namespace HatTrick.Text.Templating
         {
             _item = item;
             _children = parent;
-            _variables = new VariableBag();
         }
         #endregion
 
         #region set variable
         public void SetVariable(string name, object value)
         {
-            _variables.Add(name, value);
+            (_variables ??= new VariableBag()).Add(name, value);
         }
         #endregion
 
         #region upate variable
         public void UpdateVariable(ReadOnlySpan<char> name, object value)
         {
-            if (_variables.TryUpdate(name, value))
+            if (_variables != null && _variables.TryUpdate(name, value))
                 return;
 
             if (_children != null)
@@ -54,7 +53,7 @@ namespace HatTrick.Text.Templating
         #region access variable
         public object AccessVariable(ReadOnlySpan<char> name)
         {
-            if (_variables.TryGet(name, out object value))
+            if (_variables != null && _variables.TryGet(name, out object value))
                 return value;
 
             if (_children != null)
@@ -67,14 +66,14 @@ namespace HatTrick.Text.Templating
         #region apply variable scope marker
         public void ApplyVariableScopeMarker()
         {
-            _variables.ApplyScopeMarker();
+            _variables?.ApplyScopeMarker();
         }
         #endregion
 
         #region dereference variable scope
         public void DereferenceVariableScope()
         {
-            _variables.DereferenceScope();
+            _variables?.DereferenceScope();
         }
         #endregion
 

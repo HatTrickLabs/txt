@@ -77,12 +77,10 @@ namespace HatTrick.Text.Templating
         #region resolve lamba expression bind target
         private static object ResolveLambdaExpressionBindTarget(ReadOnlySpan<char> bindAs, LambdaRepository lambdaRepo, ScopeChain scopeChain)
         {
-            Func<object> lambda = lambdaRepo?.Resolve(bindAs, scopeChain)
-                ?? throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
+            if (lambdaRepo == null)
+                throw new InvalidOperationException($"Encountered function that does not exist in lambda repository: {bindAs}");
 
-            object target = lambda();
-
-            return target;
+            return lambdaRepo.Invoke(bindAs, scopeChain);
         }
         #endregion
 
