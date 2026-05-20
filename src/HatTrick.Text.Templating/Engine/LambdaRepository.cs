@@ -274,7 +274,8 @@ namespace HatTrick.Text.Templating
                 return arg.Slice(1, arg.Length - 2).ToString();
 
             object target = BindHelper.ResolveBindTarget(arg, this, scopeChain);
-            this.EnsureArgumentType(arg, target, TypeCode.String, lambdaName, index);
+            if (target != null)
+                this.EnsureArgumentType(arg, target, TypeCode.String, lambdaName, index);
             return target;
         }
 

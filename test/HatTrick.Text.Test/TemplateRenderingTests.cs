@@ -952,5 +952,121 @@ namespace HatTrick.Text.Test
             //then
             Assert.Equal(context.ToString(), expected);
         }
+
+        [Theory]
+        [InlineData("{42}", "42")]
+        [InlineData("{-0.5}", "-0.5")]
+        [InlineData("{.25}", ".25")]
+        public void Can_a_numeric_literal_render_in_a_simple_tag(string template, string expected)
+        {
+            //when
+            string actual = new TemplateEngine(template).Merge(new {});
+
+            //then
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Can_an_unassigned_variable_emit_empty_in_a_simple_tag()
+        {
+            //given
+            var ngin = new TemplateEngine("[{-?var:nothing-}{:nothing}]");
+
+            //when
+            string actual = ngin.Merge(new {});
+
+            //then
+            Assert.Equal("[]", actual);
+        }
+
+        [Fact]
+        public void Can_null_be_passed_to_a_lambda_object_parameter()
+        {
+            //given
+            Func<object, string> isNull = (val) => val is null ? "yes" : "no";
+
+            var ngin = new TemplateEngine("{-?var:nothing-}{(:nothing) => isNull}");
+            ngin.LambdaRepo.Register(nameof(isNull), isNull);
+
+            //when
+            string actual = ngin.Merge(new {});
+
+            //then
+            Assert.Equal("yes", actual);
+        }
+
+        [Fact]
+        public void Can_null_be_passed_to_a_lambda_string_parameter()
+        {
+            //given
+            Func<string, string> describe = (s) => s is null ? "<null>" : $"[{s}]";
+
+            var ngin = new TemplateEngine("{-?var:nothing-}{(:nothing) => describe}");
+            ngin.LambdaRepo.Register(nameof(describe), describe);
+
+            //when
+            string actual = ngin.Merge(new {});
+
+            //then
+            Assert.Equal("<null>", actual);
+        }
+
+        [Fact]
+        public void Does_a_typed_lambda_parameter_throw_on_a_type_mismatched_variable()
+        {
+            //given
+            Func<string, string> takeStr = (s) => s ?? "<null>";
+
+            var ngin = new TemplateEngine("{-?var:flag=true-}{(:flag) => takeStr}");
+            ngin.LambdaRepo.Register(nameof(takeStr), takeStr);
+
+            //then
+            Assert.Throws<MergeException>(() => ngin.Merge(new {}));
+        }
+
+        [Fact]
+        public void Can_null_be_passed_to_a_lambda_nullable_int_parameter()
+        {
+            //given
+            Func<int?, string> describe = (i) => i.HasValue ? i.Value.ToString() : "<null>";
+
+            var ngin = new TemplateEngine("{-?var:nothing-}{(:nothing) => describe}");
+            ngin.LambdaRepo.Register(nameof(describe), describe);
+
+            //when
+            string actual = ngin.Merge(new {});
+
+            //then
+            Assert.Equal("<null>", actual);
+        }
+
+        [Fact]
+        public void Can_null_be_passed_to_a_lambda_nullable_DateTime_parameter()
+        {
+            //given
+            Func<DateTime?, string> describe = (d) => d.HasValue ? d.Value.ToString("yyyy-MM-dd") : "<null>";
+
+            var ngin = new TemplateEngine("{-?var:nothing-}{(:nothing) => describe}");
+            ngin.LambdaRepo.Register(nameof(describe), describe);
+
+            //when
+            string actual = ngin.Merge(new {});
+
+            //then
+            Assert.Equal("<null>", actual);
+        }
+
+        [Fact]
+        public void Does_a_non_nullable_int_lambda_parameter_throw_on_null()
+        {
+            //given
+            Func<int, string> takeInt = (i) => i.ToString();
+
+            var ngin = new TemplateEngine("{-?var:nothing-}{(:nothing) => takeInt}");
+            ngin.LambdaRepo.Register(nameof(takeInt), takeInt);
+
+            //then
+            Assert.Throws<MergeException>(() => ngin.Merge(new {}));
+        }
     }
 }
