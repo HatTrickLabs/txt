@@ -1,3 +1,18 @@
+# HatTrick.Text.Templating
+
+A small, allocation-conscious text templating engine for .NET.  Source: [github.com/HatTrickLabs/txt](https://github.com/HatTrickLabs/txt).
+
+## Installation
+The package targets *net9.0*.
+```bash
+dotnet add package HatTrick.Text.Templating
+```
+```c#
+using HatTrick.Text.Templating;
+```
+
+
+
 ## Basic Usage:
 ```c#
 var fullName = new { FirstName = "John", LastName = "Doe"};
@@ -80,7 +95,7 @@ The *{#if}* tag allows for conditionally rendering template blocks based on eval
 var person = new 
 { 
 	IsEmployed = true, 
-	Employer = "Hat Trick Labs"
+	Employer = "Hat Trick Labs",
 	Name = new { First = "John", Last = "Doe"}, 
 };
 ```
@@ -148,7 +163,7 @@ We see you currently hold the following certs:
 ```
 Hello John Doe,
 
-We see you currently hold  the following certs:
+We see you currently hold the following certs:
   - mcse
   - mcitp
   - mcts
@@ -159,10 +174,58 @@ We see you currently hold  the following certs:
 - *{#each}* tags work on any object that implements the *System.Collections.IEnumerable* interface.
 - The $ reserved varible always references the root value of local scope (*this*).  
 - The value of $ changes every time scope changes and can be used within any template tag.
-- The ..\ operator can be used to walk backwards through scope chain.
-- Whithin the *{#each}* block from the example in this section, a tag can reference the outer each block scope
+- The ..\ operator can be used to walk backwards through scope chain (see *Scope Chain Walk* below).
+- Within the *{#each}* block from the example in this section, a tag can reference the outer each block scope
   by walking back one level *{..\Employer}*.  Declaring variables is a better way of accessing outer scope and 
   is described in detail within the next section.
+
+
+
+## Scope Chain Walk
+Inside nested *{#each}* or *{#with}* blocks, local scope shifts to the iterated/with target.  The *..\\* operator walks one scope level backward per occurrence and can be chained (e.g. *{..\\..\\Foo}*).
+
+##### Data:
+```c#
+var report = new 
+{ 
+    Title = "Quarterly Sales",
+    Departments = new[] 
+    {
+        new 
+        { 
+            Name = "Sales",
+            Reps = new[] 
+            { 
+                new { Name = "Alice" }, 
+                new { Name = "Bob" } 
+            }
+        }
+    }
+};
+```
+
+##### Template:
+```
+{Title}
+{#each Departments}
+  {Name}:
+  {#each Reps}
+  - {Name} (dept: {..\Name}, report: {..\..\Title})
+  {/each}
+{/each}
+```
+
+##### Result:
+```
+Quarterly Sales
+  Sales:
+  - Alice (dept: Sales, report: Quarterly Sales)
+  - Bob (dept: Sales, report: Quarterly Sales)
+```
+
+##### Notes:
+- The *..\\* operator may be followed by any bind expression — properties, the *$* root, or further dotted access.
+- For more than one or two walks deep, declaring a variable in the outer scope is usually cleaner than chaining *..\\* operators.
 
 
 
@@ -209,7 +272,7 @@ Fields:
 [dbo].[Person].[Id] int
 [dbo].[Person].[FirstName] varchar(32)
 [dbo].[Person].[LastName] varchar(32)
-[dbo].[Person].[Birthdate] date
+[dbo].[Person].[BirthDate] date
 ```
 ##### Notes:
 - Declaring, assigning and referencing a variable requires the variable name be proceeded by a colon:
@@ -217,19 +280,73 @@ Fields:
 	* Usage: *{:myVar}*
 	* Reassignment *{?:myVar = "hello"}*
 - The colon ensures no collisions between declared variable names and properties, fields or keys of the bound object.
-- Variables can be set via string literals, numeric literals, a value from the bound object, lamba expressions or boolean *true/false*:
+- Variables can be set via string literals, numeric literals, a value from the bound object, lambda expressions or boolean *true/false*:
 	* String Literal: *{?var:someText = "Hello"}*
-	* Numeric Literal: *{?var:someNum = 3.0d}*
+	* Numeric Literal: *{?var:someNum = 3.0}*
 	* Bound Expression: *{?var:someVal = $.SomeProperty}*
 	* Lambda: *{?var:someVal = () => GetSomeValue}*
 	* Boolean: *{?var:isValid = true}*
 - String literal values can be wrapped in double quotes or single quotes.
-- Numeric literal values cannot be inferred and must contain a type suffix.  Valid type suffix values (case insensitive):
-	* d - double
-	* i - int
-	* f - float/single
-	* m - decimal
-	* l - long
+- Numeric literal values are stored unparsed and coerced to the target type when consumed by a typed lambda parameter — no type suffix required.
+- Declaring a variable without a value leaves it *null* — *{?var:nothing}*.  This is useful if a template designer needs to explicitly pass *null* to a lambda function: *{(:nothing) => MyFunc}*.
+
+
+
+## Variable Reassignment
+Once declared, a variable can be reassigned with the *{?:name = value}* tag (the *var* keyword is omitted).  Reassignment of an undeclared variable throws.  Variables are looked up by walking the scope chain outward, so an inner block can reassign a variable declared in an outer scope.
+
+##### Data:
+```c#
+var data = new { Items = new[] { "apple", "banana", "cherry" } };
+```
+
+##### Template (with *TrimWhitespace = true*):
+```
+{?var:count = 0}
+{#each Items}
+{?:count = (1, :count) => add}
+{:count}. {$}
+{/each}
+Total: {:count}
+```
+
+```c#
+ngin.LambdaRepo.Register("add", (Func<int, int, int>)((a, b) => a + b));
+ngin.TrimWhitespace = true;
+```
+
+##### Result:
+```
+1. apple
+2. banana
+3. cherry
+Total: 3
+```
+
+##### Notes:
+- *{?var:name}* declares — uses the *var* keyword.
+- *{?:name = value}* reassigns — no *var* keyword.
+- *{:name}* reads.
+
+
+
+## Variable Scope Lifetime
+Variables declared inside a block tag (*{#if}*, *{#each}*, *{#with}*, partials) live only for the duration of that block.  When the block ends — or each iteration of a *{#each}* completes — variables declared within that scope are released.  Variables declared in an outer scope remain accessible (and reassignable) from inner blocks.
+
+##### Example:
+```
+{?var:outer = "visible everywhere"}
+{#each Items}
+  {?var:inner = "visible only in this iteration"}
+  {:outer} / {:inner}
+{/each}
+{:outer}
+{:inner}  <-- throws: inner was released when the each block exited
+```
+
+##### Notes:
+- Each *{#each}* iteration starts a fresh inner scope, so re-declaring the same variable name across iterations is safe.
+- To accumulate a value across iterations, declare the variable in the outer scope and reassign from inside the loop (as shown in *Variable Reassignment* above).
 
 
 
@@ -242,9 +359,9 @@ var attendees = new
 { 
 	People = new []
 	{
-		{ Id = 1, FirstName = "John", LastName = "Doe"},
-		{ Id = 2, FirstName = "John", LastName = "Doe"},
-		{ Id = 3, FirstName = "Jane", LastName = "Smith"}
+		new { Id = 1, FirstName = "John", LastName = "Doe"},
+		new { Id = 2, FirstName = "John", LastName = "Doe"},
+		new { Id = 3, FirstName = "Jane", LastName = "Smith"}
 	},
 	RsvpFormat = "<li><bold>{$.Id}</bold> - {$.LastName}, {$.FirstName}</li>"
 }
@@ -277,9 +394,9 @@ The *{#with}* template tag allows for a shift of local scope to a different posi
 ```c#
 var account = new 
 { 
-	Person  = new 
+	Person = new 
 	{
-		Name = new { First = "John", Last = "Dow" },
+		Name = new { First = "John", Last = "Doe" },
 		Address = new
 		{
 			Line1 = "112 Main St.",
@@ -439,6 +556,35 @@ We see you don't have any certs.
 - If an instance of the template engine has *TrimWhitespace = true*, block template tags can utilize the *'+'* retain whitespace marker to retain whitespace at the tag level.
 - The *'+'* retain whitespace trim marker can be used immediately after the open tag delimiter *{+tag}* or immediately before the close tag delimiter *{tag+}* or both.
 
+##### Retain Whitespace Example:
+With *TrimWhitespace = true*, every eligible tag trims by default.  Use *+* on a specific tag to opt that tag out and keep its surrounding whitespace intact.
+
+```c#
+ngin.TrimWhitespace = true;
+```
+
+##### Template:
+```
+<ul>
+{+#each Items+}
+  <li>{$}</li>
+{+/each+}
+</ul>
+```
+
+##### Result:
+```
+<ul>
+
+  <li>A</li>
+
+  <li>B</li>
+
+</ul>
+```
+
+Without the *+* markers, the same template under *TrimWhitespace = true* would collapse to *<ul>  <li>A</li>  <li>B</li></ul>*.
+
 
 
 ## Lambda Expressions
@@ -453,7 +599,7 @@ var person = new
 	Name = new { First = "John", Last = "Doe"}, 
 };
 
-string template = "Hello {FirstName} {LastName} we see you have these certs: {(', ', Certifications) => join}.";
+string template = "Hello {Name.First} {Name.Last} we see you have these certs: {(', ', Certifications) => join}.";
 
 Func<string, object[], string> join = (delim, values) =>
 {
@@ -466,12 +612,13 @@ ngin.LambdaRepo.Register(nameof(join), join);
 
 string result = ngin.Merge(person);
 
-//result = Hello John Doe we see who have these certs: mcse, mcitp, mcts.
+//result = Hello John Doe we see you have these certs: mcse, mcitp, mcts.
 ```
 
 ##### Notes:
 - Lambda expressions can be used within any of the following tags *{simple}*, *{#if}*, *{#each}*, *{#with}*, *{?var:},* *{?}*, *{>parital}* and *{@}* tags.
-- Lambda arguments can be: a value from the bound object, string literal, numeric literal, or boolean *true/false*.
+- Lambda arguments can be: a value from the bound object, string literal, numeric literal, boolean *true/false* literal or a declared variable,.
+- To explicitly pass a *null* argument to a lambda function, declare an unassigned variable and pass that variable as the argument — see [Variable Declaration](#variable-declaration).
 - Numeric literal argument types are inferred (no need for a type suffix).
 - String literal args can be enclosed in single or double quotes.
 - If a string literal contains a double quote, enclose the literal with single quotes to avoid the need to escape.
@@ -521,7 +668,7 @@ Here is a list of your favorite colors:
 starting #each block for colors
 Blue
 Red
-Greeen
+Green
 completed #each block for colors
 ```
 
@@ -538,6 +685,41 @@ completed #each block for colors
 ## Exception Handling
 Any exception thrown from within the *TemplateEngine.Merge()* function will bubble out to the consumer as a *HatTrick.Text.Templating.MergeException*.  The *MergeException* class is a wrapper exception and will contain the actual thrown instance within the *InnerException* property.  The *MergeException* class provides valuable troubleshooting information such as the line number, column position and char index from the exact location within a template where an exception is thrown.  This contextual awareness is available via the *MergeException.Context* property. 
 
+##### MergeException members:
+- *InnerException* — the underlying exception thrown during merge.
+- *Context* — a *MergeExceptionContextStack* (a *Stack<MergeExceptionContext>*) describing the location at each engine frame.
+
+##### MergeExceptionContext members:
+- *Line* — 1-based line number in the template where the error occurred.
+- *Column* — 1-based column number on that line.
+- *CharIndex* — 0-based character index into the template string.
+- *LastTag* — the most recently parsed tag string, when available.
+
+##### Example:
+```c#
+try
+{
+    string output = ngin.Merge(data);
+}
+catch (MergeException mex)
+{
+    foreach (var frame in mex.Context)
+        Console.WriteLine(frame); // Ln: 4   Col: 12   Char Index: 87   LastTag: {Foo.Bar}
+
+    Console.WriteLine(mex.InnerException);
+}
+```
+
 ##### Notes:
 - The *MergeException.Context* property provides a stack of *MergeExceptionContext* instances that can be used to pinpoint the exact location within a template where an exception is thrown.
-- Why is the *Context* property a stack?   The template engine instantiates additional instances of iteself when rendering content for partial tags or blocked content from block tags (*{#if}, {#each} and {#with}*).
+- Why is the *Context* property a stack?   The template engine instantiates additional instances of itself when rendering content for partial tags or blocked content from block tags (*{#if}, {#each} and {#with}*).  Each nested engine pushes its own context frame.
+
+
+
+## Stack Depth Limit
+The template engine spawns a sub-engine for each *{#if}*, *{#each}*, *{#with}* and partial template block.  The maximum nesting depth is *TemplateEngine.MaxStack* (currently *64*).  Templates that exceed this depth — most commonly via recursive partials — throw an *InvalidOperationException* with the message "Stack depth overflow...".
+
+
+
+## License
+Apache-2.0.  See the [LICENSE](LICENSE) file in the repository root.
