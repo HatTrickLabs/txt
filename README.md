@@ -48,10 +48,10 @@ Hello John Doe, this is just a test.
 ##### Notes:
 - The engine uses single brackets for tags.
 - If a template contains any non-tag brackets, they can be escaped by doubling them up. {{abc}} will render {abc} into the output.
-- The $ character is reserved by the template engine.
+- The $ character is reserved by the template engine and represents `this`.
 - $ can be used to reference local scope within any tag anywhere within a template.
 - ```Hello {$.FirstName}``` and ```Hello {FirstName}``` are functionally equivalent templates.
-- Usage of $ is optional and only needed when iterating value types via an ```{#each}``` loop described further down.
+- Usage of $ is optional and only needed when iterating scalar values via an iteration loop.
 - Unquoted Whitespace within tags is ALWAYS insignificant.
 
 

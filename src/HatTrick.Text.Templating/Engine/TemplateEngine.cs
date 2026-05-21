@@ -60,7 +60,7 @@ namespace HatTrick.Text.Templating
             _template = template;
             _scopeChain = scopeChain;
             _lambdaRepo = lambdaRepo;
-            _maxStack = maxStack > 0 ? maxStack : throw new InvalidOperationException($"Stack depth overflow...stack depth cannot exceed {_maxStack}");
+            _maxStack = maxStack > 0 ? maxStack : throw new TemplateStackDepthException($"Stack depth overflow...stack depth cannot exceed {_maxStack}");
             _trimWhitespace = trimWhiteSpace;
             _index = 0;
         }
@@ -303,6 +303,7 @@ namespace HatTrick.Text.Templating
 
             ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
+            bool render = BindHelper.IsTrue(target);
 
             int blockStart = _index;
             Tag endTag;
@@ -311,10 +312,13 @@ namespace HatTrick.Text.Templating
             if (endTag.ShouldTrimLeft())
                 blockEnd = this.TrimBlockEnd(blockEnd);
 
-            _scopeChain.ApplyVariableScopeMarker();
-            var subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-            subEngine.MergeInto(_result, target);
-            _scopeChain.DereferenceVariableScope();
+            if (render)
+            {
+                _scopeChain.ApplyVariableScopeMarker();
+                var subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                subEngine.MergeInto(_result, target);
+                _scopeChain.DereferenceVariableScope();
+            }
 
             this.EnsureRightTrim(endTag);
         }
