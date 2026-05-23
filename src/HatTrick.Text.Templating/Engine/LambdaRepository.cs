@@ -25,11 +25,14 @@ namespace HatTrick.Text.Templating
             if (function == null)
                 throw new ArgumentNullException(nameof(function));
 
+            if (_lambdas.ContainsKey(name))//check here to avoid compile if we already know this is dupe...
+                throw new ArgumentException($"A function with the provided name: {name} has already been added");
+
             ParameterInfo[] parameters = function.Method.GetParameters();
             Func<object[], object> invoker = CompileInvoker(function, parameters);
             var entry = new LambdaEntry(function, invoker, parameters);
 
-            if (!_lambdas.TryAdd(name, entry))
+            if (!_lambdas.TryAdd(name, entry))//check again because this call is not thread safe, we want to throw our msg not dupe key.
                 throw new ArgumentException($"A function with the provided name: {name} has already been added");
         }
         #endregion
