@@ -1,0 +1,22 @@
+<!-- Hat Trick Text Template over an HTML host (editors/vscode httt-html variant).
+     HTML highlights normally; httt tags { ... } highlight on top of it.
+     Note: a tag inside a quoted attribute value stays the host's string color —
+     a known limitation of flat embedding, documented in editors/vscode/NOTES.md. -->
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>{Page.Title}</h1>
+
+  <p>Hello {User.Name.First}, you have {User.UnreadCount} new messages.</p>
+
+  {#if User.HasOrders}
+  <ul class="orders">
+    {#each User.Orders}
+    <li data-id="{$.Id}">{$.Label} — {$.Total}</li>
+    {/each}
+  </ul>
+  {/if}
+
+  <a href="{User.ProfileUrl}" class="profile">View {User.Name.First}'s profile</a>
+</body>
+</html>

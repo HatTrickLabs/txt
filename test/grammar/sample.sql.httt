@@ -1,0 +1,12 @@
+-- Hat Trick Text Template over a SQL host (editors/vscode httt-sql variant).
+-- SQL keywords highlight normally; httt tags { ... } highlight on top of them.
+-- A tag inside a '...' string literal stays the host's string color (known
+-- limitation of flat embedding — see editors/vscode/NOTES.md).
+SELECT
+    {#each Query.Columns}
+    {$.Name},
+    {/each}
+    created_at
+FROM {Query.TableName}
+WHERE {Query.FilterColumn} = '{Query.FilterValue}'
+ORDER BY {Query.SortColumn};

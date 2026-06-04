@@ -1,0 +1,5 @@
+{#each Departments}     <-- outer engine
+  {#each Reps}          <-- inner engine
+    {>..\..\$.BadgeFormat}    <-- partial engine; fails inside the bound template
+  {/each}
+{/each}

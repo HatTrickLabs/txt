@@ -1,0 +1,256 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Hat Trick Text Template",
+  "scopeName": "text.httt",
+  "patterns": [
+    { "include": "#escaped-braces" },
+    { "include": "#comment-tag" },
+    { "include": "#block-begin-tag" },
+    { "include": "#block-end-tag" },
+    { "include": "#partial-tag" },
+    { "include": "#debug-tag" },
+    { "include": "#var-declare-tag" },
+    { "include": "#var-assign-tag" },
+    { "include": "#simple-tag" }
+  ],
+  "repository": {
+    "escaped-braces": {
+      "match": "\\{\\{|\\}\\}",
+      "name": "constant.character.escape.brace.httt"
+    },
+
+    "comment-tag": {
+      "name": "comment.block.httt",
+      "begin": "(\\{)([-+]?)(!)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "punctuation.definition.comment.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      }
+    },
+
+    "block-begin-tag": {
+      "name": "meta.tag.block.begin.httt",
+      "begin": "(\\{)([-+]?)(#)(if|each|with)\\b",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "punctuation.definition.block.httt" },
+        "4": { "name": "keyword.control.block.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "block-end-tag": {
+      "name": "meta.tag.block.end.httt",
+      "match": "(\\{)([-+]?)(/)(if|each|with)([-+]?)(\\})",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "punctuation.definition.block.httt" },
+        "4": { "name": "keyword.control.block.httt" },
+        "5": { "name": "keyword.operator.trim.httt" },
+        "6": { "name": "punctuation.definition.tag.end.httt" }
+      }
+    },
+
+    "partial-tag": {
+      "name": "meta.tag.partial.httt",
+      "begin": "(\\{)([-+]?)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "keyword.control.partial.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "debug-tag": {
+      "name": "meta.tag.debug.httt",
+      "begin": "(\\{)([-+]?)(@)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "keyword.control.debug.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "var-declare-tag": {
+      "name": "meta.tag.variable.declare.httt",
+      "begin": "(\\{)([-+]?)(\\?)(var)(:)([A-Za-z_][A-Za-z0-9_]*)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "punctuation.definition.variable.httt" },
+        "4": { "name": "storage.type.var.httt" },
+        "5": { "name": "punctuation.definition.variable.httt" },
+        "6": { "name": "variable.other.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "var-assign-tag": {
+      "name": "meta.tag.variable.assign.httt",
+      "begin": "(\\{)([-+]?)(\\?)(:)([A-Za-z_][A-Za-z0-9_]*)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" },
+        "2": { "name": "keyword.operator.trim.httt" },
+        "3": { "name": "punctuation.definition.variable.httt" },
+        "4": { "name": "punctuation.definition.variable.httt" },
+        "5": { "name": "variable.other.httt" }
+      },
+      "end": "([-+]?)(\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.trim.httt" },
+        "2": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "simple-tag": {
+      "name": "meta.tag.simple.httt",
+      "begin": "(\\{)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.httt" }
+      },
+      "end": "(\\})",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.httt" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+
+    "expression": {
+      "patterns": [
+        { "include": "#string-double" },
+        { "include": "#string-single" },
+        { "include": "#lambda-arrow" },
+        { "include": "#boolean" },
+        { "include": "#null" },
+        { "include": "#numeric" },
+        { "include": "#scope-walk" },
+        { "include": "#this" },
+        { "include": "#variable-ref" },
+        { "include": "#assignment" },
+        { "include": "#separator" },
+        { "include": "#parens" },
+        { "include": "#accessor" },
+        { "include": "#identifier" }
+      ]
+    },
+
+    "string-double": {
+      "name": "string.quoted.double.httt",
+      "begin": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.httt" } },
+      "end": "\"",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.httt" } },
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.httt" }
+      ]
+    },
+
+    "string-single": {
+      "name": "string.quoted.single.httt",
+      "begin": "'",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.httt" } },
+      "end": "'",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.httt" } },
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.httt" }
+      ]
+    },
+
+    "lambda-arrow": {
+      "match": "(=>)\\s*([A-Za-z_][A-Za-z0-9_]*)?",
+      "captures": {
+        "1": { "name": "keyword.operator.arrow.httt" },
+        "2": { "name": "entity.name.function.httt" }
+      }
+    },
+
+    "boolean": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.boolean.httt"
+    },
+
+    "null": {
+      "match": "\\bnull\\b",
+      "name": "constant.language.null.httt"
+    },
+
+    "numeric": {
+      "match": "(?<![\\w.])[-+]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
+      "name": "constant.numeric.httt"
+    },
+
+    "scope-walk": {
+      "match": "\\.\\.\\\\",
+      "name": "keyword.operator.scope-walk.httt"
+    },
+
+    "this": {
+      "match": "\\$",
+      "name": "variable.language.this.httt"
+    },
+
+    "variable-ref": {
+      "match": "(:)([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "punctuation.definition.variable.httt" },
+        "2": { "name": "variable.other.httt" }
+      }
+    },
+
+    "assignment": {
+      "match": "=(?!>)",
+      "name": "keyword.operator.assignment.httt"
+    },
+
+    "separator": {
+      "match": ",",
+      "name": "punctuation.separator.httt"
+    },
+
+    "parens": {
+      "match": "[()]",
+      "name": "punctuation.section.parens.httt"
+    },
+
+    "accessor": {
+      "match": "\\.",
+      "name": "punctuation.accessor.httt"
+    },
+
+    "identifier": {
+      "match": "[A-Za-z_][A-Za-z0-9_]*",
+      "name": "variable.other.property.httt"
+    }
+  }
+}

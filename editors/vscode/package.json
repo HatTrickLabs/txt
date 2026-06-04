@@ -1,0 +1,126 @@
+{
+  "name": "httt-language",
+  "displayName": "Hat Trick Text Template",
+  "description": "Syntax highlighting for Hat Trick text templates (.httt) — the HatTrick.Text.Templating language.",
+  "version": "0.1.0",
+  "icon": "icon.png",
+  "publisher": "hattricklabs",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "hattrick",
+    "template",
+    "templating",
+    "httt"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HatTrickLabs/txt"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "httt",
+        "aliases": [
+          "Hat Trick Text Template",
+          "httt"
+        ],
+        "extensions": [
+          ".httt"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      },
+      {
+        "id": "httt-sql",
+        "aliases": ["Hat Trick Text Template (SQL)"],
+        "filenamePatterns": ["*.sql.httt"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      },
+      {
+        "id": "httt-html",
+        "aliases": ["Hat Trick Text Template (HTML)"],
+        "filenamePatterns": ["*.html.httt"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      },
+      {
+        "id": "httt-xml",
+        "aliases": ["Hat Trick Text Template (XML)"],
+        "filenamePatterns": ["*.xml.httt"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      },
+      {
+        "id": "httt-markdown",
+        "aliases": ["Hat Trick Text Template (Markdown)"],
+        "filenamePatterns": ["*.md.httt"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      },
+      {
+        "id": "httt-yaml",
+        "aliases": ["Hat Trick Text Template (YAML)"],
+        "filenamePatterns": ["*.yaml.httt", "*.yml.httt"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/httt-light.svg",
+          "dark": "./icons/httt-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "httt",
+        "scopeName": "text.httt",
+        "path": "./syntaxes/httt.tmLanguage.json"
+      },
+      {
+        "language": "httt-sql",
+        "scopeName": "text.httt.sql",
+        "path": "./syntaxes/httt.sql.tmLanguage.json"
+      },
+      {
+        "language": "httt-html",
+        "scopeName": "text.httt.html",
+        "path": "./syntaxes/httt.html.tmLanguage.json"
+      },
+      {
+        "language": "httt-xml",
+        "scopeName": "text.httt.xml",
+        "path": "./syntaxes/httt.xml.tmLanguage.json"
+      },
+      {
+        "language": "httt-markdown",
+        "scopeName": "text.httt.md",
+        "path": "./syntaxes/httt.markdown.tmLanguage.json"
+      },
+      {
+        "language": "httt-yaml",
+        "scopeName": "text.httt.yaml",
+        "path": "./syntaxes/httt.yaml.tmLanguage.json"
+      }
+    ]
+  }
+}

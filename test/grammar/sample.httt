@@ -1,0 +1,38 @@
+{! Hat Trick Text Template — grammar sampler.
+   Open in the editors/vscode F5 dev host to eyeball how every tag family
+   highlights. This is a highlighting fixture, not a rendering test. }
+
+Hello {Name.First} {Name.Last},
+
+{#if Account.IsActive}
+Your account has been active since {Account.MemberSince}.
+
+{#each Account.Orders}
+  - Order {$.Id}: {$.Total} placed {$.PlacedOn}
+{/each}
+{/if}
+
+{#with Account.Address}
+Ship to: {Line1}, {City} {State} {Zip}   ({..\Account.Region})
+{/with}
+
+{! variables: declare, reassign, read }
+{?var:greeting = "Thanks"}
+{?:greeting = "Thank you"}
+{:greeting} for being a member, {$.Name.First}.
+
+{! lambda call and literals }
+Total due: {Invoice.Lines.((line, acc) => sumTotals)}
+Flags: {true}, {false}, {null}, {42}, {-3.14}
+
+{! trim markers lead/trail a block tag }
+{-#each Notices}
+{$.Text}
+{/each-}
+
+{! partial include, then a debug tag }
+{>footer-signature}
+{@Account.Address}
+
+{! escaped braces render literally — not tags }
+Use {{ and }} for a literal brace, e.g. {{ not a tag }} but {Name} is.

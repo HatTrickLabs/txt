@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Hat Trick Text Template (HTML)",
+  "scopeName": "text.httt.html",
+  "patterns": [
+    { "include": "text.httt#escaped-braces" },
+    { "include": "text.httt#comment-tag" },
+    { "include": "text.httt#block-begin-tag" },
+    { "include": "text.httt#block-end-tag" },
+    { "include": "text.httt#partial-tag" },
+    { "include": "text.httt#debug-tag" },
+    { "include": "text.httt#var-declare-tag" },
+    { "include": "text.httt#var-assign-tag" },
+    { "include": "text.httt#simple-tag" },
+    { "include": "text.html.basic" }
+  ]
+}
