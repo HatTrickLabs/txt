@@ -105,7 +105,7 @@ namespace HatTrick.Text.Templating
             }
             catch (Exception ex)
             {
-                var mex = new MergeException("An error occurrred while merging the template.  See the inner exception for details.", ex);
+                var mex = new MergeException("An error occurred while merging the template.  See the inner exception for details.", ex);
                 mex.Context.Push(this.ResolveExceptionContext());
                 throw mex;
             }
@@ -143,6 +143,17 @@ namespace HatTrick.Text.Templating
         {
             string lastTag = _tagLen > 0 ? new string(_tagBuffer, 0, _tagLen) : null;
             return new MergeExceptionContext(_lineNum, _columnNum, _index, lastTag);
+        }
+        #endregion
+
+        #region restore cursor
+        //MunchBlockContent advances the cursor to a block's close to delimit its body; when a sub-engine
+        //throws, restore the cursor to the block-open position so the pushed frame points at the opening tag.
+        private void RestoreCursor(int line, int column, int index)
+        {
+            _lineNum = line;
+            _columnNum = column;
+            _index = index;
         }
         #endregion
 
@@ -232,7 +243,9 @@ namespace HatTrick.Text.Templating
             if (negate)
                 render = !render;
 
-            int blockStart = _index;
+            int blockIndex = _index;
+            int blockLineNum = _lineNum;       //snapshot the block-open cursor before MunchBlockContent advances it to the close
+            int blockColumnNum = _columnNum;
             Tag endTag;
             int blockEnd = this.MunchBlockContent(TagType.If, out endTag);
 
@@ -242,8 +255,16 @@ namespace HatTrick.Text.Templating
             if (render)
             {
                 _scopeChain.ApplyVariableScopeMarker();
-                var subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                subEngine.MergeInto(_result);
+                var subEngine = new TemplateEngine(_template.Slice(blockIndex, blockEnd - blockIndex), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                try
+                {
+                    subEngine.MergeInto(_result);
+                }
+                catch (MergeException)
+                {
+                    this.RestoreCursor(blockLineNum, blockColumnNum, blockIndex);
+                    throw;
+                }
                 _scopeChain.DereferenceVariableScope();
             }
 
@@ -260,7 +281,9 @@ namespace HatTrick.Text.Templating
             ReadOnlySpan<char> bindAs = tag.BindAs();
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
 
-            int blockStart = _index;
+            int blockIndex = _index;
+            int blockLineNum = _lineNum;       //snapshot the block-open cursor before MunchBlockContent advances it to the close
+            int blockColumnNum = _columnNum;
             Tag endTag;
             int blockEnd = this.MunchBlockContent(TagType.Each, out endTag);
 
@@ -273,7 +296,7 @@ namespace HatTrick.Text.Templating
                     throw new InvalidOperationException($"#each tag bound to non-enumerable object: {bindAs}");
 
                 var items = (System.Collections.IEnumerable)target;
-                TemplateEngine subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                TemplateEngine subEngine = new TemplateEngine(_template.Slice(blockIndex, blockEnd - blockIndex), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
                 subEngine._tagBuffer = ArrayPool<char>.Shared.Rent(64);
                 try
                 {
@@ -283,6 +306,11 @@ namespace HatTrick.Text.Templating
                         subEngine.MergeInto(_result, item);
                         _scopeChain.DereferenceVariableScope();
                     }
+                }
+                catch (MergeException)
+                {
+                    this.RestoreCursor(blockLineNum, blockColumnNum, blockIndex);
+                    throw;
                 }
                 finally
                 {
@@ -305,7 +333,9 @@ namespace HatTrick.Text.Templating
             object target = BindHelper.ResolveBindTarget(bindAs, _lambdaRepo, _scopeChain);
             bool render = BindHelper.IsTrue(target);
 
-            int blockStart = _index;
+            int blockIndex = _index;
+            int blockLineNum = _lineNum;       //snapshot the block-open cursor before MunchBlockContent advances it to the close
+            int blockColumnNum = _columnNum;
             Tag endTag;
             int blockEnd = this.MunchBlockContent(TagType.With, out endTag);
 
@@ -315,8 +345,16 @@ namespace HatTrick.Text.Templating
             if (render)
             {
                 _scopeChain.ApplyVariableScopeMarker();
-                var subEngine = new TemplateEngine(_template.Slice(blockStart, blockEnd - blockStart), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
-                subEngine.MergeInto(_result, target);
+                var subEngine = new TemplateEngine(_template.Slice(blockIndex, blockEnd - blockIndex), _scopeChain, _lambdaRepo, (_maxStack - 1), _trimWhitespace);
+                try
+                {
+                    subEngine.MergeInto(_result, target);
+                }
+                catch (MergeException)
+                {
+                    this.RestoreCursor(blockLineNum, blockColumnNum, blockIndex);
+                    throw;
+                }
                 _scopeChain.DereferenceVariableScope();
             }
 
