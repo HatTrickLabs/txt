@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) HatTrick Labs, LLC
+
+using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
