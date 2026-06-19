@@ -1,6 +1,13 @@
 # HatTrick.Text.Templating
 
-A small, allocation-conscious text templating engine for .NET.  Source: [github.com/HatTrickLabs/txt](https://github.com/HatTrickLabs/txt).
+[![NuGet](https://img.shields.io/nuget/v/HatTrick.Text.Templating.svg)](https://www.nuget.org/packages/HatTrick.Text.Templating/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+A small, allocation-conscious text templating engine for .NET.
+
+**[Full documentation](https://hattricklabs.com/docs/text-templates/)** | **[NuGet package](https://www.nuget.org/packages/HatTrick.Text.Templating/)** | **[hattricklabs.com](https://hattricklabs.com)**
+
+---
 
 ## Installation
 The package targets *net9.0*.
@@ -646,7 +653,7 @@ Hello {FirstName} {LastName},
 
 Here is a list of your favorite colors:
 {@ 'starting #each block for colors' }
-{#each $}
+{#each FavoriteColors}
 {@ $ }
 - {$}
 {/each}
@@ -717,7 +724,7 @@ catch (MergeException mex)
 
 
 ## Stack Depth Limit
-The template engine spawns a sub-engine for each *{#if}*, *{#each}*, *{#with}* and partial template block.  The maximum nesting depth is *TemplateEngine.MaxStack* (currently *64*).  Templates that exceed this depth — most commonly via recursive partials — throw an *InvalidOperationException* with the message "Stack depth overflow...".
+The template engine spawns a sub-engine for each *{#if}*, *{#each}*, *{#with}* and partial template block.  The maximum nesting depth is *TemplateEngine.MaxStack* (currently *64*).  Templates that exceed this depth — most commonly via recursive partials — surface as a *MergeException* whose *InnerException* is a *TemplateStackDepthException* (a subclass of *InvalidOperationException*) with the message "Stack depth overflow...".
 
 
 

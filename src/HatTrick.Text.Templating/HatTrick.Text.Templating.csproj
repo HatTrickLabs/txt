@@ -7,15 +7,18 @@
     <Copyright>Hat Trick Labs</Copyright>
     <PackageLicenseUrl>
     </PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/HatTrickLabs/txt</PackageProjectUrl>
+    <PackageProjectUrl>https://hattricklabs.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HatTrickLabs/txt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.2.0</Version>
+    <Version>3.0.0</Version>
     <PackageReleaseNotes>All nuget package referenced updated to newest versions.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>htl-nuget-logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <PackageIconUrl />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -32,6 +35,10 @@
       <Pack>True</Pack>
       <PackagePath>
       </PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 </Project>
