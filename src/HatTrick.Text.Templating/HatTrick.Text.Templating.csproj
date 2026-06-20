@@ -13,7 +13,13 @@
     <PackageTags>text template templating engine template-engine</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Version>3.0.0</Version>
-    <PackageReleaseNotes>All nuget package referenced updated to newest versions.</PackageReleaseNotes>
+    <PackageReleaseNotes>Breaking: numeric literals in templates no longer require or support a type-suffix postfix.
+Allocation-reduction pass across the parser/merge pipeline: char-buffer based tag building, cached compiled lambda invokers (no more dynamic invoke), and hot-path optimizations for simple-tag binding.
+Added TemplateStackDepthException with richer MergeException context (start-block tag tracking) for clearer error locations.
+Fixed: lambda registration could throw before the intended duplicate-key exception.
+Fixed: debug tag misidentified when adjacent to whitespace trim markers (#62).
+Lambda argument parsing now accepts null for nullable parameter types.
+Upgraded target framework to net9.0.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>htl-nuget-logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -28,17 +34,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="HatTrick.Reflection" Version="3.0.0" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\build\htl-nuget-logo.png">
       <Pack>True</Pack>
       <PackagePath>
       </PackagePath>
     </None>
-    <None Include="..\..\README.md">
+    <None Include="..\..\build\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="HatTrick.Reflection" Version="3.0.1" />
   </ItemGroup>
 </Project>
